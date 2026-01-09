@@ -1,7 +1,7 @@
 /**
  * TDD RED Phase: 기록 서비스 테스트
  */
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import {
   getBestRecord,
   saveBestRecord,
@@ -110,6 +110,36 @@ describe('Record Service', () => {
 
       expect(getBestRecord('easy')).toBeNull();
       expect(getBestRecord('medium')).toBeNull();
+    });
+  });
+
+  describe('에러 처리', () => {
+    it('localStorage.getItem에서 에러 발생시 빈 객체를 반환해야 한다', () => {
+      const getItemSpy = vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+        throw new Error('Storage error');
+      });
+
+      expect(getBestRecord('easy')).toBeNull();
+
+      getItemSpy.mockRestore();
+    });
+
+    it('localStorage에 잘못된 JSON이 저장되어 있을 때 빈 객체를 반환해야 한다', () => {
+      localStorage.setItem(STORAGE_KEY, 'invalid json');
+
+      expect(getBestRecord('easy')).toBeNull();
+    });
+
+    it('saveBestRecord는 기존 기록이 더 좋을 때 false를 반환해야 한다', () => {
+      // 먼저 좋은 기록 저장
+      saveBestRecord('easy', 3000);
+
+      // 더 나쁜 기록으로 저장 시도 - false 반환
+      const result = saveBestRecord('easy', 5000);
+      expect(result).toBe(false);
+
+      // 기존 기록 유지 확인
+      expect(getBestRecord('easy')!.time).toBe(3000);
     });
   });
 });
