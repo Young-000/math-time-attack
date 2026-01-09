@@ -88,6 +88,42 @@ describe('useMathGame', () => {
       expect(result.current.gameState!.currentIndex).toBe(0); // Should stay at same problem
     });
 
+    it('should return false when game is not started', () => {
+      const { result } = renderHook(() => useMathGame());
+
+      let isCorrect: boolean | undefined;
+      act(() => {
+        isCorrect = result.current.submitAnswer(12);
+      });
+
+      expect(isCorrect).toBe(false);
+    });
+
+    it('should return false when game is already complete', () => {
+      const { result } = renderHook(() => useMathGame());
+
+      act(() => {
+        result.current.startGame('easy');
+      });
+
+      // 모든 문제 맞추기
+      for (let i = 0; i < 5; i++) {
+        const answer = result.current.currentProblem!.answer;
+        act(() => {
+          result.current.submitAnswer(answer);
+        });
+      }
+
+      // 게임 완료 후 추가 제출 시도
+      let isCorrect: boolean | undefined;
+      act(() => {
+        isCorrect = result.current.submitAnswer(12);
+      });
+
+      expect(isCorrect).toBe(false);
+      expect(result.current.gameState!.isComplete).toBe(true);
+    });
+
     it('should complete game after 5 correct answers', () => {
       const { result } = renderHook(() => useMathGame());
 
@@ -137,6 +173,33 @@ describe('useMathGame', () => {
       expect(result.current.elapsedTime).toBeGreaterThanOrEqual(0);
     });
 
+    it('should update elapsed time as timer runs', () => {
+      const { result } = renderHook(() => useMathGame());
+
+      act(() => {
+        result.current.startGame('easy');
+      });
+
+      // 초기 시간
+      expect(result.current.elapsedTime).toBe(0);
+
+      // 100ms 진행 (타이머 인터벌)
+      act(() => {
+        vi.advanceTimersByTime(100);
+      });
+
+      // elapsedTime이 업데이트되어야 함
+      expect(result.current.elapsedTime).toBeGreaterThan(0);
+
+      // 500ms 더 진행
+      act(() => {
+        vi.advanceTimersByTime(500);
+      });
+
+      // elapsedTime이 더 증가해야 함
+      expect(result.current.elapsedTime).toBeGreaterThanOrEqual(500);
+    });
+
     it('should have elapsed time after game completes', () => {
       vi.useRealTimers(); // Use real timers for this test
 
@@ -157,6 +220,35 @@ describe('useMathGame', () => {
       // Elapsed time should be recorded
       expect(result.current.elapsedTime).toBeGreaterThanOrEqual(0);
       expect(result.current.gameState!.isComplete).toBe(true);
+    });
+
+    it('should stop timer when game is not playing', () => {
+      const { result } = renderHook(() => useMathGame());
+
+      act(() => {
+        result.current.startGame('easy');
+      });
+
+      // 시간 진행
+      act(() => {
+        vi.advanceTimersByTime(500);
+      });
+
+      // 시간이 증가했는지 확인
+      expect(result.current.elapsedTime).toBeGreaterThan(0);
+
+      // 게임 리셋
+      act(() => {
+        result.current.resetGame();
+      });
+
+      // 시간 더 진행
+      act(() => {
+        vi.advanceTimersByTime(500);
+      });
+
+      // elapsedTime은 0으로 리셋되어야 함
+      expect(result.current.elapsedTime).toBe(0);
     });
   });
 });

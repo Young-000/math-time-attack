@@ -86,6 +86,21 @@ describe('Math Game Engine', () => {
       expect(checkAnswer(state, 30)).toBe(true);
       expect(checkAnswer(state, 12)).toBe(false);
     });
+
+    it('should return false when there is no current problem', () => {
+      // 빈 문제 배열로 상태 생성
+      const state = createGameState('easy', []);
+      expect(checkAnswer(state, 12)).toBe(false);
+    });
+
+    it('should return false when currentIndex is out of bounds', () => {
+      let state = createGameState('easy', mockProblems);
+      // 모든 문제를 넘기고 범위를 벗어남
+      for (let i = 0; i <= mockProblems.length; i++) {
+        state = nextProblem(state);
+      }
+      expect(checkAnswer(state, 12)).toBe(false);
+    });
   });
 
   describe('nextProblem', () => {

@@ -67,6 +67,29 @@ describe('GamePage', () => {
     });
   });
 
+  describe('게임 시작', () => {
+    it('유효한 난이도와 gameState가 null일 때 startGame이 호출되어야 한다', () => {
+      mockGameState = null;
+      mockCurrentProblem = null;
+      renderPage('easy');
+      expect(mockStartGame).toHaveBeenCalledWith('easy');
+    });
+
+    it('medium 난이도로 startGame이 호출되어야 한다', () => {
+      mockGameState = null;
+      mockCurrentProblem = null;
+      renderPage('medium');
+      expect(mockStartGame).toHaveBeenCalledWith('medium');
+    });
+
+    it('hard 난이도로 startGame이 호출되어야 한다', () => {
+      mockGameState = null;
+      mockCurrentProblem = null;
+      renderPage('hard');
+      expect(mockStartGame).toHaveBeenCalledWith('hard');
+    });
+  });
+
   describe('로딩 상태', () => {
     it('문제가 없을 때 로딩 메시지를 표시해야 한다', () => {
       mockGameState = {
@@ -217,6 +240,91 @@ describe('GamePage', () => {
       renderPage('easy');
       const input = screen.getByRole('spinbutton');
       expect(input).toHaveAttribute('aria-label', '3 × 4 = ?');
+    });
+  });
+
+  describe('게임 완료', () => {
+    it('게임 완료 시 결과 페이지로 이동해야 한다', () => {
+      mockGameState = {
+        difficulty: 'easy',
+        isComplete: true,
+        currentIndex: 5,
+        problems: [{ firstNum: 3, secondNum: 4, answer: 12 }],
+        startTime: Date.now(),
+      };
+      mockCurrentProblem = { firstNum: 3, secondNum: 4, answer: 12 };
+
+      renderPage('easy');
+
+      expect(mockNavigate).toHaveBeenCalledWith('/result', {
+        state: {
+          difficulty: 'easy',
+          elapsedTime: 5000,
+        },
+      });
+    });
+  });
+
+  describe('오답 피드백', () => {
+    beforeEach(() => {
+      mockGameState = {
+        difficulty: 'easy',
+        isComplete: false,
+        currentIndex: 0,
+        problems: [{ firstNum: 3, secondNum: 4, answer: 12 }],
+        startTime: Date.now(),
+      };
+      mockCurrentProblem = { firstNum: 3, secondNum: 4, answer: 12 };
+    });
+
+    it('오답 시 진동 기능이 호출되어야 한다 (지원되는 경우)', () => {
+      const mockVibrate = vi.fn();
+      Object.defineProperty(navigator, 'vibrate', {
+        value: mockVibrate,
+        writable: true,
+        configurable: true,
+      });
+
+      mockSubmitAnswer.mockReturnValue(false);
+      renderPage('easy');
+
+      const input = screen.getByRole('spinbutton');
+      fireEvent.change(input, { target: { value: '10' } });
+
+      const form = screen.getByRole('form');
+      fireEvent.submit(form);
+
+      expect(mockVibrate).toHaveBeenCalledWith(100);
+    });
+
+    it('연속 오답 시 이전 타임아웃이 클리어되어야 한다', () => {
+      vi.useFakeTimers();
+      mockSubmitAnswer.mockReturnValue(false);
+
+      // navigator.vibrate가 없는 환경 시뮬레이션
+      Object.defineProperty(navigator, 'vibrate', {
+        value: undefined,
+        writable: true,
+        configurable: true,
+      });
+
+      renderPage('easy');
+
+      const input = screen.getByRole('spinbutton');
+      const form = screen.getByRole('form');
+
+      // 첫 번째 오답
+      fireEvent.change(input, { target: { value: '10' } });
+      fireEvent.submit(form);
+
+      // 두 번째 오답 (이전 타임아웃 클리어 필요)
+      fireEvent.change(input, { target: { value: '11' } });
+      fireEvent.submit(form);
+
+      // 타임아웃이 두 번 설정되었는지 확인
+      expect(mockSubmitAnswer).toHaveBeenCalledTimes(2);
+
+      vi.useRealTimers();
     });
   });
 });

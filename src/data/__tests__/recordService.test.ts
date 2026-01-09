@@ -141,5 +141,47 @@ describe('Record Service', () => {
       // 기존 기록 유지 확인
       expect(getBestRecord('easy')!.time).toBe(3000);
     });
+
+    it('localStorage.setItem에서 에러 발생시 경고를 출력해야 한다', () => {
+      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+      // 원본 localStorage 백업
+      const originalLocalStorage = globalThis.localStorage;
+
+      // 에러를 던지는 모의 localStorage 생성
+      const mockLocalStorage = {
+        getItem: () => '{}',
+        setItem: () => {
+          throw new Error('QuotaExceededError');
+        },
+        removeItem: () => {},
+        clear: () => {},
+        key: () => null,
+        length: 0,
+      };
+
+      // 테스트를 위해 localStorage 재정의
+      Object.defineProperty(globalThis, 'localStorage', {
+        value: mockLocalStorage,
+        writable: true,
+        configurable: true,
+      });
+
+      try {
+        // 새 기록 저장 시도 (setItem에서 에러 발생)
+        saveBestRecord('easy', 3000);
+
+        // console.warn이 호출되었는지 확인
+        expect(consoleWarnSpy).toHaveBeenCalledWith('Failed to save records to localStorage');
+      } finally {
+        // 복원
+        Object.defineProperty(globalThis, 'localStorage', {
+          value: originalLocalStorage,
+          writable: true,
+          configurable: true,
+        });
+        consoleWarnSpy.mockRestore();
+      }
+    });
   });
 });
