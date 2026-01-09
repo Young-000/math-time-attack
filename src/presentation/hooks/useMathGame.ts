@@ -37,21 +37,21 @@ export function useMathGame(): UseMathGameReturn {
   const currentIndex = gameState?.currentIndex ?? 0;
   const totalProblems = gameState?.problems.length ?? 5;
 
-  // Timer effect
+  // Timer effect - 클로저 버그 수정: startTime을 직접 사용
   useEffect(() => {
-    if (isPlaying && gameState) {
-      const updateTimer = () => {
-        setElapsedTime(getElapsedTime(gameState));
-      };
+    if (!isPlaying || !gameState?.startTime) return;
 
-      timerRef.current = window.setInterval(updateTimer, 100);
+    const startTime = gameState.startTime;
+    const id = window.setInterval(() => {
+      setElapsedTime(Date.now() - startTime);
+    }, 100);
 
-      return () => {
-        if (timerRef.current) {
-          clearInterval(timerRef.current);
-        }
-      };
-    }
+    timerRef.current = id;
+
+    return () => {
+      clearInterval(id);
+      timerRef.current = null;
+    };
   }, [isPlaying, gameState?.startTime]);
 
   // Update elapsed time when game state changes

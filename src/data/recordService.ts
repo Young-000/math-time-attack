@@ -29,8 +29,14 @@ function getStoredRecords(): StoredRecords {
 /**
  * localStorage에 기록 저장
  */
-function setStoredRecords(records: StoredRecords): void {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+function setStoredRecords(records: StoredRecords): boolean {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+    return true;
+  } catch {
+    console.warn('Failed to save records to localStorage');
+    return false;
+  }
 }
 
 /**

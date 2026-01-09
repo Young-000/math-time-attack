@@ -22,4 +22,6 @@ export default defineConfig({
     gameCenter: true,
     ads: false,
   },
+  permissions: [],
+  outdir: 'dist',
 });
