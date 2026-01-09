@@ -155,6 +155,45 @@ describe('GamePage', () => {
 
       expect(mockSubmitAnswer).not.toHaveBeenCalled();
     });
+
+    it('오답 제출시 입력이 초기화되어야 한다', () => {
+      mockSubmitAnswer.mockReturnValue(false);
+      renderPage('easy');
+
+      const input = screen.getByRole('spinbutton');
+      fireEvent.change(input, { target: { value: '10' } });
+
+      const form = screen.getByRole('form');
+      fireEvent.submit(form);
+
+      expect(mockSubmitAnswer).toHaveBeenCalledWith(10);
+      expect(input).toHaveValue(null);
+    });
+
+    it('정답 제출시 입력이 초기화되어야 한다', () => {
+      mockSubmitAnswer.mockReturnValue(true);
+      renderPage('easy');
+
+      const input = screen.getByRole('spinbutton');
+      fireEvent.change(input, { target: { value: '12' } });
+
+      const form = screen.getByRole('form');
+      fireEvent.submit(form);
+
+      expect(input).toHaveValue(null);
+    });
+
+    it('10000 초과 입력은 제출되지 않아야 한다', () => {
+      renderPage('easy');
+
+      const input = screen.getByRole('spinbutton');
+      fireEvent.change(input, { target: { value: '10001' } });
+
+      const form = screen.getByRole('form');
+      fireEvent.submit(form);
+
+      expect(mockSubmitAnswer).not.toHaveBeenCalled();
+    });
   });
 
   describe('접근성', () => {
