@@ -19,6 +19,7 @@ export default defineConfig({
     type: 'game',
     bounces: false, // 게임에서는 바운스 비활성화
     pullToRefreshEnabled: false, // 게임에서는 당겨서 새로고침 비활성화
+    allowsBackForwardNavigationGestures: false, // 게임 중 스와이프 뒤로가기 방지
   },
   navigationBar: {
     withBackButton: true,
