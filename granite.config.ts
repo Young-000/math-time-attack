@@ -17,6 +17,12 @@ export default defineConfig({
   },
   webViewProps: {
     type: 'game',
+    bounces: false, // 게임에서는 바운스 비활성화
+    pullToRefreshEnabled: false, // 게임에서는 당겨서 새로고침 비활성화
+  },
+  navigationBar: {
+    withBackButton: true,
+    withHomeButton: false, // 게임에서는 홈 버튼 불필요
   },
   features: {
     gameCenter: true,
