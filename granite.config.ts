@@ -1,0 +1,25 @@
+import { defineConfig } from '@apps-in-toss/web-framework/config';
+
+export default defineConfig({
+  appName: 'math-time-attack',
+  brand: {
+    displayName: '연산 타임어택',
+    primaryColor: '#3182F6', // 토스 블루
+    icon: 'https://math-time-attack.vercel.app/app-icon.svg',
+  },
+  web: {
+    host: 'localhost',
+    port: 5174,
+    commands: {
+      dev: 'vite',
+      build: 'tsc && vite build',
+    },
+  },
+  webViewProps: {
+    type: 'game',
+  },
+  features: {
+    gameCenter: true,
+    ads: false,
+  },
+});
