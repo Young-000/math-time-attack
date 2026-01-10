@@ -15,11 +15,19 @@ import type { Problem } from '../entities';
 
 describe('Math Game Engine', () => {
   const mockProblems: Problem[] = [
-    { id: 1, firstNum: 3, secondNum: 4, answer: 12 },
-    { id: 2, firstNum: 5, secondNum: 6, answer: 30 },
-    { id: 3, firstNum: 7, secondNum: 8, answer: 56 },
-    { id: 4, firstNum: 2, secondNum: 9, answer: 18 },
-    { id: 5, firstNum: 4, secondNum: 4, answer: 16 },
+    { id: 1, firstNum: 3, secondNum: 4, operator: 'multiplication', answer: 12 },
+    { id: 2, firstNum: 5, secondNum: 6, operator: 'multiplication', answer: 30 },
+    { id: 3, firstNum: 7, secondNum: 8, operator: 'multiplication', answer: 56 },
+    { id: 4, firstNum: 2, secondNum: 9, operator: 'multiplication', answer: 18 },
+    { id: 5, firstNum: 4, secondNum: 4, operator: 'multiplication', answer: 16 },
+  ];
+
+  const mockAdditionProblems: Problem[] = [
+    { id: 1, firstNum: 3, secondNum: 4, operator: 'addition', answer: 7 },
+    { id: 2, firstNum: 5, secondNum: 6, operator: 'addition', answer: 11 },
+    { id: 3, firstNum: 7, secondNum: 8, operator: 'addition', answer: 15 },
+    { id: 4, firstNum: 2, secondNum: 9, operator: 'addition', answer: 11 },
+    { id: 5, firstNum: 4, secondNum: 4, operator: 'addition', answer: 8 },
   ];
 
   beforeEach(() => {
@@ -31,15 +39,29 @@ describe('Math Game Engine', () => {
   });
 
   describe('createGameState', () => {
-    it('should create initial game state', () => {
+    it('should create initial game state with multiplication', () => {
       const state = createGameState('easy', mockProblems);
 
       expect(state.difficulty).toBe('easy');
+      expect(state.operation).toBe('multiplication');
       expect(state.problems).toEqual(mockProblems);
       expect(state.currentIndex).toBe(0);
       expect(state.startTime).toBeNull();
       expect(state.endTime).toBeNull();
       expect(state.isComplete).toBe(false);
+    });
+
+    it('should create game state with specified operation', () => {
+      const state = createGameState('medium', mockAdditionProblems, 'addition');
+
+      expect(state.operation).toBe('addition');
+      expect(state.difficulty).toBe('medium');
+    });
+
+    it('should create game state with mixed operation', () => {
+      const state = createGameState('hard', mockProblems, 'mixed');
+
+      expect(state.operation).toBe('mixed');
     });
   });
 
@@ -55,19 +77,27 @@ describe('Math Game Engine', () => {
     });
 
     it('should not modify other state properties', () => {
-      const state = createGameState('medium', mockProblems);
+      const state = createGameState('medium', mockProblems, 'addition');
       const started = startGame(state);
 
       expect(started.difficulty).toBe('medium');
+      expect(started.operation).toBe('addition');
       expect(started.currentIndex).toBe(0);
       expect(started.isComplete).toBe(false);
     });
   });
 
   describe('checkAnswer', () => {
-    it('should return true for correct answer', () => {
+    it('should return true for correct multiplication answer', () => {
       const state = createGameState('easy', mockProblems);
       const isCorrect = checkAnswer(state, 12); // 3 × 4 = 12
+
+      expect(isCorrect).toBe(true);
+    });
+
+    it('should return true for correct addition answer', () => {
+      const state = createGameState('easy', mockAdditionProblems, 'addition');
+      const isCorrect = checkAnswer(state, 7); // 3 + 4 = 7
 
       expect(isCorrect).toBe(true);
     });

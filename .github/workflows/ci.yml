@@ -1,34 +1,161 @@
-name: CI
+# GitHub Actions CI/CD with Code Review
+# 이 파일을 프로젝트의 .github/workflows/ 에 복사해서 사용하세요
+
+name: CI/CD with Code Review
 
 on:
-  pull_request:
-    branches: [main]
   push:
-    branches: [main]
+    branches: [main, master, develop]
+  pull_request:
+    branches: [main, master, develop]
+    types: [opened, synchronize, reopened]
+
+env:
+  NODE_VERSION: '20'
 
 jobs:
-  test:
-    name: Test & Build
+  # 1단계: 린팅 및 타입 체크
+  lint-and-typecheck:
+    name: Lint & Type Check
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout
+      - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Type check
-        run: npm run typecheck
+      - name: Run ESLint
+        run: npm run lint --if-present
+
+      - name: Run TypeScript check
+        run: npm run type-check --if-present || npx tsc --noEmit
+
+  # 2단계: 테스트 실행
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    needs: lint-and-typecheck
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
 
       - name: Run tests
-        run: npm test
+        run: npm test -- --coverage --passWithNoTests
 
-      - name: Build
+      - name: Upload coverage report
+        uses: codecov/codecov-action@v4
+        if: always()
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: false
+
+  # 3단계: 빌드 검증
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build project
         run: npm run build
+
+  # 4단계: AI 코드 리뷰 (PR에서만 실행)
+  ai-code-review:
+    name: AI Code Review
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get changed files
+        id: changed-files
+        uses: tj-actions/changed-files@v44
+        with:
+          files: |
+            **/*.ts
+            **/*.tsx
+            **/*.js
+            **/*.jsx
+
+      - name: Run Claude Code Review
+        if: steps.changed-files.outputs.any_changed == 'true'
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: |
+            Review the following changed files for:
+            1. Code quality and best practices
+            2. Potential bugs or security issues
+            3. Performance concerns
+            4. Maintainability
+
+            Changed files: ${{ steps.changed-files.outputs.all_changed_files }}
+
+            Provide constructive feedback in Korean.
+
+      - name: Post review comment
+        if: steps.changed-files.outputs.any_changed == 'true'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const changedFiles = '${{ steps.changed-files.outputs.all_changed_files }}'.split(' ');
+
+            if (changedFiles.length > 0) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: `## AI Code Review Summary\n\n**Changed Files:** ${changedFiles.length}\n\n${changedFiles.map(f => '- `' + f + '`').join('\n')}\n\n---\n*Automated code review by Claude*`
+              });
+            }
+
+  # 5단계: 보안 스캔
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run npm audit
+        run: npm audit --audit-level=high || true
+
+      - name: Run Snyk security scan
+        uses: snyk/actions/node@master
+        continue-on-error: true
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}

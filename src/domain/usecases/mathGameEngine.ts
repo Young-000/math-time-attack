@@ -3,17 +3,20 @@
  * 게임 상태 관리 및 핵심 로직
  */
 
-import type { GameState, Problem, DifficultyType } from '../entities';
+import type { GameState, Problem, DifficultyType, OperationType } from '../entities';
+import { Operation } from '../entities';
 
 /**
  * 초기 게임 상태 생성
  */
 export function createGameState(
   difficulty: DifficultyType,
-  problems: Problem[]
+  problems: Problem[],
+  operation: OperationType = Operation.MULTIPLICATION
 ): GameState {
   return {
     difficulty,
+    operation,
     problems,
     currentIndex: 0,
     startTime: null,

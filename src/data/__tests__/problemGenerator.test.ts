@@ -20,10 +20,19 @@ describe('Problem Generator', () => {
         }
       });
 
-      it('should calculate correct answer', () => {
+      it('should calculate correct multiplication answer by default', () => {
         for (let i = 0; i < 100; i++) {
           const problem = generateProblem('easy');
+          expect(problem.operator).toBe('multiplication');
           expect(problem.answer).toBe(problem.firstNum * problem.secondNum);
+        }
+      });
+
+      it('should calculate correct addition answer', () => {
+        for (let i = 0; i < 100; i++) {
+          const problem = generateProblem('easy', 'addition');
+          expect(problem.operator).toBe('addition');
+          expect(problem.answer).toBe(problem.firstNum + problem.secondNum);
         }
       });
     });
@@ -40,10 +49,17 @@ describe('Problem Generator', () => {
         }
       });
 
-      it('should calculate correct answer', () => {
+      it('should calculate correct multiplication answer', () => {
         for (let i = 0; i < 100; i++) {
-          const problem = generateProblem('medium');
+          const problem = generateProblem('medium', 'multiplication');
           expect(problem.answer).toBe(problem.firstNum * problem.secondNum);
+        }
+      });
+
+      it('should calculate correct addition answer', () => {
+        for (let i = 0; i < 100; i++) {
+          const problem = generateProblem('medium', 'addition');
+          expect(problem.answer).toBe(problem.firstNum + problem.secondNum);
         }
       });
     });
@@ -68,6 +84,30 @@ describe('Problem Generator', () => {
       });
     });
 
+    describe('Mixed operation', () => {
+      it('should generate problems with either addition or multiplication', () => {
+        const operators = new Set<string>();
+
+        // Generate many problems to ensure we get both operators
+        for (let i = 0; i < 100; i++) {
+          const problem = generateProblem('easy', 'mixed');
+          operators.add(problem.operator);
+
+          // Verify answer is correct for the operator
+          if (problem.operator === 'addition') {
+            expect(problem.answer).toBe(problem.firstNum + problem.secondNum);
+          } else {
+            expect(problem.answer).toBe(problem.firstNum * problem.secondNum);
+          }
+        }
+
+        // Should have both operators
+        expect(operators.size).toBe(2);
+        expect(operators.has('addition')).toBe(true);
+        expect(operators.has('multiplication')).toBe(true);
+      });
+    });
+
     it('should generate unique IDs', () => {
       const problems = [
         generateProblem('easy'),
@@ -89,7 +129,7 @@ describe('Problem Generator', () => {
     });
 
     it('should generate specified number of problems', () => {
-      const problems = generateProblems('easy', 10);
+      const problems = generateProblems('easy', 'multiplication', 10);
       expect(problems).toHaveLength(10);
     });
 
@@ -115,6 +155,42 @@ describe('Problem Generator', () => {
           expect(problem.secondNum).toBeLessThanOrEqual(config.max);
         }
       }
+    });
+
+    it('should generate all addition problems when operation is addition', () => {
+      const problems = generateProblems('easy', 'addition');
+
+      for (const problem of problems) {
+        expect(problem.operator).toBe('addition');
+        expect(problem.answer).toBe(problem.firstNum + problem.secondNum);
+      }
+    });
+
+    it('should generate all multiplication problems when operation is multiplication', () => {
+      const problems = generateProblems('medium', 'multiplication');
+
+      for (const problem of problems) {
+        expect(problem.operator).toBe('multiplication');
+        expect(problem.answer).toBe(problem.firstNum * problem.secondNum);
+      }
+    });
+
+    it('should generate mixed operators when operation is mixed', () => {
+      // Generate many sets to ensure we get both operators
+      let hasAddition = false;
+      let hasMultiplication = false;
+
+      for (let i = 0; i < 20; i++) {
+        const problems = generateProblems('easy', 'mixed');
+
+        for (const problem of problems) {
+          if (problem.operator === 'addition') hasAddition = true;
+          if (problem.operator === 'multiplication') hasMultiplication = true;
+        }
+      }
+
+      expect(hasAddition).toBe(true);
+      expect(hasMultiplication).toBe(true);
     });
   });
 });

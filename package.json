@@ -3,7 +3,14 @@
   "version": "1.0.0",
   "description": "구구단부터 99단까지! 곱셈 실력을 테스트하는 타임어택 게임",
   "author": "Math Time Attack Team",
-  "keywords": ["math", "game", "multiplication", "education", "toss", "apps-in-toss"],
+  "keywords": [
+    "math",
+    "game",
+    "multiplication",
+    "education",
+    "toss",
+    "apps-in-toss"
+  ],
   "private": true,
   "type": "module",
   "scripts": {
@@ -17,6 +24,7 @@
   },
   "dependencies": {
     "@apps-in-toss/web-framework": "^1.7.0",
+    "@supabase/supabase-js": "^2.90.1",
     "@toss/tds-mobile": "^2.2.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
