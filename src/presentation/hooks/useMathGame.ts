@@ -60,12 +60,6 @@ export function useMathGame(): UseMathGameReturn {
     };
   }, [isPlaying, gameState?.startTime]);
 
-  // Update elapsed time when game state changes
-  useEffect(() => {
-    if (gameState) {
-      setElapsedTime(getElapsedTime(gameState));
-    }
-  }, [gameState]);
 
   const startGame = useCallback((difficulty: DifficultyType, operation: OperationType = Operation.MULTIPLICATION) => {
     const problems = generateProblems(difficulty, operation);

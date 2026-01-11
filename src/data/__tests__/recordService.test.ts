@@ -1,7 +1,7 @@
 /**
  * TDD RED Phase: 기록 서비스 테스트
  */
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import {
   getBestRecord,
   saveBestRecord,
@@ -16,19 +16,21 @@ import {
 } from '../recordService';
 
 // Supabase 모듈 모킹
-const mockFrom = vi.fn();
-const mockInsert = vi.fn();
-const mockSelect = vi.fn();
-const mockSingle = vi.fn();
-const mockEq = vi.fn();
-const mockOrder = vi.fn();
-const mockLimit = vi.fn();
-const mockLt = vi.fn();
-
 vi.mock('@infrastructure/supabase', () => ({
   getSupabaseClient: vi.fn(() => null),
   isSupabaseConfigured: vi.fn(() => false),
 }));
+
+/**
+ * Helper: Supabase mock에 schema() 체인 지원 추가
+ * SUPABASE_RULES.md에 따라 math_attack 스키마 사용
+ */
+function createSupabaseMock(fromMock: ReturnType<typeof vi.fn>) {
+  return {
+    schema: vi.fn(() => ({ from: fromMock })),
+    from: fromMock, // 하위 호환성
+  };
+}
 
 describe('Record Service', () => {
   beforeEach(() => {
@@ -328,15 +330,15 @@ describe('Supabase 연동 함수', () => {
         played_at: '2026-01-08T00:00:00.000Z',
       };
 
-      const mockSupabase = {
-        from: vi.fn(() => ({
-          insert: vi.fn(() => ({
-            select: vi.fn(() => ({
-              single: vi.fn(() => Promise.resolve({ data: mockRecord, error: null })),
-            })),
+      const mockFromFn = vi.fn(() => ({
+        insert: vi.fn(() => ({
+          select: vi.fn(() => ({
+            single: vi.fn(() => Promise.resolve({ data: mockRecord, error: null })),
           })),
         })),
-      };
+      }));
+
+      const mockSupabase = createSupabaseMock(mockFromFn);
 
       getSupabaseClient.mockReturnValue(mockSupabase as unknown as ReturnType<typeof getSupabaseClient>);
 
@@ -355,15 +357,15 @@ describe('Supabase 연동 함수', () => {
       const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
       const mockError = { message: 'Database error' };
 
-      const mockSupabase = {
-        from: vi.fn(() => ({
-          insert: vi.fn(() => ({
-            select: vi.fn(() => ({
-              single: vi.fn(() => Promise.resolve({ data: null, error: mockError })),
-            })),
+      const mockFromFn = vi.fn(() => ({
+        insert: vi.fn(() => ({
+          select: vi.fn(() => ({
+            single: vi.fn(() => Promise.resolve({ data: null, error: mockError })),
           })),
         })),
-      };
+      }));
+
+      const mockSupabase = createSupabaseMock(mockFromFn);
 
       getSupabaseClient.mockReturnValue(mockSupabase as unknown as ReturnType<typeof getSupabaseClient>);
 
@@ -386,11 +388,11 @@ describe('Supabase 연동 함수', () => {
     it('Supabase 예외 발생시 null을 반환해야 한다', async () => {
       const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
-      const mockSupabase = {
-        from: vi.fn(() => {
-          throw new Error('Network error');
-        }),
-      };
+      const mockFromFn = vi.fn(() => {
+        throw new Error('Network error');
+      });
+
+      const mockSupabase = createSupabaseMock(mockFromFn);
 
       getSupabaseClient.mockReturnValue(mockSupabase as unknown as ReturnType<typeof getSupabaseClient>);
 
@@ -429,19 +431,19 @@ describe('Supabase 연동 함수', () => {
         { odl_id: 'user2', time: 6000, played_at: '2026-01-08T00:00:00.000Z' },
       ];
 
-      const mockSupabase = {
-        from: vi.fn(() => ({
-          select: vi.fn(() => ({
+      const mockFromFn = vi.fn(() => ({
+        select: vi.fn(() => ({
+          eq: vi.fn(() => ({
             eq: vi.fn(() => ({
-              eq: vi.fn(() => ({
-                order: vi.fn(() => ({
-                  limit: vi.fn(() => Promise.resolve({ data: mockData, error: null })),
-                })),
+              order: vi.fn(() => ({
+                limit: vi.fn(() => Promise.resolve({ data: mockData, error: null })),
               })),
             })),
           })),
         })),
-      };
+      }));
+
+      const mockSupabase = createSupabaseMock(mockFromFn);
 
       getSupabaseClient.mockReturnValue(mockSupabase as unknown as ReturnType<typeof getSupabaseClient>);
 
@@ -460,19 +462,19 @@ describe('Supabase 연동 함수', () => {
     it('Supabase 에러시 빈 배열을 반환해야 한다', async () => {
       const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
-      const mockSupabase = {
-        from: vi.fn(() => ({
-          select: vi.fn(() => ({
+      const mockFromFn = vi.fn(() => ({
+        select: vi.fn(() => ({
+          eq: vi.fn(() => ({
             eq: vi.fn(() => ({
-              eq: vi.fn(() => ({
-                order: vi.fn(() => ({
-                  limit: vi.fn(() => Promise.resolve({ data: null, error: { message: 'Error' } })),
-                })),
+              order: vi.fn(() => ({
+                limit: vi.fn(() => Promise.resolve({ data: null, error: { message: 'Error' } })),
               })),
             })),
           })),
         })),
-      };
+      }));
+
+      const mockSupabase = createSupabaseMock(mockFromFn);
 
       getSupabaseClient.mockReturnValue(mockSupabase as unknown as ReturnType<typeof getSupabaseClient>);
 
@@ -487,11 +489,11 @@ describe('Supabase 연동 함수', () => {
     it('예외 발생시 빈 배열을 반환해야 한다', async () => {
       const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
-      const mockSupabase = {
-        from: vi.fn(() => {
-          throw new Error('Network error');
-        }),
-      };
+      const mockFromFn = vi.fn(() => {
+        throw new Error('Network error');
+      });
+
+      const mockSupabase = createSupabaseMock(mockFromFn);
 
       getSupabaseClient.mockReturnValue(mockSupabase as unknown as ReturnType<typeof getSupabaseClient>);
 
@@ -513,7 +515,7 @@ describe('Supabase 연동 함수', () => {
     });
 
     it('odlId가 빈 문자열이면 null을 반환해야 한다', async () => {
-      const mockSupabase = { from: vi.fn() };
+      const mockSupabase = createSupabaseMock(vi.fn());
       getSupabaseClient.mockReturnValue(mockSupabase as unknown as ReturnType<typeof getSupabaseClient>);
 
       const result = await getMyRank('', 'easy', 'multiplication');
@@ -522,23 +524,23 @@ describe('Supabase 연동 함수', () => {
     });
 
     it('내 기록이 없으면 null을 반환해야 한다', async () => {
-      const mockSupabase = {
-        from: vi.fn(() => ({
-          select: vi.fn(() => ({
+      const mockFromFn = vi.fn(() => ({
+        select: vi.fn(() => ({
+          eq: vi.fn(() => ({
             eq: vi.fn(() => ({
               eq: vi.fn(() => ({
-                eq: vi.fn(() => ({
-                  order: vi.fn(() => ({
-                    limit: vi.fn(() => ({
-                      single: vi.fn(() => Promise.resolve({ data: null, error: { code: 'PGRST116' } })),
-                    })),
+                order: vi.fn(() => ({
+                  limit: vi.fn(() => ({
+                    single: vi.fn(() => Promise.resolve({ data: null, error: { code: 'PGRST116' } })),
                   })),
                 })),
               })),
             })),
           })),
         })),
-      };
+      }));
+
+      const mockSupabase = createSupabaseMock(mockFromFn);
 
       getSupabaseClient.mockReturnValue(mockSupabase as unknown as ReturnType<typeof getSupabaseClient>);
 
@@ -548,36 +550,36 @@ describe('Supabase 연동 함수', () => {
     });
 
     it('내 랭킹을 성공적으로 조회해야 한다', async () => {
-      const mockSupabase = {
-        from: vi.fn(() => ({
-          select: vi.fn((fields: string, options?: { count?: string; head?: boolean }) => {
-            if (options?.count === 'exact') {
-              // count 쿼리
-              return {
-                eq: vi.fn(() => ({
-                  eq: vi.fn(() => ({
-                    lt: vi.fn(() => Promise.resolve({ count: 2, error: null })),
-                  })),
-                })),
-              };
-            }
-            // 일반 조회
+      const mockFromFn = vi.fn(() => ({
+        select: vi.fn((fields: string, options?: { count?: string; head?: boolean }) => {
+          if (options?.count === 'exact') {
+            // count 쿼리
             return {
               eq: vi.fn(() => ({
                 eq: vi.fn(() => ({
-                  eq: vi.fn(() => ({
-                    order: vi.fn(() => ({
-                      limit: vi.fn(() => ({
-                        single: vi.fn(() => Promise.resolve({ data: { time: 5000 }, error: null })),
-                      })),
+                  lt: vi.fn(() => Promise.resolve({ count: 2, error: null })),
+                })),
+              })),
+            };
+          }
+          // 일반 조회
+          return {
+            eq: vi.fn(() => ({
+              eq: vi.fn(() => ({
+                eq: vi.fn(() => ({
+                  order: vi.fn(() => ({
+                    limit: vi.fn(() => ({
+                      single: vi.fn(() => Promise.resolve({ data: { time: 5000 }, error: null })),
                     })),
                   })),
                 })),
               })),
-            };
-          }),
-        })),
-      };
+            })),
+          };
+        }),
+      }));
+
+      const mockSupabase = createSupabaseMock(mockFromFn);
 
       getSupabaseClient.mockReturnValue(mockSupabase as unknown as ReturnType<typeof getSupabaseClient>);
 
@@ -587,34 +589,34 @@ describe('Supabase 연동 함수', () => {
     });
 
     it('카운트 쿼리 에러시 null을 반환해야 한다', async () => {
-      const mockSupabase = {
-        from: vi.fn(() => ({
-          select: vi.fn((fields: string, options?: { count?: string; head?: boolean }) => {
-            if (options?.count === 'exact') {
-              return {
-                eq: vi.fn(() => ({
-                  eq: vi.fn(() => ({
-                    lt: vi.fn(() => Promise.resolve({ count: null, error: { message: 'Count error' } })),
-                  })),
-                })),
-              };
-            }
+      const mockFromFn = vi.fn(() => ({
+        select: vi.fn((fields: string, options?: { count?: string; head?: boolean }) => {
+          if (options?.count === 'exact') {
             return {
               eq: vi.fn(() => ({
                 eq: vi.fn(() => ({
-                  eq: vi.fn(() => ({
-                    order: vi.fn(() => ({
-                      limit: vi.fn(() => ({
-                        single: vi.fn(() => Promise.resolve({ data: { time: 5000 }, error: null })),
-                      })),
+                  lt: vi.fn(() => Promise.resolve({ count: null, error: { message: 'Count error' } })),
+                })),
+              })),
+            };
+          }
+          return {
+            eq: vi.fn(() => ({
+              eq: vi.fn(() => ({
+                eq: vi.fn(() => ({
+                  order: vi.fn(() => ({
+                    limit: vi.fn(() => ({
+                      single: vi.fn(() => Promise.resolve({ data: { time: 5000 }, error: null })),
                     })),
                   })),
                 })),
               })),
-            };
-          }),
-        })),
-      };
+            })),
+          };
+        }),
+      }));
+
+      const mockSupabase = createSupabaseMock(mockFromFn);
 
       getSupabaseClient.mockReturnValue(mockSupabase as unknown as ReturnType<typeof getSupabaseClient>);
 
@@ -626,11 +628,11 @@ describe('Supabase 연동 함수', () => {
     it('예외 발생시 null을 반환해야 한다', async () => {
       const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
-      const mockSupabase = {
-        from: vi.fn(() => {
-          throw new Error('Network error');
-        }),
-      };
+      const mockFromFn = vi.fn(() => {
+        throw new Error('Network error');
+      });
+
+      const mockSupabase = createSupabaseMock(mockFromFn);
 
       getSupabaseClient.mockReturnValue(mockSupabase as unknown as ReturnType<typeof getSupabaseClient>);
 
@@ -665,15 +667,15 @@ describe('Supabase 연동 함수', () => {
         played_at: '2026-01-08T00:00:00.000Z',
       };
 
-      const mockSupabase = {
-        from: vi.fn(() => ({
-          insert: vi.fn(() => ({
-            select: vi.fn(() => ({
-              single: vi.fn(() => Promise.resolve({ data: mockRecord, error: null })),
-            })),
+      const mockFromFn = vi.fn(() => ({
+        insert: vi.fn(() => ({
+          select: vi.fn(() => ({
+            single: vi.fn(() => Promise.resolve({ data: mockRecord, error: null })),
           })),
         })),
-      };
+      }));
+
+      const mockSupabase = createSupabaseMock(mockFromFn);
 
       getSupabaseClient.mockReturnValue(mockSupabase as unknown as ReturnType<typeof getSupabaseClient>);
 

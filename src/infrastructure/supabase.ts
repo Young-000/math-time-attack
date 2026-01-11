@@ -41,9 +41,10 @@ export function isSupabaseConfigured(): boolean {
 
 /**
  * Database 타입 정의
+ * 스키마: math_attack (SUPABASE_RULES.md 준수)
  */
 export interface Database {
-  public: {
+  math_attack: {
     Tables: {
       game_records: {
         Row: {
@@ -52,6 +53,7 @@ export interface Database {
           difficulty: string;
           operation: string;
           time: number;
+          nickname: string | null;
           played_at: string;
           created_at: string;
         };
@@ -61,6 +63,7 @@ export interface Database {
           difficulty: string;
           operation: string;
           time: number;
+          nickname?: string | null;
           played_at: string;
           created_at?: string;
         };
@@ -70,8 +73,32 @@ export interface Database {
           difficulty?: string;
           operation?: string;
           time?: number;
+          nickname?: string | null;
           played_at?: string;
           created_at?: string;
+        };
+      };
+      user_profiles: {
+        Row: {
+          id: string;
+          odl_id: string;
+          nickname: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          odl_id: string;
+          nickname: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          odl_id?: string;
+          nickname?: string;
+          created_at?: string;
+          updated_at?: string;
         };
       };
     };

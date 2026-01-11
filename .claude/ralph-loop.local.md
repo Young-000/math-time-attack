@@ -1,9 +1,9 @@
 ---
 active: true
-iteration: 4
-max_iterations: 100
-completion_promise: null
-started_at: "2026-01-09T23:34:31Z"
+iteration: 1
+max_iterations: 25
+completion_promise: "E2E 점검 완료"
+started_at: "2026-01-11T14:49:59Z"
 ---
 
-아직 커버리지가 100이 아니네 계속해서 반복하자 테스트 코드를 추가로 작성하고, 앱인토스 mcp가이드에 있는 것 중 빠진게 없는지 여러번 체크하면서 문제 없는지 파악해줘.
+E2E 점검 시작. .claude/commands/e2e-review.md 파일의 작업 순서를 따라 진행. Phase 0부터 Phase 7까지 순서대로 완료.

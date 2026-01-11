@@ -24,8 +24,6 @@ vi.mock('@data/recordService', () => ({
 }));
 
 describe('Ranking Service', () => {
-  const originalWindow = global.window;
-
   beforeEach(() => {
     vi.clearAllMocks();
     // window.ODL 초기화

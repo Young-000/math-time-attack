@@ -12,6 +12,7 @@ vi.mock('@presentation/pages', () => ({
   DifficultySelectPage: () => <div data-testid="difficulty-page">DifficultySelectPage</div>,
   GamePage: () => <div data-testid="game-page">GamePage</div>,
   ResultPage: () => <div data-testid="result-page">ResultPage</div>,
+  RankingPage: () => <div data-testid="ranking-page">RankingPage</div>,
 }));
 
 describe('App', () => {
@@ -41,6 +42,24 @@ describe('App', () => {
         </MemoryRouter>
       );
       expect(screen.getByTestId('result-page')).toBeInTheDocument();
+    });
+
+    it('/ranking 경로에서 RankingPage를 렌더링해야 한다', () => {
+      render(
+        <MemoryRouter initialEntries={['/ranking']}>
+          <App />
+        </MemoryRouter>
+      );
+      expect(screen.getByTestId('ranking-page')).toBeInTheDocument();
+    });
+
+    it('/ranking/:difficulty 경로에서 RankingPage를 렌더링해야 한다', () => {
+      render(
+        <MemoryRouter initialEntries={['/ranking/easy']}>
+          <App />
+        </MemoryRouter>
+      );
+      expect(screen.getByTestId('ranking-page')).toBeInTheDocument();
     });
   });
 });

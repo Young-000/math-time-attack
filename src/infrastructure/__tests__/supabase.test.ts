@@ -12,8 +12,6 @@ vi.mock('@supabase/supabase-js', () => ({
 }));
 
 describe('Supabase Client', () => {
-  const originalEnv = import.meta.env;
-
   beforeEach(() => {
     vi.resetModules();
   });
