@@ -25,6 +25,9 @@ vi.mock('@data/recordService', () => ({
     }
     return null;
   }),
+  isOnlineMode: vi.fn(() => false),
+  getTopRankings: vi.fn(() => Promise.resolve([])),
+  getMyRankInfo: vi.fn(() => Promise.resolve({ rank: null, percentile: null, totalPlayers: 0 })),
 }));
 
 describe('DifficultySelectPage', () => {
@@ -53,9 +56,12 @@ describe('DifficultySelectPage', () => {
 
     it('3개의 난이도 버튼이 표시되어야 한다', () => {
       renderPage();
-      expect(screen.getByText('초급')).toBeInTheDocument();
-      expect(screen.getByText('중급')).toBeInTheDocument();
-      expect(screen.getByText('고급')).toBeInTheDocument();
+      // difficulty-card 버튼 내의 난이도 라벨 확인
+      const difficultyCards = document.querySelectorAll('.difficulty-card');
+      expect(difficultyCards.length).toBe(3);
+      expect(screen.getByText('1-9단')).toBeInTheDocument();
+      expect(screen.getByText('1-19단')).toBeInTheDocument();
+      expect(screen.getByText('1-99단')).toBeInTheDocument();
     });
 
     it('각 난이도의 범위가 표시되어야 한다', () => {
@@ -82,21 +88,21 @@ describe('DifficultySelectPage', () => {
   describe('네비게이션', () => {
     it('초급 버튼 클릭시 /game/easy로 이동해야 한다', () => {
       renderPage();
-      const easyButton = screen.getByText('초급').closest('button');
+      const easyButton = document.querySelector('.difficulty-card[data-difficulty="easy"]');
       fireEvent.click(easyButton!);
       expect(mockNavigate).toHaveBeenCalledWith('/game/easy');
     });
 
     it('중급 버튼 클릭시 /game/medium으로 이동해야 한다', () => {
       renderPage();
-      const mediumButton = screen.getByText('중급').closest('button');
+      const mediumButton = document.querySelector('.difficulty-card[data-difficulty="medium"]');
       fireEvent.click(mediumButton!);
       expect(mockNavigate).toHaveBeenCalledWith('/game/medium');
     });
 
     it('고급 버튼 클릭시 /game/hard로 이동해야 한다', () => {
       renderPage();
-      const hardButton = screen.getByText('고급').closest('button');
+      const hardButton = document.querySelector('.difficulty-card[data-difficulty="hard"]');
       fireEvent.click(hardButton!);
       expect(mockNavigate).toHaveBeenCalledWith('/game/hard');
     });

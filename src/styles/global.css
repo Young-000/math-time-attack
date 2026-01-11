@@ -871,3 +871,145 @@ body {
   font-size: 14px;
   color: #6b7684;
 }
+
+/* ================================
+   Ranking Preview (Main Page)
+   ================================ */
+.ranking-preview {
+  background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%);
+  border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  border: 1px solid #e5e8eb;
+}
+
+.ranking-preview:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.ranking-preview-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.ranking-preview-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #191f28;
+  margin: 0;
+}
+
+.ranking-preview .ranking-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 0;
+  border-bottom: none;
+  position: static;
+  background: transparent;
+}
+
+.ranking-preview .ranking-tab {
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #6b7684;
+  background: #f2f4f6;
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex: none;
+}
+
+.ranking-preview .ranking-tab:hover {
+  background: #e5e8eb;
+}
+
+.ranking-preview .ranking-tab.active {
+  background: #3182f6;
+  color: #fff;
+}
+
+.ranking-preview-loading {
+  text-align: center;
+  padding: 20px;
+  font-size: 14px;
+  color: #6b7684;
+}
+
+.ranking-preview-content {
+  display: flex;
+  gap: 16px;
+}
+
+.ranking-top-player,
+.ranking-my-rank {
+  flex: 1;
+  background: #fff;
+  border-radius: 12px;
+  padding: 12px;
+  border: 1px solid #f2f4f6;
+}
+
+.ranking-preview .ranking-label {
+  font-size: 12px;
+  color: #6b7684;
+  margin-bottom: 8px;
+}
+
+.ranking-preview .ranking-value {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ranking-preview .ranking-nickname {
+  font-size: 14px;
+  font-weight: 600;
+  color: #191f28;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ranking-preview .ranking-time {
+  font-size: 13px;
+  color: #3182f6;
+  font-weight: 500;
+}
+
+.ranking-preview .ranking-empty {
+  font-size: 13px;
+  color: #adb5bd;
+}
+
+.ranking-preview .ranking-highlight {
+  color: #ff9500;
+  font-weight: 600;
+}
+
+.ranking-preview-empty {
+  text-align: center;
+  padding: 20px;
+  font-size: 14px;
+  color: #adb5bd;
+}
+
+.ranking-preview-footer {
+  text-align: center;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #f2f4f6;
+}
+
+.ranking-view-all {
+  font-size: 13px;
+  color: #3182f6;
+  font-weight: 500;
+}

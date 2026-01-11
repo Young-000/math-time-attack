@@ -425,6 +425,109 @@ export async function updateNickname(nickname: string, odlId?: string): Promise<
 }
 
 /**
+ * 전체 참가자 수 조회
+ */
+export async function getTotalPlayers(
+  difficulty: DifficultyType,
+  operation: OperationType = Operation.MULTIPLICATION
+): Promise<number> {
+  const supabase = getSupabaseClient();
+  if (!supabase) {
+    return 0;
+  }
+
+  try {
+    const { data, error } = await supabase
+      .schema('math_attack')
+      .from('game_records')
+      .select('odl_id')
+      .eq('difficulty', difficulty)
+      .eq('operation', operation);
+
+    if (error || !data) {
+      return 0;
+    }
+
+    // 중복 제거 (고유 사용자 수)
+    const uniquePlayers = new Set(data.map(d => d.odl_id));
+    return uniquePlayers.size;
+  } catch {
+    return 0;
+  }
+}
+
+/**
+ * 내 순위와 퍼센타일 조회
+ */
+export async function getMyRankInfo(
+  odlId: string,
+  difficulty: DifficultyType,
+  operation: OperationType = Operation.MULTIPLICATION
+): Promise<{ rank: number | null; percentile: number | null; totalPlayers: number }> {
+  const supabase = getSupabaseClient();
+  if (!supabase || !odlId) {
+    return { rank: null, percentile: null, totalPlayers: 0 };
+  }
+
+  try {
+    // 내 최고 기록 조회
+    const { data: myRecord, error: myError } = await supabase
+      .schema('math_attack')
+      .from('game_records')
+      .select('time')
+      .eq('odl_id', odlId)
+      .eq('difficulty', difficulty)
+      .eq('operation', operation)
+      .order('time', { ascending: true })
+      .limit(1)
+      .single();
+
+    if (myError || !myRecord) {
+      const totalPlayers = await getTotalPlayers(difficulty, operation);
+      return { rank: null, percentile: null, totalPlayers };
+    }
+
+    // 전체 기록에서 고유 사용자별 최고 기록 조회
+    const { data: allRecords, error: allError } = await supabase
+      .schema('math_attack')
+      .from('game_records')
+      .select('odl_id, time')
+      .eq('difficulty', difficulty)
+      .eq('operation', operation);
+
+    if (allError || !allRecords) {
+      return { rank: null, percentile: null, totalPlayers: 0 };
+    }
+
+    // 사용자별 최고 기록만 추출
+    const bestByUser = new Map<string, number>();
+    for (const record of allRecords) {
+      const existing = bestByUser.get(record.odl_id);
+      if (!existing || record.time < existing) {
+        bestByUser.set(record.odl_id, record.time);
+      }
+    }
+
+    // 정렬 후 내 순위 찾기
+    const sortedTimes = Array.from(bestByUser.entries())
+      .sort((a, b) => a[1] - b[1]);
+
+    const totalPlayers = sortedTimes.length;
+    const myRankIndex = sortedTimes.findIndex(([id]) => id === odlId);
+    const rank = myRankIndex >= 0 ? myRankIndex + 1 : null;
+
+    // 퍼센타일 계산 (상위 몇%)
+    const percentile = rank !== null && totalPlayers > 0
+      ? Math.round((rank / totalPlayers) * 100)
+      : null;
+
+    return { rank, percentile, totalPlayers };
+  } catch {
+    return { rank: null, percentile: null, totalPlayers: 0 };
+  }
+}
+
+/**
  * 전체 랭킹 조회 (닉네임 포함)
  */
 export async function getTopRankings(
