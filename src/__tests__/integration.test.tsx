@@ -14,22 +14,35 @@ vi.mock('@data/recordService', () => ({
   getBestRecord: vi.fn(() => null),
   saveBestRecord: vi.fn(() => true),
   isNewRecord: vi.fn(() => true),
+  isOnlineMode: vi.fn(() => false),
+  getTopRankings: vi.fn(() => Promise.resolve([])),
+  getMyRankInfo: vi.fn(() => Promise.resolve({ rank: null, percentile: null, totalPlayers: 0 })),
 }));
 
 // Mock useMathGame for integration tests
 const mockStartGame = vi.fn();
 const mockSubmitAnswer = vi.fn();
+const mockSaveGameResult = vi.fn();
 
 vi.mock('@presentation/hooks', () => ({
   useMathGame: () => ({
-    gameState: { difficulty: 'easy', isComplete: false, currentIndex: 0, problems: [{ firstNum: 5, secondNum: 6, answer: 30 }], startTime: Date.now() },
+    gameState: {
+      difficulty: 'easy',
+      operation: 'multiplication',
+      isComplete: false,
+      currentIndex: 0,
+      problems: [{ id: 1, firstNum: 5, secondNum: 6, operator: 'multiplication', answer: 30 }],
+      startTime: Date.now(),
+    },
     elapsedTime: 1000,
-    currentProblem: { firstNum: 5, secondNum: 6, answer: 30 },
+    currentProblem: { id: 1, firstNum: 5, secondNum: 6, operator: 'multiplication', answer: 30 },
     currentIndex: 0,
     totalProblems: 5,
+    isNewRecord: false,
     startGame: mockStartGame,
     submitAnswer: mockSubmitAnswer,
     resetGame: vi.fn(),
+    saveGameResult: mockSaveGameResult,
   }),
 }));
 
@@ -55,23 +68,27 @@ describe('통합 테스트', () => {
     it('모든 난이도 옵션이 표시되어야 한다', () => {
       renderApp('/');
 
-      expect(screen.getByText('초급')).toBeInTheDocument();
-      expect(screen.getByText('중급')).toBeInTheDocument();
-      expect(screen.getByText('고급')).toBeInTheDocument();
+      // difficulty-card 버튼으로 난이도 확인
+      const difficultyCards = document.querySelectorAll('.difficulty-card');
+      expect(difficultyCards.length).toBe(3);
+      expect(screen.getByText('1-9단')).toBeInTheDocument();
+      expect(screen.getByText('1-19단')).toBeInTheDocument();
+      expect(screen.getByText('1-99단')).toBeInTheDocument();
     });
 
     it('난이도 설명이 정확해야 한다', () => {
       renderApp('/');
 
-      expect(screen.getByText('구구단 (1-9단)')).toBeInTheDocument();
-      expect(screen.getByText('19단 (1-19단)')).toBeInTheDocument();
-      expect(screen.getByText('99단 (1-99단)')).toBeInTheDocument();
+      expect(screen.getByText('1-9 범위')).toBeInTheDocument();
+      expect(screen.getByText('1-19 범위')).toBeInTheDocument();
+      expect(screen.getByText('1-99 범위')).toBeInTheDocument();
     });
 
     it('기록이 없는 경우 "기록 없음"을 표시해야 한다', () => {
       renderApp('/');
 
-      const noRecords = screen.getAllByText('기록 없음');
+      // difficulty-card 내의 기록 없음만 카운트
+      const noRecords = document.querySelectorAll('.difficulty-card .record-none');
       expect(noRecords.length).toBe(3);
     });
   });

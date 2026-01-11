@@ -5,10 +5,22 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useMathGame } from '../useMathGame';
 
+// Mock recordService
+vi.mock('@data/recordService', () => ({
+  saveRecord: vi.fn(() => Promise.resolve({ isNewLocalRecord: true, serverRecord: null })),
+  isNewRecord: vi.fn(() => true),
+}));
+
+// Mock rankingService
+vi.mock('@infrastructure/rankingService', () => ({
+  getCurrentUserId: vi.fn(() => Promise.resolve('test-user-id')),
+}));
+
 describe('useMathGame', () => {
   beforeEach(() => {
     vi.useFakeTimers();
     localStorage.clear();
+    vi.clearAllMocks();
   });
 
   afterEach(() => {
@@ -249,6 +261,103 @@ describe('useMathGame', () => {
 
       // elapsedTime은 0으로 리셋되어야 함
       expect(result.current.elapsedTime).toBe(0);
+    });
+  });
+
+  describe('saveGameResult', () => {
+    it('should not save when game is not complete', async () => {
+      const { saveRecord } = await import('@data/recordService');
+      const { result } = renderHook(() => useMathGame());
+
+      act(() => {
+        result.current.startGame('easy');
+      });
+
+      // 게임이 완료되지 않은 상태에서 저장 시도
+      await act(async () => {
+        await result.current.saveGameResult();
+      });
+
+      expect(saveRecord).not.toHaveBeenCalled();
+    });
+
+    it('should save when game is complete', async () => {
+      vi.useRealTimers();
+      const { saveRecord } = await import('@data/recordService');
+      const { result } = renderHook(() => useMathGame());
+
+      act(() => {
+        result.current.startGame('easy');
+      });
+
+      // 모든 문제 맞추기
+      for (let i = 0; i < 5; i++) {
+        const answer = result.current.currentProblem!.answer;
+        act(() => {
+          result.current.submitAnswer(answer);
+        });
+      }
+
+      expect(result.current.gameState!.isComplete).toBe(true);
+
+      // 게임 결과 저장
+      await act(async () => {
+        await result.current.saveGameResult();
+      });
+
+      expect(saveRecord).toHaveBeenCalledWith(
+        'easy',
+        expect.any(Number),
+        'multiplication',
+        'test-user-id'
+      );
+    });
+
+    it('should save with null userId when not logged in', async () => {
+      vi.useRealTimers();
+      const { saveRecord } = await import('@data/recordService');
+      const { getCurrentUserId } = await import('@infrastructure/rankingService');
+      vi.mocked(getCurrentUserId).mockResolvedValueOnce(null);
+
+      const { result } = renderHook(() => useMathGame());
+
+      act(() => {
+        result.current.startGame('medium');
+      });
+
+      // 모든 문제 맞추기
+      for (let i = 0; i < 5; i++) {
+        const answer = result.current.currentProblem!.answer;
+        act(() => {
+          result.current.submitAnswer(answer);
+        });
+      }
+
+      // 게임 결과 저장
+      await act(async () => {
+        await result.current.saveGameResult();
+      });
+
+      expect(saveRecord).toHaveBeenCalledWith(
+        'medium',
+        expect.any(Number),
+        'multiplication',
+        undefined
+      );
+    });
+
+    it('should not save when gameState is null', async () => {
+      const { saveRecord } = await import('@data/recordService');
+      const { result } = renderHook(() => useMathGame());
+
+      // gameState가 null인 상태
+      expect(result.current.gameState).toBeNull();
+
+      await act(async () => {
+        await result.current.saveGameResult();
+      });
+
+      expect(saveRecord).not.toHaveBeenCalled();
     });
   });
 });

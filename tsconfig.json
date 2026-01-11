@@ -19,10 +19,12 @@
     "paths": {
       "@domain/*": ["src/domain/*"],
       "@data/*": ["src/data/*"],
+      "@infrastructure/*": ["src/infrastructure/*"],
       "@presentation/*": ["src/presentation/*"],
       "@lib/*": ["src/lib/*"]
     }
   },
   "include": ["src"],
+  "exclude": ["src/**/__tests__/**", "src/**/*.test.ts", "src/**/*.test.tsx"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

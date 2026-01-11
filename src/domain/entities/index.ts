@@ -3,6 +3,46 @@
  * 연산 타임어택 게임 핵심 도메인 모델
  */
 
+/** 연산 타입 */
+export const Operation = {
+  ADDITION: 'addition',
+  MULTIPLICATION: 'multiplication',
+  MIXED: 'mixed',
+} as const;
+
+export type OperationType = (typeof Operation)[keyof typeof Operation];
+
+/** 연산자 기호 */
+export const OPERATION_SYMBOLS: Record<Exclude<OperationType, 'mixed'>, string> = {
+  addition: '+',
+  multiplication: '×',
+};
+
+/** 연산 타입별 설정 */
+export interface OperationConfigItem {
+  label: string;
+  description: string;
+  emoji: string;
+}
+
+export const OPERATION_CONFIG: Record<OperationType, OperationConfigItem> = {
+  addition: {
+    label: '덧셈',
+    description: '더하기 문제',
+    emoji: '➕',
+  },
+  multiplication: {
+    label: '곱셈',
+    description: '곱하기 문제',
+    emoji: '✖️',
+  },
+  mixed: {
+    label: '복합',
+    description: '덧셈 + 곱셈 랜덤',
+    emoji: '🔀',
+  },
+};
+
 /** 난이도 */
 export const Difficulty = {
   EASY: 'easy',
@@ -25,19 +65,19 @@ export const DIFFICULTY_CONFIG: Record<DifficultyType, DifficultyConfigItem> = {
     min: 1,
     max: 9,
     label: '초급',
-    description: '구구단 (1-9단)',
+    description: '1-9 범위',
   },
   medium: {
     min: 1,
     max: 19,
     label: '중급',
-    description: '19단 (1-19단)',
+    description: '1-19 범위',
   },
   hard: {
     min: 1,
     max: 99,
     label: '고급',
-    description: '99단 (1-99단)',
+    description: '1-99 범위',
   },
 };
 
@@ -51,12 +91,14 @@ export interface Problem {
   id: number;
   firstNum: number;
   secondNum: number;
+  operator: Exclude<OperationType, 'mixed'>; // 실제 연산자 (mixed 제외)
   answer: number;
 }
 
 /** 게임 상태 */
 export interface GameState {
   difficulty: DifficultyType;
+  operation: OperationType;
   problems: Problem[];
   currentIndex: number;
   startTime: number | null;
@@ -67,14 +109,43 @@ export interface GameState {
 /** 게임 결과 */
 export interface GameResult {
   difficulty: DifficultyType;
+  operation: OperationType;
   elapsedTime: number; // milliseconds
   completedAt: string; // ISO date string
   isNewRecord: boolean;
 }
 
-/** 최고 기록 */
+/** 최고 기록 (로컬) */
 export interface BestRecord {
   difficulty: DifficultyType;
+  operation: OperationType;
   time: number; // milliseconds
   achievedAt: string; // ISO date string
+}
+
+/** 게임 기록 (Supabase 저장용) */
+export interface GameRecord {
+  id?: string;
+  odl_id?: string; // Apps-in-Toss 사용자 ID
+  difficulty: DifficultyType;
+  operation: OperationType;
+  time: number; // milliseconds
+  played_at: string; // ISO date string
+}
+
+/** 랭킹 아이템 */
+export interface RankingItem {
+  rank: number;
+  odl_id: string;
+  nickname?: string;
+  time: number;
+  played_at: string;
+}
+
+/** 게임 모드 키 (난이도 + 연산타입 조합) */
+export type GameModeKey = `${DifficultyType}_${OperationType}`;
+
+/** 게임 모드 키 생성 헬퍼 */
+export function createGameModeKey(difficulty: DifficultyType, operation: OperationType): GameModeKey {
+  return `${difficulty}_${operation}`;
 }

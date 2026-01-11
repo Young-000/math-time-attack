@@ -4,7 +4,8 @@
  */
 
 import { useState, useCallback, useEffect, useRef } from 'react';
-import type { GameState, DifficultyType, Problem } from '@domain/entities';
+import type { GameState, DifficultyType, OperationType, Problem } from '@domain/entities';
+import { Operation } from '@domain/entities';
 import {
   createGameState,
   startGame as startGameEngine,
@@ -14,6 +15,8 @@ import {
   getCurrentProblem as getCurrentProblemFromState,
 } from '@domain/usecases/mathGameEngine';
 import { generateProblems } from '@data/problemGenerator';
+import { saveRecord, isNewRecord as checkNewRecord } from '@data/recordService';
+import { getCurrentUserId } from '@infrastructure/rankingService';
 
 interface UseMathGameReturn {
   gameState: GameState | null;
@@ -22,14 +25,17 @@ interface UseMathGameReturn {
   currentProblem: Problem | null;
   currentIndex: number;
   totalProblems: number;
-  startGame: (difficulty: DifficultyType) => void;
+  isNewRecord: boolean;
+  startGame: (difficulty: DifficultyType, operation?: OperationType) => void;
   submitAnswer: (answer: number) => boolean;
   resetGame: () => void;
+  saveGameResult: () => Promise<void>;
 }
 
 export function useMathGame(): UseMathGameReturn {
   const [gameState, setGameState] = useState<GameState | null>(null);
   const [elapsedTime, setElapsedTime] = useState(0);
+  const [isNewRecord, setIsNewRecord] = useState(false);
   const timerRef = useRef<number | null>(null);
 
   const isPlaying = gameState !== null && !gameState.isComplete && gameState.startTime !== null;
@@ -54,19 +60,14 @@ export function useMathGame(): UseMathGameReturn {
     };
   }, [isPlaying, gameState?.startTime]);
 
-  // Update elapsed time when game state changes
-  useEffect(() => {
-    if (gameState) {
-      setElapsedTime(getElapsedTime(gameState));
-    }
-  }, [gameState]);
 
-  const startGame = useCallback((difficulty: DifficultyType) => {
-    const problems = generateProblems(difficulty);
-    let state = createGameState(difficulty, problems);
+  const startGame = useCallback((difficulty: DifficultyType, operation: OperationType = Operation.MULTIPLICATION) => {
+    const problems = generateProblems(difficulty, operation);
+    let state = createGameState(difficulty, problems, operation);
     state = startGameEngine(state);
     setGameState(state);
     setElapsedTime(0);
+    setIsNewRecord(false);
   }, []);
 
   const submitAnswer = useCallback((answer: number): boolean => {
@@ -79,7 +80,17 @@ export function useMathGame(): UseMathGameReturn {
       setGameState(newState);
 
       if (newState.isComplete) {
-        setElapsedTime(getElapsedTime(newState));
+        const finalTime = getElapsedTime(newState);
+        setElapsedTime(finalTime);
+
+        // 신기록 확인
+        const newRecordStatus = checkNewRecord(
+          newState.difficulty,
+          finalTime,
+          newState.operation
+        );
+        setIsNewRecord(newRecordStatus);
+
         if (timerRef.current) {
           clearInterval(timerRef.current);
         }
@@ -89,12 +100,27 @@ export function useMathGame(): UseMathGameReturn {
     return isCorrect;
   }, [gameState]);
 
+  const saveGameResult = useCallback(async () => {
+    if (!gameState || !gameState.isComplete) return;
+
+    const finalTime = getElapsedTime(gameState);
+    const userId = await getCurrentUserId();
+
+    await saveRecord(
+      gameState.difficulty,
+      finalTime,
+      gameState.operation,
+      userId || undefined
+    );
+  }, [gameState]);
+
   const resetGame = useCallback(() => {
     if (timerRef.current) {
       clearInterval(timerRef.current);
     }
     setGameState(null);
     setElapsedTime(0);
+    setIsNewRecord(false);
   }, []);
 
   return {
@@ -104,8 +130,10 @@ export function useMathGame(): UseMathGameReturn {
     currentProblem,
     currentIndex,
     totalProblems,
+    isNewRecord,
     startGame,
     submitAnswer,
     resetGame,
+    saveGameResult,
   };
 }
