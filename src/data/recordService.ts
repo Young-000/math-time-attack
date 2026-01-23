@@ -129,7 +129,7 @@ export function clearAllRecords(): void {
 // ============================================
 
 /**
- * 게임 기록을 Supabase에 저장
+ * 게임 기록을 Supabase에 저장 (public 스키마 RPC wrapper 사용)
  */
 export async function saveGameRecordToServer(
   record: Omit<GameRecord, 'id'>
@@ -141,18 +141,16 @@ export async function saveGameRecordToServer(
   }
 
   try {
+    // public 스키마의 wrapper RPC 함수 사용 (PostgREST 스키마 노출 문제 해결)
     const { data, error } = await supabase
-      .schema('math_attack')
-      .from('game_records')
-      .insert({
-        odl_id: record.odl_id || 'anonymous',
-        difficulty: record.difficulty,
-        operation: record.operation,
-        time: record.time,
-        played_at: record.played_at,
-      })
-      .select()
-      .single();
+      .schema('public')
+      .rpc('insert_game_record', {
+        p_odl_id: record.odl_id || 'anonymous',
+        p_difficulty: record.difficulty,
+        p_operation: record.operation,
+        p_time: record.time,
+        p_played_at: record.played_at,
+      });
 
     if (error) {
       console.error('Failed to save record to server:', error);

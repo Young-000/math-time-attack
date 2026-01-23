@@ -25,10 +25,14 @@ vi.mock('@infrastructure/supabase', () => ({
  * Helper: Supabase mock에 schema() 체인 지원 추가
  * SUPABASE_RULES.md에 따라 math_attack 스키마 사용
  */
-function createSupabaseMock(fromMock: ReturnType<typeof vi.fn>) {
+function createSupabaseMock(fromMock: ReturnType<typeof vi.fn>, rpcMock?: ReturnType<typeof vi.fn>) {
   return {
-    schema: vi.fn(() => ({ from: fromMock })),
+    schema: vi.fn(() => ({
+      from: fromMock,
+      rpc: rpcMock || vi.fn(),
+    })),
     from: fromMock, // 하위 호환성
+    rpc: rpcMock || vi.fn(),
   };
 }
 
@@ -330,15 +334,10 @@ describe('Supabase 연동 함수', () => {
         played_at: '2026-01-08T00:00:00.000Z',
       };
 
-      const mockFromFn = vi.fn(() => ({
-        insert: vi.fn(() => ({
-          select: vi.fn(() => ({
-            single: vi.fn(() => Promise.resolve({ data: mockRecord, error: null })),
-          })),
-        })),
-      }));
-
-      const mockSupabase = createSupabaseMock(mockFromFn);
+      // RPC 방식으로 변경됨 (public 스키마의 insert_game_record 함수 사용)
+      const mockRpcFn = vi.fn(() => Promise.resolve({ data: mockRecord, error: null }));
+      const mockFromFn = vi.fn();
+      const mockSupabase = createSupabaseMock(mockFromFn, mockRpcFn);
 
       getSupabaseClient.mockReturnValue(mockSupabase as unknown as ReturnType<typeof getSupabaseClient>);
 
@@ -357,15 +356,10 @@ describe('Supabase 연동 함수', () => {
       const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
       const mockError = { message: 'Database error' };
 
-      const mockFromFn = vi.fn(() => ({
-        insert: vi.fn(() => ({
-          select: vi.fn(() => ({
-            single: vi.fn(() => Promise.resolve({ data: null, error: mockError })),
-          })),
-        })),
-      }));
-
-      const mockSupabase = createSupabaseMock(mockFromFn);
+      // RPC 방식으로 변경됨
+      const mockRpcFn = vi.fn(() => Promise.resolve({ data: null, error: mockError }));
+      const mockFromFn = vi.fn();
+      const mockSupabase = createSupabaseMock(mockFromFn, mockRpcFn);
 
       getSupabaseClient.mockReturnValue(mockSupabase as unknown as ReturnType<typeof getSupabaseClient>);
 
@@ -388,11 +382,12 @@ describe('Supabase 연동 함수', () => {
     it('Supabase 예외 발생시 null을 반환해야 한다', async () => {
       const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
-      const mockFromFn = vi.fn(() => {
+      // RPC 호출 시 예외 발생
+      const mockRpcFn = vi.fn(() => {
         throw new Error('Network error');
       });
-
-      const mockSupabase = createSupabaseMock(mockFromFn);
+      const mockFromFn = vi.fn();
+      const mockSupabase = createSupabaseMock(mockFromFn, mockRpcFn);
 
       getSupabaseClient.mockReturnValue(mockSupabase as unknown as ReturnType<typeof getSupabaseClient>);
 
@@ -667,15 +662,10 @@ describe('Supabase 연동 함수', () => {
         played_at: '2026-01-08T00:00:00.000Z',
       };
 
-      const mockFromFn = vi.fn(() => ({
-        insert: vi.fn(() => ({
-          select: vi.fn(() => ({
-            single: vi.fn(() => Promise.resolve({ data: mockRecord, error: null })),
-          })),
-        })),
-      }));
-
-      const mockSupabase = createSupabaseMock(mockFromFn);
+      // RPC 방식으로 변경됨
+      const mockRpcFn = vi.fn(() => Promise.resolve({ data: mockRecord, error: null }));
+      const mockFromFn = vi.fn();
+      const mockSupabase = createSupabaseMock(mockFromFn, mockRpcFn);
 
       getSupabaseClient.mockReturnValue(mockSupabase as unknown as ReturnType<typeof getSupabaseClient>);
 

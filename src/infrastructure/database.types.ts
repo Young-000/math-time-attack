@@ -136,6 +136,24 @@ export interface Database {
           played_at: string;
         }[];
       };
+      insert_game_record: {
+        Args: {
+          p_odl_id: string;
+          p_difficulty: string;
+          p_operation: string;
+          p_time: number;
+          p_played_at: string;
+        };
+        Returns: {
+          id: string;
+          odl_id: string;
+          difficulty: string;
+          operation: string;
+          time: number;
+          played_at: string;
+          created_at: string;
+        } | null;
+      };
     };
   };
 }
