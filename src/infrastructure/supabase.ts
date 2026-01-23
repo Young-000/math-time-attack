@@ -4,25 +4,30 @@
  */
 
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import type { Database } from './database.types';
 
 // 환경 변수에서 Supabase 설정 가져오기
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
+// 타입이 적용된 Supabase 클라이언트 타입
+export type TypedSupabaseClient = SupabaseClient<Database>;
+
 // Supabase 클라이언트 생성 (싱글톤)
-let supabaseClient: SupabaseClient | null = null;
+let supabaseClient: TypedSupabaseClient | null = null;
 
 /**
  * Supabase 클라이언트 인스턴스 가져오기
+ * Database 타입이 적용되어 타입 안전성 보장
  */
-export function getSupabaseClient(): SupabaseClient | null {
+export function getSupabaseClient(): TypedSupabaseClient | null {
   if (!supabaseUrl || !supabaseAnonKey) {
     console.warn('Supabase credentials not configured. Using localStorage fallback.');
     return null;
   }
 
   if (!supabaseClient) {
-    supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
+    supabaseClient = createClient<Database>(supabaseUrl, supabaseAnonKey, {
       auth: {
         persistSession: false, // 앱인토스에서는 세션 저장 불필요
       },
@@ -39,68 +44,5 @@ export function isSupabaseConfigured(): boolean {
   return Boolean(supabaseUrl && supabaseAnonKey);
 }
 
-/**
- * Database 타입 정의
- * 스키마: math_attack (SUPABASE_RULES.md 준수)
- */
-export interface Database {
-  math_attack: {
-    Tables: {
-      game_records: {
-        Row: {
-          id: string;
-          odl_id: string;
-          difficulty: string;
-          operation: string;
-          time: number;
-          nickname: string | null;
-          played_at: string;
-          created_at: string;
-        };
-        Insert: {
-          id?: string;
-          odl_id: string;
-          difficulty: string;
-          operation: string;
-          time: number;
-          nickname?: string | null;
-          played_at: string;
-          created_at?: string;
-        };
-        Update: {
-          id?: string;
-          odl_id?: string;
-          difficulty?: string;
-          operation?: string;
-          time?: number;
-          nickname?: string | null;
-          played_at?: string;
-          created_at?: string;
-        };
-      };
-      user_profiles: {
-        Row: {
-          id: string;
-          odl_id: string;
-          nickname: string;
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: {
-          id?: string;
-          odl_id: string;
-          nickname: string;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Update: {
-          id?: string;
-          odl_id?: string;
-          nickname?: string;
-          created_at?: string;
-          updated_at?: string;
-        };
-      };
-    };
-  };
-}
+// Database 타입 re-export (하위 호환성)
+export type { Database } from './database.types';

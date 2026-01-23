@@ -5,7 +5,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useMathGame } from '@presentation/hooks';
-import { DIFFICULTY_CONFIG, type DifficultyType } from '@domain/entities';
+import { DIFFICULTY_CONFIG, OPERATION_SYMBOLS, type DifficultyType } from '@domain/entities';
 import { formatTime } from '@lib/utils';
 
 export function GamePage() {
@@ -54,16 +54,21 @@ export function GamePage() {
         state: {
           difficulty: gameState.difficulty,
           elapsedTime,
+          operation: gameState.operation,
         },
       });
     }
-  }, [gameState?.isComplete, gameState?.difficulty, elapsedTime, navigate]);
+  }, [gameState?.isComplete, gameState?.difficulty, gameState?.operation, elapsedTime, navigate]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    const answer = parseInt(inputValue, 10);
-    if (isNaN(answer) || answer < 0 || answer > 10000) return;
+    const trimmed = inputValue.trim();
+    // 숫자만 허용 (정규식으로 검증 강화)
+    if (!/^\d+$/.test(trimmed)) return;
+
+    const answer = parseInt(trimmed, 10);
+    if (answer < 0 || answer > 10000) return;
 
     const isCorrect = submitAnswer(answer);
 
@@ -120,7 +125,7 @@ export function GamePage() {
       <main className="game-content">
         <div className={`problem-card ${isWrong ? 'shake' : ''}`}>
           <span className="problem-num">{currentProblem.firstNum}</span>
-          <span className="problem-op">×</span>
+          <span className="problem-op">{OPERATION_SYMBOLS[currentProblem.operator]}</span>
           <span className="problem-num">{currentProblem.secondNum}</span>
           <span className="problem-eq">=</span>
           <span className="problem-answer">?</span>
@@ -128,7 +133,7 @@ export function GamePage() {
 
         <form onSubmit={handleSubmit} className="answer-form" role="form">
           <label htmlFor="answer-input" className="visually-hidden">
-            {currentProblem.firstNum} × {currentProblem.secondNum}의 정답을 입력하세요
+            {currentProblem.firstNum} {OPERATION_SYMBOLS[currentProblem.operator]} {currentProblem.secondNum}의 정답을 입력하세요
           </label>
           <input
             id="answer-input"
@@ -140,7 +145,7 @@ export function GamePage() {
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             placeholder="정답 입력"
-            aria-label={`${currentProblem.firstNum} × ${currentProblem.secondNum} = ?`}
+            aria-label={`${currentProblem.firstNum} ${OPERATION_SYMBOLS[currentProblem.operator]} ${currentProblem.secondNum} = ?`}
             aria-invalid={isWrong}
             aria-describedby={isWrong ? 'error-message' : undefined}
             autoComplete="off"
