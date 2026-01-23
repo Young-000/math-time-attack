@@ -9,7 +9,7 @@ import { ResultPage } from '../ResultPage';
 
 // Mock react-router-dom
 const mockNavigate = vi.fn();
-let mockLocationState: { difficulty: string; elapsedTime: number } | null = null;
+let mockLocationState: { difficulty: string; elapsedTime: number; operation?: string } | null = null;
 
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom');
@@ -22,22 +22,34 @@ vi.mock('react-router-dom', async () => {
 
 // Mock recordService
 const mockIsNewRecord = vi.fn();
-const mockSaveBestRecord = vi.fn();
+const mockSaveRecord = vi.fn();
 const mockGetBestRecord = vi.fn();
+const mockGetMyRankInfo = vi.fn();
 
 vi.mock('@data/recordService', () => ({
   isNewRecord: (...args: unknown[]) => mockIsNewRecord(...args),
-  saveBestRecord: (...args: unknown[]) => mockSaveBestRecord(...args),
+  saveRecord: (...args: unknown[]) => mockSaveRecord(...args),
   getBestRecord: (...args: unknown[]) => mockGetBestRecord(...args),
+  getMyRankInfo: (...args: unknown[]) => mockGetMyRankInfo(...args),
+}));
+
+// Mock rankingService
+vi.mock('@infrastructure/rankingService', () => ({
+  getCurrentUserId: vi.fn().mockResolvedValue(null),
 }));
 
 describe('ResultPage', () => {
   beforeEach(() => {
     mockNavigate.mockClear();
     mockIsNewRecord.mockClear();
-    mockSaveBestRecord.mockClear();
+    mockSaveRecord.mockClear();
     mockGetBestRecord.mockClear();
+    mockGetMyRankInfo.mockClear();
+    mockGetMyRankInfo.mockResolvedValue({ rank: null, percentile: null, totalPlayers: 0 });
+    mockSaveRecord.mockResolvedValue({ isNewLocalRecord: false, serverRecord: null });
     mockLocationState = null;
+    // localStorage mock for dev_odl_id
+    localStorage.clear();
   });
 
   const renderPage = () => {
@@ -58,7 +70,7 @@ describe('ResultPage', () => {
 
   describe('일반 결과 표시', () => {
     beforeEach(() => {
-      mockLocationState = { difficulty: 'easy', elapsedTime: 15000 };
+      mockLocationState = { difficulty: 'easy', elapsedTime: 15000, operation: 'multiplication' };
       mockIsNewRecord.mockReturnValue(false);
       mockGetBestRecord.mockReturnValue({ difficulty: 'easy', time: 12000, date: Date.now() });
     });
@@ -88,25 +100,35 @@ describe('ResultPage', () => {
 
   describe('신기록인 경우', () => {
     beforeEach(() => {
-      mockLocationState = { difficulty: 'easy', elapsedTime: 10000 };
+      mockLocationState = { difficulty: 'easy', elapsedTime: 10000, operation: 'multiplication' };
       mockIsNewRecord.mockReturnValue(true);
       mockGetBestRecord.mockReturnValue({ difficulty: 'easy', time: 10000, date: Date.now() });
     });
 
-    it('신기록 배너가 표시되어야 한다', () => {
+    it('신기록 배너가 표시되어야 한다', async () => {
       renderPage();
-      expect(screen.getByText('신기록!')).toBeInTheDocument();
+      // 비동기 처리 후 신기록 배너가 표시됨
+      await vi.waitFor(() => {
+        expect(screen.getByText('신기록!')).toBeInTheDocument();
+      });
     });
 
-    it('기록이 저장되어야 한다', () => {
+    it('기록이 저장되어야 한다', async () => {
       renderPage();
-      expect(mockSaveBestRecord).toHaveBeenCalledWith('easy', 10000);
+      // saveRecord는 비동기로 호출되므로 약간의 대기 필요
+      await vi.waitFor(() => {
+        expect(mockSaveRecord).toHaveBeenCalled();
+      });
+      // saveRecord 호출 인자 확인 (difficulty, time, operation, userId)
+      expect(mockSaveRecord.mock.calls[0][0]).toBe('easy');
+      expect(mockSaveRecord.mock.calls[0][1]).toBe(10000);
+      expect(mockSaveRecord.mock.calls[0][2]).toBe('multiplication');
     });
   });
 
   describe('버튼 동작', () => {
     beforeEach(() => {
-      mockLocationState = { difficulty: 'medium', elapsedTime: 20000 };
+      mockLocationState = { difficulty: 'medium', elapsedTime: 20000, operation: 'multiplication' };
       mockIsNewRecord.mockReturnValue(false);
       mockGetBestRecord.mockReturnValue(null);
     });
@@ -118,9 +140,9 @@ describe('ResultPage', () => {
       expect(mockNavigate).toHaveBeenCalledWith('/game/medium');
     });
 
-    it('난이도 선택 버튼 클릭시 홈으로 이동해야 한다', () => {
+    it('홈으로 버튼 클릭시 홈으로 이동해야 한다', () => {
       renderPage();
-      const homeButton = screen.getByText('난이도 선택');
+      const homeButton = screen.getByText('🏠 홈으로');
       fireEvent.click(homeButton);
       expect(mockNavigate).toHaveBeenCalledWith('/');
     });

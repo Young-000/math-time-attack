@@ -2,16 +2,17 @@
  * 결과 페이지
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { DIFFICULTY_CONFIG, type DifficultyType } from '@domain/entities';
-import { saveBestRecord, isNewRecord, getBestRecord, getMyRank } from '@data/recordService';
+import { DIFFICULTY_CONFIG, Operation, type DifficultyType, type OperationType } from '@domain/entities';
+import { saveRecord, isNewRecord, getBestRecord, getMyRankInfo } from '@data/recordService';
 import { getCurrentUserId } from '@infrastructure/rankingService';
 import { formatTime } from '@lib/utils';
 
 interface LocationState {
   difficulty: DifficultyType;
   elapsedTime: number;
+  operation?: OperationType;
 }
 
 export function ResultPage() {
@@ -21,7 +22,9 @@ export function ResultPage() {
 
   const [isNew, setIsNew] = useState(false);
   const [myRank, setMyRank] = useState<number | null>(null);
+  const [totalPlayers, setTotalPlayers] = useState<number>(0);
   const [isLoadingRank, setIsLoadingRank] = useState(false);
+  const hasProcessedRef = useRef(false);
 
   useEffect(() => {
     if (!state) {
@@ -29,39 +32,58 @@ export function ResultPage() {
       return;
     }
 
-    const { difficulty, elapsedTime } = state;
-
-    // Check and save record
-    if (isNewRecord(difficulty, elapsedTime)) {
-      saveBestRecord(difficulty, elapsedTime);
-      setIsNew(true);
+    // StrictMode 중복 실행 방지
+    if (hasProcessedRef.current) {
+      return;
     }
+    hasProcessedRef.current = true;
 
-    // Fetch current rank
-    const fetchRank = async () => {
+    const { difficulty, elapsedTime, operation = Operation.MULTIPLICATION } = state;
+
+    // Save record and fetch rank
+    const processResult = async () => {
       setIsLoadingRank(true);
       try {
-        const userId = await getCurrentUserId();
-        if (userId) {
-          const rank = await getMyRank(userId, difficulty, 'multiplication');
-          setMyRank(rank);
+        // 개발 환경용 로컬 ID 생성/조회
+        let userId = await getCurrentUserId();
+        if (!userId) {
+          userId = localStorage.getItem('dev_odl_id');
+          if (!userId) {
+            userId = `dev_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+            localStorage.setItem('dev_odl_id', userId);
+          }
         }
+
+        // 신기록 여부 확인
+        const newRecord = isNewRecord(difficulty, elapsedTime, operation);
+        if (newRecord) {
+          setIsNew(true);
+        }
+
+        // 로컬 + 서버에 기록 저장
+        await saveRecord(difficulty, elapsedTime, operation, userId);
+
+        // 랭킹 정보 조회
+        const rankInfo = await getMyRankInfo(userId, difficulty, operation);
+        setMyRank(rankInfo.rank);
+        setTotalPlayers(rankInfo.totalPlayers);
       } catch (err) {
-        console.error('Failed to fetch rank:', err);
+        console.error('Failed to process result:', err);
       } finally {
         setIsLoadingRank(false);
       }
     };
-    fetchRank();
+
+    processResult();
   }, [state, navigate]);
 
   if (!state) {
     return null;
   }
 
-  const { difficulty, elapsedTime } = state;
+  const { difficulty, elapsedTime, operation = Operation.MULTIPLICATION } = state;
   const config = DIFFICULTY_CONFIG[difficulty];
-  const bestRecord = getBestRecord(difficulty);
+  const bestRecord = getBestRecord(difficulty, operation);
 
   const handleRetry = () => {
     navigate(`/game/${difficulty}`);
@@ -104,7 +126,7 @@ export function ResultPage() {
             {isLoadingRank ? (
               <span className="rank-value loading">로딩 중...</span>
             ) : myRank ? (
-              <span className="rank-value">{myRank}위</span>
+              <span className="rank-value">{myRank}위 / {totalPlayers}명</span>
             ) : (
               <span className="rank-value none">순위 없음</span>
             )}
@@ -119,7 +141,7 @@ export function ResultPage() {
             랭킹 보기
           </button>
           <button className="action-btn tertiary" onClick={handleHome}>
-            난이도 선택
+            🏠 홈으로
           </button>
         </div>
       </main>

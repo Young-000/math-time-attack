@@ -4,14 +4,12 @@
 
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { DIFFICULTY_CONFIG, type DifficultyType, type RankingItem, Operation } from '@domain/entities';
-import { getBestRecord, getTopRankings, getMyRankInfo, isOnlineMode } from '@data/recordService';
+import { DIFFICULTY_CONFIG, type DifficultyType, Operation } from '@domain/entities';
+import { getBestRecord, getMyRankInfo, isOnlineMode } from '@data/recordService';
 import { formatTime } from '@lib/utils';
 
 interface RankingPreview {
-  topPlayer: RankingItem | null;
   myRank: number | null;
-  myPercentile: number | null;
   totalPlayers: number;
 }
 
@@ -21,7 +19,6 @@ export function DifficultySelectPage() {
   const navigate = useNavigate();
   const [rankingPreview, setRankingPreview] = useState<RankingPreview | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedDifficulty, setSelectedDifficulty] = useState<DifficultyType>('medium');
 
   const online = isOnlineMode();
 
@@ -31,37 +28,31 @@ export function DifficultySelectPage() {
 
     const loadRankingPreview = async () => {
       if (!online) {
-        // 오프라인 모드에서는 빈 상태로 설정
-        setRankingPreview({ topPlayer: null, myRank: null, myPercentile: null, totalPlayers: 0 });
+        setRankingPreview({ myRank: null, totalPlayers: 0 });
         return;
       }
 
       setIsLoading(true);
       try {
-        // 1등 기록 조회
-        const topRankings = await getTopRankings(selectedDifficulty, Operation.MULTIPLICATION, 1);
-        const topPlayer = topRankings.length > 0 ? topRankings[0] : null;
-
         // 내 랭킹 조회 (odl_id가 있다면)
-        const odlId = localStorage.getItem('odl_id') || '';
+        const odlId = localStorage.getItem('odl_id') || localStorage.getItem('dev_odl_id') || '';
         let myRank: number | null = null;
-        let myPercentile: number | null = null;
         let totalPlayers = 0;
 
         if (odlId) {
-          const rankInfo = await getMyRankInfo(odlId, selectedDifficulty, Operation.MULTIPLICATION);
+          // 기본 난이도(easy)로 내 랭킹 조회
+          const rankInfo = await getMyRankInfo(odlId, 'easy', Operation.MULTIPLICATION);
           myRank = rankInfo.rank;
-          myPercentile = rankInfo.percentile;
           totalPlayers = rankInfo.totalPlayers;
         }
 
         if (!cancelled) {
-          setRankingPreview({ topPlayer, myRank, myPercentile, totalPlayers });
+          setRankingPreview({ myRank, totalPlayers });
         }
       } catch (error) {
         console.error('Failed to load ranking preview:', error);
         if (!cancelled) {
-          setRankingPreview({ topPlayer: null, myRank: null, myPercentile: null, totalPlayers: 0 });
+          setRankingPreview({ myRank: null, totalPlayers: 0 });
         }
       } finally {
         if (!cancelled) {
@@ -75,7 +66,7 @@ export function DifficultySelectPage() {
     return () => {
       cancelled = true;
     };
-  }, [selectedDifficulty, online]);
+  }, [online]);
 
   const handleSelect = (difficulty: DifficultyType) => {
     navigate(`/game/${difficulty}`);
@@ -83,28 +74,6 @@ export function DifficultySelectPage() {
 
   const handleRankingClick = () => {
     navigate('/ranking');
-  };
-
-  const handleDifficultyTabChange = (difficulty: DifficultyType) => {
-    setSelectedDifficulty(difficulty);
-  };
-
-  // 내 순위 표시 텍스트 생성
-  const getMyRankText = () => {
-    if (!rankingPreview) return null;
-    const { myRank, myPercentile, totalPlayers } = rankingPreview;
-
-    if (myRank === null) {
-      return '아직 기록이 없어요';
-    }
-
-    // 100등 이내면 등수 표시
-    if (myRank <= 100) {
-      return `${myRank}등 / ${totalPlayers}명`;
-    }
-
-    // 100등 밖이면 퍼센타일 표시
-    return `상위 ${myPercentile}%`;
   };
 
   return (
@@ -129,69 +98,24 @@ export function DifficultySelectPage() {
         <p className="subtitle">5문제를 가장 빠르게 풀어보세요!</p>
       </header>
 
-      {/* 랭킹 프리뷰 섹션 - 항상 표시 */}
-      <section className="ranking-preview" onClick={handleRankingClick}>
-          <div className="ranking-preview-header">
-            <h2 className="ranking-preview-title">🏆 실시간 랭킹</h2>
-            <div className="ranking-tabs">
-              {difficulties.map((diff) => (
-                <button
-                  key={diff}
-                  className={`ranking-tab ${selectedDifficulty === diff ? 'active' : ''}`}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDifficultyTabChange(diff);
-                  }}
-                >
-                  {DIFFICULTY_CONFIG[diff].label}
-                </button>
-              ))}
-            </div>
-          </div>
-
+      {/* 랭킹 프리뷰 - 간단한 한 줄 표시 */}
+      <button
+        className="ranking-preview-compact"
+        onClick={handleRankingClick}
+        aria-label="전체 랭킹 보기"
+      >
+        <span className="ranking-preview-icon">🏆</span>
+        <span className="ranking-preview-text">
           {isLoading ? (
-            <div className="ranking-preview-loading">로딩 중...</div>
-          ) : rankingPreview ? (
-            <div className="ranking-preview-content">
-              {/* 1등 기록 */}
-              <div className="ranking-top-player">
-                <div className="ranking-label">👑 1등</div>
-                {rankingPreview.topPlayer ? (
-                  <div className="ranking-value">
-                    <span className="ranking-nickname">
-                      {rankingPreview.topPlayer.nickname || rankingPreview.topPlayer.odl_id.slice(0, 8)}
-                    </span>
-                    <span className="ranking-time">
-                      {formatTime(rankingPreview.topPlayer.time)}
-                    </span>
-                  </div>
-                ) : (
-                  <div className="ranking-value">
-                    <span className="ranking-empty">아직 기록이 없어요</span>
-                  </div>
-                )}
-              </div>
-
-              {/* 내 순위 */}
-              <div className="ranking-my-rank">
-                <div className="ranking-label">📊 내 순위</div>
-                <div className="ranking-value">
-                  <span className={rankingPreview.myRank !== null && rankingPreview.myRank <= 10 ? 'ranking-highlight' : ''}>
-                    {getMyRankText()}
-                  </span>
-                </div>
-              </div>
-            </div>
+            '랭킹 로딩 중...'
+          ) : rankingPreview?.myRank ? (
+            `내 순위: ${rankingPreview.myRank}등 / ${rankingPreview.totalPlayers}명`
           ) : (
-            <div className="ranking-preview-empty">
-              랭킹 정보를 불러올 수 없습니다
-            </div>
+            '랭킹 보기'
           )}
-
-          <div className="ranking-preview-footer">
-            <span className="ranking-view-all">전체 랭킹 보기 →</span>
-          </div>
-        </section>
+        </span>
+        <span className="ranking-preview-arrow">→</span>
+      </button>
 
       <main className="content">
         <div className="difficulty-list">

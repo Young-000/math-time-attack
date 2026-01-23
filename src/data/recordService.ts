@@ -297,6 +297,17 @@ export function isOnlineMode(): boolean {
 // ============================================
 
 const NICKNAME_STORAGE_KEY = 'math-time-attack-nickname';
+const NICKNAME_MAX_LENGTH = 20;
+
+/**
+ * 닉네임 sanitize (XSS 방지)
+ */
+function sanitizeNickname(nickname: string): string {
+  return nickname
+    .replace(/[<>'"&]/g, '')  // HTML 특수문자 제거
+    .trim()
+    .slice(0, NICKNAME_MAX_LENGTH);
+}
 
 /**
  * 랜덤 닉네임 생성
@@ -326,7 +337,9 @@ export function getLocalNickname(): string | null {
  */
 export function saveLocalNickname(nickname: string): void {
   try {
-    localStorage.setItem(NICKNAME_STORAGE_KEY, nickname);
+    const sanitized = sanitizeNickname(nickname);
+    if (!sanitized) return;
+    localStorage.setItem(NICKNAME_STORAGE_KEY, sanitized);
   } catch {
     console.warn('Failed to save nickname to localStorage');
   }
@@ -361,13 +374,16 @@ export async function saveServerNickname(odlId: string, nickname: string): Promi
   const supabase = getSupabaseClient();
   if (!supabase || !odlId) return false;
 
+  const sanitized = sanitizeNickname(nickname);
+  if (!sanitized) return false;
+
   try {
     const { error } = await supabase
       .schema('math_attack')
       .from('user_profiles')
       .upsert({
         odl_id: odlId,
-        nickname,
+        nickname: sanitized,
         updated_at: new Date().toISOString(),
       }, {
         onConflict: 'odl_id',
@@ -425,7 +441,7 @@ export async function updateNickname(nickname: string, odlId?: string): Promise<
 }
 
 /**
- * 전체 참가자 수 조회
+ * 전체 참가자 수 조회 (RPC 함수 사용으로 최적화)
  */
 export async function getTotalPlayers(
   difficulty: DifficultyType,
@@ -437,27 +453,29 @@ export async function getTotalPlayers(
   }
 
   try {
+    // RPC 함수를 사용하여 서버에서 집계 (public 스키마 wrapper 사용)
     const { data, error } = await supabase
-      .schema('math_attack')
-      .from('game_records')
-      .select('odl_id')
-      .eq('difficulty', difficulty)
-      .eq('operation', operation);
+      .schema('public')
+      .rpc('get_total_unique_players', {
+        p_difficulty: difficulty,
+        p_operation: operation,
+      });
 
-    if (error || !data) {
+    if (error || data === null) {
+      console.error('Failed to get total players:', error);
       return 0;
     }
 
-    // 중복 제거 (고유 사용자 수)
-    const uniquePlayers = new Set(data.map(d => d.odl_id));
-    return uniquePlayers.size;
-  } catch {
+    return data as number;
+  } catch (err) {
+    console.error('Error getting total players:', err);
     return 0;
   }
 }
 
 /**
- * 내 순위와 퍼센타일 조회
+ * 내 순위와 퍼센타일 조회 (RPC 함수 사용으로 최적화)
+ * 서버에서 집계하여 데이터 전송량 대폭 감소
  */
 export async function getMyRankInfo(
   odlId: string,
@@ -470,65 +488,41 @@ export async function getMyRankInfo(
   }
 
   try {
-    // 내 최고 기록 조회
-    const { data: myRecord, error: myError } = await supabase
-      .schema('math_attack')
-      .from('game_records')
-      .select('time')
-      .eq('odl_id', odlId)
-      .eq('difficulty', difficulty)
-      .eq('operation', operation)
-      .order('time', { ascending: true })
-      .limit(1)
-      .single();
+    // RPC 함수를 사용하여 서버에서 순위 계산 (public 스키마 wrapper 사용)
+    const { data, error } = await supabase
+      .schema('public')
+      .rpc('get_my_rank_info', {
+        p_odl_id: odlId,
+        p_difficulty: difficulty,
+        p_operation: operation,
+      });
 
-    if (myError || !myRecord) {
-      const totalPlayers = await getTotalPlayers(difficulty, operation);
-      return { rank: null, percentile: null, totalPlayers };
-    }
-
-    // 전체 기록에서 고유 사용자별 최고 기록 조회
-    const { data: allRecords, error: allError } = await supabase
-      .schema('math_attack')
-      .from('game_records')
-      .select('odl_id, time')
-      .eq('difficulty', difficulty)
-      .eq('operation', operation);
-
-    if (allError || !allRecords) {
+    if (error) {
+      console.error('Failed to get rank info:', error);
       return { rank: null, percentile: null, totalPlayers: 0 };
     }
 
-    // 사용자별 최고 기록만 추출
-    const bestByUser = new Map<string, number>();
-    for (const record of allRecords) {
-      const existing = bestByUser.get(record.odl_id);
-      if (!existing || record.time < existing) {
-        bestByUser.set(record.odl_id, record.time);
-      }
+    // RPC는 배열을 반환하므로 첫 번째 요소 사용
+    const result = Array.isArray(data) ? data[0] : data;
+
+    if (!result) {
+      return { rank: null, percentile: null, totalPlayers: 0 };
     }
 
-    // 정렬 후 내 순위 찾기
-    const sortedTimes = Array.from(bestByUser.entries())
-      .sort((a, b) => a[1] - b[1]);
-
-    const totalPlayers = sortedTimes.length;
-    const myRankIndex = sortedTimes.findIndex(([id]) => id === odlId);
-    const rank = myRankIndex >= 0 ? myRankIndex + 1 : null;
-
-    // 퍼센타일 계산 (상위 몇%)
-    const percentile = rank !== null && totalPlayers > 0
-      ? Math.round((rank / totalPlayers) * 100)
-      : null;
-
-    return { rank, percentile, totalPlayers };
-  } catch {
+    return {
+      rank: result.my_rank,
+      percentile: result.my_percentile,
+      totalPlayers: result.total_players ?? 0,
+    };
+  } catch (err) {
+    console.error('Error getting rank info:', err);
     return { rank: null, percentile: null, totalPlayers: 0 };
   }
 }
 
 /**
- * 전체 랭킹 조회 (닉네임 포함)
+ * 전체 랭킹 조회 (닉네임 포함, RPC 함수 사용으로 최적화)
+ * 서버에서 사용자별 최고 기록만 추출하여 반환
  */
 export async function getTopRankings(
   difficulty: DifficultyType,
@@ -542,39 +536,34 @@ export async function getTopRankings(
   }
 
   try {
+    // RPC 함수를 사용하여 서버에서 최적화된 랭킹 조회 (public 스키마 wrapper 사용)
     const { data, error } = await supabase
-      .schema('math_attack')
-      .from('game_records')
-      .select('odl_id, time, played_at, nickname')
-      .eq('difficulty', difficulty)
-      .eq('operation', operation)
-      .order('time', { ascending: true })
-      .limit(limit);
+      .schema('public')
+      .rpc('get_top_rankings', {
+        p_difficulty: difficulty,
+        p_operation: operation,
+        p_limit: limit,
+      });
 
     if (error) {
       console.error('Failed to fetch top rankings:', error);
       return [];
     }
 
-    // 랭킹 번호 부여 및 중복 제거 (사용자별 최고 기록만)
-    const bestByUser = new Map<string, typeof data[0]>();
-    for (const item of data || []) {
-      const existing = bestByUser.get(item.odl_id);
-      if (!existing || item.time < existing.time) {
-        bestByUser.set(item.odl_id, item);
-      }
-    }
-
-    return Array.from(bestByUser.values())
-      .sort((a, b) => a.time - b.time)
-      .slice(0, limit)
-      .map((item, index) => ({
-        rank: index + 1,
-        odl_id: item.odl_id,
-        nickname: item.nickname || undefined,
-        time: item.time,
-        played_at: item.played_at,
-      }));
+    // RPC 결과를 RankingItem 형식으로 변환
+    return (data || []).map((item: {
+      rank: number;
+      odl_id: string;
+      nickname: string | null;
+      best_time: number;
+      played_at: string;
+    }) => ({
+      rank: item.rank,
+      odl_id: item.odl_id,
+      nickname: item.nickname || undefined,
+      time: item.best_time,
+      played_at: item.played_at,
+    }));
   } catch (err) {
     console.error('Error fetching top rankings:', err);
     return [];

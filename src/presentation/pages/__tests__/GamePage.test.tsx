@@ -12,12 +12,13 @@ const mockStartGame = vi.fn();
 const mockSubmitAnswer = vi.fn();
 let mockGameState: {
   difficulty: string;
+  operation: string;
   isComplete: boolean;
   currentIndex: number;
-  problems: { firstNum: number; secondNum: number; answer: number }[];
+  problems: { firstNum: number; secondNum: number; answer: number; operator: string }[];
   startTime: number;
 } | null = null;
-let mockCurrentProblem: { firstNum: number; secondNum: number; answer: number } | null = null;
+let mockCurrentProblem: { firstNum: number; secondNum: number; answer: number; operator: string } | null = null;
 
 vi.mock('@presentation/hooks', () => ({
   useMathGame: () => ({
@@ -94,6 +95,7 @@ describe('GamePage', () => {
     it('문제가 없을 때 로딩 메시지를 표시해야 한다', () => {
       mockGameState = {
         difficulty: 'easy',
+        operation: 'multiplication',
         isComplete: false,
         currentIndex: 0,
         problems: [],
@@ -109,18 +111,20 @@ describe('GamePage', () => {
     beforeEach(() => {
       mockGameState = {
         difficulty: 'easy',
+        operation: 'multiplication',
         isComplete: false,
         currentIndex: 0,
-        problems: [{ firstNum: 3, secondNum: 4, answer: 12 }],
+        problems: [{ firstNum: 3, secondNum: 4, answer: 12, operator: 'multiplication' }],
         startTime: Date.now(),
       };
-      mockCurrentProblem = { firstNum: 3, secondNum: 4, answer: 12 };
+      mockCurrentProblem = { firstNum: 3, secondNum: 4, answer: 12, operator: 'multiplication' };
     });
 
     it('문제가 표시되어야 한다', () => {
       renderPage('easy');
       expect(screen.getByText('3')).toBeInTheDocument();
       expect(screen.getByText('4')).toBeInTheDocument();
+      // OPERATION_SYMBOLS에서 multiplication은 '×'로 표시됨
       expect(screen.getByText('×')).toBeInTheDocument();
     });
 
@@ -223,12 +227,13 @@ describe('GamePage', () => {
     beforeEach(() => {
       mockGameState = {
         difficulty: 'easy',
+        operation: 'multiplication',
         isComplete: false,
         currentIndex: 0,
-        problems: [{ firstNum: 3, secondNum: 4, answer: 12 }],
+        problems: [{ firstNum: 3, secondNum: 4, answer: 12, operator: 'multiplication' }],
         startTime: Date.now(),
       };
-      mockCurrentProblem = { firstNum: 3, secondNum: 4, answer: 12 };
+      mockCurrentProblem = { firstNum: 3, secondNum: 4, answer: 12, operator: 'multiplication' };
     });
 
     it('progressbar role이 있어야 한다', () => {
@@ -247,12 +252,13 @@ describe('GamePage', () => {
     it('게임 완료 시 결과 페이지로 이동해야 한다', () => {
       mockGameState = {
         difficulty: 'easy',
+        operation: 'multiplication',
         isComplete: true,
         currentIndex: 5,
-        problems: [{ firstNum: 3, secondNum: 4, answer: 12 }],
+        problems: [{ firstNum: 3, secondNum: 4, answer: 12, operator: 'multiplication' }],
         startTime: Date.now(),
       };
-      mockCurrentProblem = { firstNum: 3, secondNum: 4, answer: 12 };
+      mockCurrentProblem = { firstNum: 3, secondNum: 4, answer: 12, operator: 'multiplication' };
 
       renderPage('easy');
 
@@ -260,6 +266,7 @@ describe('GamePage', () => {
         state: {
           difficulty: 'easy',
           elapsedTime: 5000,
+          operation: 'multiplication',
         },
       });
     });
@@ -269,12 +276,13 @@ describe('GamePage', () => {
     beforeEach(() => {
       mockGameState = {
         difficulty: 'easy',
+        operation: 'multiplication',
         isComplete: false,
         currentIndex: 0,
-        problems: [{ firstNum: 3, secondNum: 4, answer: 12 }],
+        problems: [{ firstNum: 3, secondNum: 4, answer: 12, operator: 'multiplication' }],
         startTime: Date.now(),
       };
-      mockCurrentProblem = { firstNum: 3, secondNum: 4, answer: 12 };
+      mockCurrentProblem = { firstNum: 3, secondNum: 4, answer: 12, operator: 'multiplication' };
     });
 
     it('오답 시 진동 기능이 호출되어야 한다 (지원되는 경우)', () => {
