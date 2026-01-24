@@ -143,6 +143,7 @@ export interface Database {
           p_operation: string;
           p_time: number;
           p_played_at: string;
+          p_nickname?: string | null;
         };
         Returns: {
           id: string;
@@ -150,6 +151,7 @@ export interface Database {
           difficulty: string;
           operation: string;
           time: number;
+          nickname: string | null;
           played_at: string;
           created_at: string;
         } | null;

@@ -132,7 +132,8 @@ export function clearAllRecords(): void {
  * 게임 기록을 Supabase에 저장 (public 스키마 RPC wrapper 사용)
  */
 export async function saveGameRecordToServer(
-  record: Omit<GameRecord, 'id'>
+  record: Omit<GameRecord, 'id'>,
+  nickname?: string
 ): Promise<GameRecord | null> {
   const supabase = getSupabaseClient();
   if (!supabase) {
@@ -150,6 +151,7 @@ export async function saveGameRecordToServer(
         p_operation: record.operation,
         p_time: record.time,
         p_played_at: record.played_at,
+        p_nickname: nickname || null,
       });
 
     if (error) {
@@ -263,10 +265,14 @@ export async function saveRecord(
   difficulty: DifficultyType,
   time: number,
   operation: OperationType = Operation.MULTIPLICATION,
-  odlId?: string
+  odlId?: string,
+  nickname?: string
 ): Promise<{ isNewLocalRecord: boolean; serverRecord: GameRecord | null }> {
   // 1. 로컬 저장
   const isNewLocalRecord = saveBestRecord(difficulty, time, operation);
+
+  // 닉네임이 없으면 로컬에서 가져오기
+  const finalNickname = nickname || getLocalNickname() || undefined;
 
   // 2. 서버 저장 (Supabase가 설정된 경우)
   let serverRecord: GameRecord | null = null;
@@ -277,7 +283,7 @@ export async function saveRecord(
       operation,
       time,
       played_at: new Date().toISOString(),
-    });
+    }, finalNickname);
   }
 
   return { isNewLocalRecord, serverRecord };
