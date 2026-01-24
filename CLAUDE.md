@@ -58,11 +58,35 @@
 
 ## 개발 명령어
 
+### 기본 명령어
 ```bash
-npm install    # 의존성 설치
-npm run dev    # 개발 서버
-npm run build  # 프로덕션 빌드
-npm run lint   # 린트 실행
+npm install      # 의존성 설치
+npm run dev      # 개발 서버 (localhost:5173)
+npm run build    # 프로덕션 빌드
+npm run preview  # 빌드 결과 미리보기
+```
+
+### 코드 품질 검사
+```bash
+npm run lint       # ESLint 실행
+npm run typecheck  # TypeScript 타입 검사
+```
+
+### 테스트 실행
+```bash
+npm run test              # 단위 테스트 (Vitest)
+npm run test:coverage     # 테스트 커버리지 보고서
+npm run test:e2e          # E2E 테스트 (Playwright)
+npm run test:e2e:ui       # E2E 테스트 UI 모드
+npm run test:e2e:headed   # E2E 테스트 헤드 모드
+```
+
+### 배포 전 체크리스트
+```bash
+npm run lint       # 에러 0개
+npm run typecheck  # 에러 0개
+npm run build      # 빌드 성공
+npm test           # 80% 이상 통과
 ```
 
 ## 환경 변수
