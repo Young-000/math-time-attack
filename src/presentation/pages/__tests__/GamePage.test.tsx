@@ -73,21 +73,21 @@ describe('GamePage', () => {
       mockGameState = null;
       mockCurrentProblem = null;
       renderPage('easy');
-      expect(mockStartGame).toHaveBeenCalledWith('easy');
+      expect(mockStartGame).toHaveBeenCalledWith('easy', undefined, undefined);
     });
 
     it('medium 난이도로 startGame이 호출되어야 한다', () => {
       mockGameState = null;
       mockCurrentProblem = null;
       renderPage('medium');
-      expect(mockStartGame).toHaveBeenCalledWith('medium');
+      expect(mockStartGame).toHaveBeenCalledWith('medium', undefined, undefined);
     });
 
     it('hard 난이도로 startGame이 호출되어야 한다', () => {
       mockGameState = null;
       mockCurrentProblem = null;
       renderPage('hard');
-      expect(mockStartGame).toHaveBeenCalledWith('hard');
+      expect(mockStartGame).toHaveBeenCalledWith('hard', undefined, undefined);
     });
   });
 
@@ -267,6 +267,7 @@ describe('GamePage', () => {
           difficulty: 'easy',
           elapsedTime: 5000,
           operation: 'multiplication',
+          isDaily: false,
         },
       });
     });

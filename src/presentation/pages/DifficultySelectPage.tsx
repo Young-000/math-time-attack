@@ -2,10 +2,17 @@
  * 난이도 선택 페이지
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { DIFFICULTY_CONFIG, type DifficultyType, Operation } from '@domain/entities';
 import { getBestRecord, getMyRankInfo, isOnlineMode } from '@data/recordService';
+import {
+  isDailyChallengeCompleted,
+  getDailyChallengeCompletion,
+  getTimeUntilNextChallenge,
+  formatTimeRemaining,
+  getDailyChallengeDifficulty,
+} from '@domain/services/dailyChallengeService';
 import { formatTime } from '@lib/utils';
 
 interface RankingPreview {
@@ -19,8 +26,24 @@ export function DifficultySelectPage() {
   const navigate = useNavigate();
   const [rankingPreview, setRankingPreview] = useState<RankingPreview | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [timeRemaining, setTimeRemaining] = useState('');
 
   const online = isOnlineMode();
+  const dailyDifficulty = getDailyChallengeDifficulty();
+  const dailyCompleted = isDailyChallengeCompleted();
+  const dailyCompletion = getDailyChallengeCompletion();
+
+  // 다음 일일 챌린지까지 남은 시간 업데이트
+  useEffect(() => {
+    const updateTimer = () => {
+      const remaining = getTimeUntilNextChallenge();
+      setTimeRemaining(formatTimeRemaining(remaining));
+    };
+
+    updateTimer();
+    const interval = setInterval(updateTimer, 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   // 랭킹 프리뷰 데이터 로드
   useEffect(() => {
@@ -68,13 +91,17 @@ export function DifficultySelectPage() {
     };
   }, [online]);
 
-  const handleSelect = (difficulty: DifficultyType) => {
+  const handleSelect = useCallback((difficulty: DifficultyType) => {
     navigate(`/game/${difficulty}`);
-  };
+  }, [navigate]);
 
-  const handleRankingClick = () => {
+  const handleDailyChallenge = useCallback(() => {
+    navigate(`/game/${dailyDifficulty}?daily=true`);
+  }, [navigate, dailyDifficulty]);
+
+  const handleRankingClick = useCallback(() => {
     navigate('/ranking');
-  };
+  }, [navigate]);
 
   return (
     <div className="page">
@@ -94,9 +121,41 @@ export function DifficultySelectPage() {
             랭킹
           </button>
         </div>
-        <h1 className="title">연산 타임어택</h1>
+        <h1 className="title">구구단 챌린지</h1>
         <p className="subtitle">5문제를 가장 빠르게 풀어보세요!</p>
       </header>
+
+      {/* 오늘의 챌린지 배너 */}
+      <div className="daily-challenge-banner">
+        <div className="daily-challenge-header">
+          <span className="daily-challenge-icon">🔥</span>
+          <span className="daily-challenge-title">오늘의 챌린지</span>
+          {dailyCompleted && (
+            <span className="daily-challenge-badge">✓ 완료</span>
+          )}
+        </div>
+        <div className="daily-challenge-info">
+          <span className="daily-challenge-difficulty">
+            {DIFFICULTY_CONFIG[dailyDifficulty].label} ({DIFFICULTY_CONFIG[dailyDifficulty].min}-{DIFFICULTY_CONFIG[dailyDifficulty].max}단)
+          </span>
+          {dailyCompleted && dailyCompletion ? (
+            <span className="daily-challenge-record">
+              기록: {formatTime(dailyCompletion.time)}
+            </span>
+          ) : (
+            <span className="daily-challenge-timer">
+              남은 시간: {timeRemaining}
+            </span>
+          )}
+        </div>
+        <button
+          className="daily-challenge-btn"
+          onClick={handleDailyChallenge}
+          disabled={dailyCompleted}
+        >
+          {dailyCompleted ? '내일 다시 도전하세요!' : '도전하기'}
+        </button>
+      </div>
 
       {/* 랭킹 프리뷰 - 간단한 한 줄 표시 */}
       <button

@@ -5,14 +5,28 @@
 
 import type { Problem, DifficultyType, OperationType } from '@domain/entities';
 import { DIFFICULTY_CONFIG, GAME_CONFIG, Operation } from '@domain/entities';
+import { createSeededRandom } from '@domain/services/dailyChallengeService';
 
 let problemIdCounter = 0;
+
+// 현재 사용 중인 랜덤 함수 (시드 기반 또는 기본)
+let currentRandomFn: (() => number) | null = null;
+
+/**
+ * 랜덤 함수 반환 (시드 기반 또는 Math.random)
+ */
+function getRandom(): number {
+  if (currentRandomFn) {
+    return currentRandomFn();
+  }
+  return Math.random();
+}
 
 /**
  * 지정된 범위 내 랜덤 정수 생성
  */
 function getRandomInt(min: number, max: number): number {
-  return Math.floor(Math.random() * (max - min + 1)) + min;
+  return Math.floor(getRandom() * (max - min + 1)) + min;
 }
 
 /**
@@ -33,7 +47,7 @@ export function resetIdCounter(): void {
  * 랜덤 연산자 선택 (mixed 모드용)
  */
 function getRandomOperator(): Exclude<OperationType, 'mixed'> {
-  return Math.random() < 0.5 ? Operation.ADDITION : Operation.MULTIPLICATION;
+  return getRandom() < 0.5 ? Operation.ADDITION : Operation.MULTIPLICATION;
 }
 
 /**
@@ -76,13 +90,29 @@ export function generateProblem(
 
 /**
  * 여러 문제 생성
+ * @param seed - 시드 값 (일일 챌린지용, 같은 시드면 같은 문제)
  */
 export function generateProblems(
   difficulty: DifficultyType,
   operation: OperationType = Operation.MULTIPLICATION,
-  count: number = GAME_CONFIG.PROBLEMS_PER_GAME
+  count: number = GAME_CONFIG.PROBLEMS_PER_GAME,
+  seed?: number
 ): Problem[] {
   resetIdCounter(); // 게임마다 ID 초기화
 
-  return Array.from({ length: count }, () => generateProblem(difficulty, operation));
+  // 시드가 제공되면 시드 기반 랜덤 사용
+  if (seed !== undefined) {
+    currentRandomFn = createSeededRandom(seed);
+  } else {
+    currentRandomFn = null;
+  }
+
+  const problems = Array.from({ length: count }, () =>
+    generateProblem(difficulty, operation)
+  );
+
+  // 시드 기반 랜덤 함수 초기화
+  currentRandomFn = null;
+
+  return problems;
 }

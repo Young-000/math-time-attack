@@ -3,13 +3,15 @@
  */
 
 import { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useMathGame } from '@presentation/hooks';
 import { DIFFICULTY_CONFIG, OPERATION_SYMBOLS, type DifficultyType } from '@domain/entities';
 import { formatTime } from '@lib/utils';
+import { generateDailySeed } from '@domain/services/dailyChallengeService';
 
 export function GamePage() {
   const { difficulty } = useParams<{ difficulty: DifficultyType }>();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const {
     gameState,
@@ -26,12 +28,17 @@ export function GamePage() {
   const inputRef = useRef<HTMLInputElement>(null);
   const wrongTimeoutRef = useRef<number | null>(null);
 
+  // 일일 챌린지 여부 확인
+  const isDaily = searchParams.get('daily') === 'true';
+
   // Start game on mount - 타입 검증 추가
   useEffect(() => {
     if (difficulty && DIFFICULTY_CONFIG[difficulty] && !gameState) {
-      startGame(difficulty);
+      // 일일 챌린지인 경우 시드 사용
+      const seed = isDaily ? generateDailySeed() : undefined;
+      startGame(difficulty, undefined, seed);
     }
-  }, [difficulty, gameState, startGame]);
+  }, [difficulty, gameState, startGame, isDaily]);
 
   // Focus input on mount and after each answer
   useEffect(() => {
@@ -55,10 +62,11 @@ export function GamePage() {
           difficulty: gameState.difficulty,
           elapsedTime,
           operation: gameState.operation,
+          isDaily,
         },
       });
     }
-  }, [gameState?.isComplete, gameState?.difficulty, gameState?.operation, elapsedTime, navigate]);
+  }, [gameState?.isComplete, gameState?.difficulty, gameState?.operation, elapsedTime, navigate, isDaily]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

@@ -46,7 +46,7 @@ describe('DifficultySelectPage', () => {
   describe('렌더링', () => {
     it('페이지 타이틀이 표시되어야 한다', () => {
       renderPage();
-      expect(screen.getByRole('heading', { name: '연산 타임어택' })).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: '구구단 챌린지' })).toBeInTheDocument();
     });
 
     it('부제목이 표시되어야 한다', () => {
