@@ -26,7 +26,7 @@ interface UseMathGameReturn {
   currentIndex: number;
   totalProblems: number;
   isNewRecord: boolean;
-  startGame: (difficulty: DifficultyType, operation?: OperationType) => void;
+  startGame: (difficulty: DifficultyType, operation?: OperationType, seed?: number) => void;
   submitAnswer: (answer: number) => boolean;
   resetGame: () => void;
   saveGameResult: () => Promise<void>;
@@ -61,8 +61,12 @@ export function useMathGame(): UseMathGameReturn {
   }, [isPlaying, gameState?.startTime]);
 
 
-  const startGame = useCallback((difficulty: DifficultyType, operation: OperationType = Operation.MULTIPLICATION) => {
-    const problems = generateProblems(difficulty, operation);
+  const startGame = useCallback((
+    difficulty: DifficultyType,
+    operation: OperationType = Operation.MULTIPLICATION,
+    seed?: number
+  ) => {
+    const problems = generateProblems(difficulty, operation, undefined, seed);
     let state = createGameState(difficulty, problems, operation);
     state = startGameEngine(state);
     setGameState(state);

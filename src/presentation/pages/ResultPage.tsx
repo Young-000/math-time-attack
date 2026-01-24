@@ -8,11 +8,14 @@ import { DIFFICULTY_CONFIG, Operation, type DifficultyType, type OperationType }
 import { saveRecord, isNewRecord, getBestRecord, getMyRankInfo } from '@data/recordService';
 import { getCurrentUserId } from '@infrastructure/rankingService';
 import { formatTime } from '@lib/utils';
+import { ShareButton } from '@presentation/components';
+import { saveDailyChallengeCompletion } from '@domain/services/dailyChallengeService';
 
 interface LocationState {
   difficulty: DifficultyType;
   elapsedTime: number;
   operation?: OperationType;
+  isDaily?: boolean;
 }
 
 export function ResultPage() {
@@ -38,7 +41,7 @@ export function ResultPage() {
     }
     hasProcessedRef.current = true;
 
-    const { difficulty, elapsedTime, operation = Operation.MULTIPLICATION } = state;
+    const { difficulty, elapsedTime, operation = Operation.MULTIPLICATION, isDaily = false } = state;
 
     // Save record and fetch rank
     const processResult = async () => {
@@ -62,6 +65,11 @@ export function ResultPage() {
 
         // 로컬 + 서버에 기록 저장
         await saveRecord(difficulty, elapsedTime, operation, userId);
+
+        // 일일 챌린지 완료 기록 저장
+        if (isDaily) {
+          saveDailyChallengeCompletion(difficulty, elapsedTime);
+        }
 
         // 랭킹 정보 조회
         const rankInfo = await getMyRankInfo(userId, difficulty, operation);
@@ -134,6 +142,13 @@ export function ResultPage() {
         </div>
 
         <div className="result-actions">
+          <ShareButton
+            difficulty={difficulty}
+            time={elapsedTime}
+            operation={operation}
+            rank={myRank}
+            totalPlayers={totalPlayers}
+          />
           <button className="action-btn primary" onClick={handleRetry}>
             다시 하기
           </button>

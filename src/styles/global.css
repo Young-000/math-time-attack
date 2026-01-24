@@ -1057,3 +1057,259 @@ body {
   font-size: 12px;
   opacity: 0.6;
 }
+
+/* =============================================
+   Share Button & Toast Styles
+   ============================================= */
+
+/* Share Button - 초록색 강조로 바이럴 유도 */
+.action-btn.share {
+  background: linear-gradient(135deg, #20c997 0%, #12b886 100%);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(32, 201, 151, 0.3);
+}
+
+.action-btn.share:hover {
+  background: linear-gradient(135deg, #12b886 0%, #0ca678 100%);
+  box-shadow: 0 6px 16px rgba(32, 201, 151, 0.4);
+  transform: translateY(-2px);
+}
+
+.action-btn.share:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(32, 201, 151, 0.3);
+}
+
+.action-btn.share:disabled {
+  background: #adb5bd;
+  box-shadow: none;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Toast Notification */
+.toast {
+  position: fixed;
+  bottom: 100px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(25, 31, 40, 0.95);
+  color: #fff;
+  padding: 12px 24px;
+  border-radius: 24px;
+  font-size: 14px;
+  font-weight: 500;
+  z-index: 1000;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  white-space: nowrap;
+}
+
+.toast-enter {
+  animation: toastEnter 0.3s ease-out forwards;
+}
+
+.toast-exit {
+  animation: toastExit 0.3s ease-in forwards;
+}
+
+@keyframes toastEnter {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+@keyframes toastExit {
+  from {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(-50%) translateY(20px);
+  }
+}
+
+/* =============================================
+   Daily Challenge Banner Styles
+   ============================================= */
+
+.daily-challenge-banner {
+  background: linear-gradient(135deg, #fff9e6 0%, #fff3cc 100%);
+  border: 2px solid #ffd43b;
+  border-radius: 16px;
+  padding: 16px;
+  margin: 0 16px 16px;
+  text-align: center;
+}
+
+.daily-challenge-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.daily-challenge-icon {
+  font-size: 24px;
+  animation: flame 1s ease-in-out infinite;
+}
+
+@keyframes flame {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+.daily-challenge-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #191f28;
+}
+
+.daily-challenge-badge {
+  background: #20c997;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+.daily-challenge-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+
+.daily-challenge-difficulty {
+  font-size: 14px;
+  font-weight: 600;
+  color: #495057;
+}
+
+.daily-challenge-timer {
+  font-size: 13px;
+  color: #868e96;
+}
+
+.daily-challenge-record {
+  font-size: 14px;
+  font-weight: 600;
+  color: #20c997;
+}
+
+.daily-challenge-btn {
+  width: 100%;
+  height: 44px;
+  background: linear-gradient(135deg, #ffd43b 0%, #fab005 100%);
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #191f28;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.daily-challenge-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #fab005 0%, #f59f00 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(250, 176, 5, 0.3);
+}
+
+.daily-challenge-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.daily-challenge-btn:disabled {
+  background: #dee2e6;
+  color: #868e96;
+  cursor: not-allowed;
+}
+
+/* =============================================
+   Google AdSense Styles
+   ============================================= */
+
+/* 배너 광고 컨테이너 */
+.ad-banner-container {
+  width: 100%;
+  max-width: 728px;
+  margin: 16px auto;
+  text-align: center;
+  min-height: 90px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* 전면 광고 오버레이 */
+.ad-interstitial-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.ad-interstitial-container {
+  background: #fff;
+  border-radius: 16px;
+  overflow: hidden;
+  max-width: 340px;
+  width: 90%;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.ad-interstitial-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: #f8f9fa;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.ad-interstitial-label {
+  font-size: 12px;
+  color: #868e96;
+  font-weight: 500;
+}
+
+.ad-interstitial-skip {
+  background: none;
+  border: none;
+  font-size: 13px;
+  color: #3182f6;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.ad-interstitial-skip:hover:not(:disabled) {
+  background: rgba(49, 130, 246, 0.1);
+}
+
+.ad-interstitial-skip:disabled {
+  color: #adb5bd;
+  cursor: default;
+}
+
+.ad-interstitial-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  min-height: 280px;
+  background: #fff;
+}

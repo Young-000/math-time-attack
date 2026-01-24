@@ -1,0 +1,53 @@
+<svg width="1200" height="630" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#4A9DFF;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#3182F6;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="btnGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#20c997;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#12b886;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bgGradient)"/>
+
+  <!-- Decorative circles -->
+  <circle cx="100" cy="100" r="150" fill="rgba(255,255,255,0.1)"/>
+  <circle cx="1100" cy="530" r="200" fill="rgba(255,255,255,0.1)"/>
+  <circle cx="1000" cy="100" r="80" fill="rgba(255,255,255,0.05)"/>
+
+  <!-- Main title -->
+  <text x="600" y="220" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="72" font-weight="700" fill="#FFFFFF">
+    구구단 챌린지
+  </text>
+
+  <!-- Math equation -->
+  <text x="600" y="340" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="96" font-weight="300" fill="rgba(255,255,255,0.9)">
+    7 × 8 = ?
+  </text>
+
+  <!-- Subtitle -->
+  <text x="600" y="420" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="32" font-weight="400" fill="rgba(255,255,255,0.8)">
+    5문제를 가장 빠르게 풀어보세요!
+  </text>
+
+  <!-- CTA Button -->
+  <rect x="450" y="470" width="300" height="60" rx="30" fill="url(#btnGradient)"/>
+  <text x="600" y="510" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="24" font-weight="600" fill="#FFFFFF">
+    🔥 도전하기
+  </text>
+
+  <!-- Timer icon -->
+  <g transform="translate(150, 450)">
+    <circle cx="40" cy="40" r="35" fill="rgba(255,255,255,0.2)" stroke="rgba(255,255,255,0.5)" stroke-width="3"/>
+    <line x1="40" y1="40" x2="40" y2="20" stroke="white" stroke-width="3" stroke-linecap="round"/>
+    <line x1="40" y1="40" x2="55" y2="45" stroke="white" stroke-width="2" stroke-linecap="round"/>
+  </g>
+
+  <!-- Trophy icon -->
+  <g transform="translate(980, 450)">
+    <path d="M40 10 L50 10 L50 20 C55 20 60 25 60 30 L60 35 C60 40 55 45 50 45 L50 50 L55 60 L25 60 L30 50 L30 45 C25 45 20 40 20 35 L20 30 C20 25 25 20 30 20 L30 10 L40 10 Z" fill="rgba(255,255,255,0.9)"/>
+  </g>
+</svg>
