@@ -5,7 +5,7 @@ export default defineConfig({
   brand: {
     displayName: '구구단 챌린지',
     primaryColor: '#3182F6',
-    icon: 'https://math-time-attack.vercel.app/app-icon.svg',
+    icon: 'https://math-time-attack.vercel.app/app-icon-512.png',
   },
   web: {
     host: 'localhost',

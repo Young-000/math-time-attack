@@ -1,0 +1,30 @@
+{
+  "name": "구구단 챌린지",
+  "short_name": "구구단",
+  "description": "구구단부터 99단까지! 나의 곱셈 실력을 테스트하고 친구와 경쟁해보세요.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#3182F6",
+  "theme_color": "#3182F6",
+  "orientation": "portrait",
+  "categories": ["education", "games"],
+  "lang": "ko-KR",
+  "icons": [
+    {
+      "src": "/app-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/app-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    }
+  ]
+}
