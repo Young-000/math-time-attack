@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- 라이트 배경용 로고 (어두운 색상) -->
+  <defs>
+    <linearGradient id="timerGradientLight" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#FF922B"/>
+      <stop offset="100%" style="stop-color:#E8590C"/>
+    </linearGradient>
+    <linearGradient id="textGradientLight" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3182F6"/>
+      <stop offset="100%" style="stop-color:#1864D0"/>
+    </linearGradient>
+  </defs>
+
+  <!-- 투명 배경 -->
+  <rect width="512" height="512" fill="transparent"/>
+
+  <!-- 타이머/스톱워치 아이콘 (상단) -->
+  <circle cx="256" cy="140" r="50" fill="none" stroke="url(#timerGradientLight)" stroke-width="8"/>
+  <line x1="256" y1="140" x2="256" y2="110" stroke="url(#timerGradientLight)" stroke-width="6" stroke-linecap="round"/>
+  <line x1="256" y1="140" x2="276" y2="130" stroke="url(#timerGradientLight)" stroke-width="6" stroke-linecap="round"/>
+  <!-- 타이머 버튼 -->
+  <rect x="248" y="82" width="16" height="12" rx="3" fill="url(#timerGradientLight)"/>
+
+  <!-- 곱셈 수식 (토스 블루) -->
+  <text x="256" y="290" font-size="80" font-weight="bold" fill="#3182F6" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif">7 × 8</text>
+
+  <!-- 등호와 물음표 -->
+  <text x="256" y="380" font-size="70" font-weight="bold" fill="rgba(49,130,246,0.8)" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif">= ?</text>
+
+  <!-- 하단 장식 라인 -->
+  <rect x="120" y="420" width="272" height="6" rx="3" fill="rgba(49,130,246,0.2)"/>
+  <rect x="120" y="420" width="180" height="6" rx="3" fill="rgba(49,130,246,0.5)"/>
+</svg>
