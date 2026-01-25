@@ -1,11 +1,11 @@
 import { defineConfig } from '@apps-in-toss/web-framework/config';
 
 export default defineConfig({
-  appName: 'math-time-attack',
+  appName: 'gugudan-challenge',
   brand: {
     displayName: '구구단 챌린지',
     primaryColor: '#3182F6',
-    icon: 'https://math-time-attack.vercel.app/app-icon-512.png',
+    icon: 'https://math-time-attack.vercel.app/logo-light-600.png',
   },
   web: {
     host: 'localhost',

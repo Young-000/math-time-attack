@@ -1,33 +1,46 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <!-- 라이트 배경용 로고 (어두운 색상) -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600">
   <defs>
-    <linearGradient id="timerGradientLight" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" style="stop-color:#FF922B"/>
-      <stop offset="100%" style="stop-color:#E8590C"/>
-    </linearGradient>
-    <linearGradient id="textGradientLight" x1="0%" y1="0%" x2="100%" y2="100%">
+    <linearGradient id="brainGradientL" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" style="stop-color:#3182F6"/>
       <stop offset="100%" style="stop-color:#1864D0"/>
     </linearGradient>
+    <linearGradient id="boltGradientL" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FF922B"/>
+      <stop offset="100%" style="stop-color:#F76707"/>
+    </linearGradient>
+    <filter id="glowL" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="10" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
   </defs>
 
-  <!-- 투명 배경 -->
-  <rect width="512" height="512" fill="transparent"/>
+  <rect width="600" height="600" fill="#FFFFFF"/>
 
-  <!-- 타이머/스톱워치 아이콘 (상단) -->
-  <circle cx="256" cy="140" r="50" fill="none" stroke="url(#timerGradientLight)" stroke-width="8"/>
-  <line x1="256" y1="140" x2="256" y2="110" stroke="url(#timerGradientLight)" stroke-width="6" stroke-linecap="round"/>
-  <line x1="256" y1="140" x2="276" y2="130" stroke="url(#timerGradientLight)" stroke-width="6" stroke-linecap="round"/>
-  <!-- 타이머 버튼 -->
-  <rect x="248" y="82" width="16" height="12" rx="3" fill="url(#timerGradientLight)"/>
+  <!-- 두뇌 (중앙) -->
+  <g transform="translate(300, 300)" filter="url(#glowL)">
+    <ellipse cx="-55" cy="0" rx="95" ry="115" fill="url(#brainGradientL)" opacity="0.95"/>
+    <ellipse cx="-80" cy="-55" rx="42" ry="34" fill="url(#brainGradientL)"/>
+    <ellipse cx="-98" cy="15" rx="34" ry="42" fill="url(#brainGradientL)"/>
+    <ellipse cx="-78" cy="75" rx="48" ry="34" fill="url(#brainGradientL)"/>
 
-  <!-- 곱셈 수식 (토스 블루) -->
-  <text x="256" y="290" font-size="80" font-weight="bold" fill="#3182F6" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif">7 × 8</text>
+    <ellipse cx="55" cy="0" rx="95" ry="115" fill="url(#brainGradientL)" opacity="0.95"/>
+    <ellipse cx="80" cy="-55" rx="42" ry="34" fill="url(#brainGradientL)"/>
+    <ellipse cx="98" cy="15" rx="34" ry="42" fill="url(#brainGradientL)"/>
+    <ellipse cx="78" cy="75" rx="48" ry="34" fill="url(#brainGradientL)"/>
 
-  <!-- 등호와 물음표 -->
-  <text x="256" y="380" font-size="70" font-weight="bold" fill="rgba(49,130,246,0.8)" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif">= ?</text>
+    <ellipse cx="0" cy="25" rx="22" ry="65" fill="url(#brainGradientL)" opacity="0.85"/>
+  </g>
 
-  <!-- 하단 장식 라인 -->
-  <rect x="120" y="420" width="272" height="6" rx="3" fill="rgba(49,130,246,0.2)"/>
-  <rect x="120" y="420" width="180" height="6" rx="3" fill="rgba(49,130,246,0.5)"/>
+  <!-- 번개 왼쪽 -->
+  <g transform="translate(55, 115) scale(1.5)" filter="url(#glowL)">
+    <polygon points="50,0 18,60 36,60 0,110 62,48 40,48 68,0" fill="url(#boltGradientL)"/>
+  </g>
+
+  <!-- 번개 오른쪽 -->
+  <g transform="translate(443, 115) scale(1.5)" filter="url(#glowL)">
+    <polygon points="18,0 50,60 32,60 68,110 6,48 28,48 0,0" fill="url(#boltGradientL)"/>
+  </g>
 </svg>
