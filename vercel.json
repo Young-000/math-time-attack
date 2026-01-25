@@ -1,6 +1,16 @@
 {
   "routes": [
     {
+      "src": "/terms.html",
+      "dest": "/terms.html",
+      "status": 200
+    },
+    {
+      "src": "/privacy.html",
+      "dest": "/privacy.html",
+      "status": 200
+    },
+    {
       "handle": "filesystem"
     },
     {
