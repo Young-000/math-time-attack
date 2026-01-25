@@ -140,32 +140,35 @@ export function GamePage() {
         </div>
 
         <form onSubmit={handleSubmit} className="answer-form" role="form">
+          <div className="mobile-timer">{formatTime(elapsedTime)}</div>
           <label htmlFor="answer-input" className="visually-hidden">
             {currentProblem.firstNum} {OPERATION_SYMBOLS[currentProblem.operator]} {currentProblem.secondNum}의 정답을 입력하세요
           </label>
-          <input
-            id="answer-input"
-            ref={inputRef}
-            type="number"
-            inputMode="numeric"
-            pattern="[0-9]*"
-            className={`answer-input ${isWrong ? 'wrong' : ''}`}
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            placeholder="정답 입력"
-            aria-label={`${currentProblem.firstNum} ${OPERATION_SYMBOLS[currentProblem.operator]} ${currentProblem.secondNum} = ?`}
-            aria-invalid={isWrong}
-            aria-describedby={isWrong ? 'error-message' : undefined}
-            autoComplete="off"
-          />
-          {isWrong && (
-            <span id="error-message" className="visually-hidden" role="alert">
-              오답입니다. 다시 시도해주세요.
-            </span>
-          )}
-          <button type="submit" className="submit-btn" aria-label="정답 확인">
-            확인
-          </button>
+          <div className="input-row">
+            <input
+              id="answer-input"
+              ref={inputRef}
+              type="number"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              className={`answer-input ${isWrong ? 'wrong' : ''}`}
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              placeholder="정답 입력"
+              aria-label={`${currentProblem.firstNum} ${OPERATION_SYMBOLS[currentProblem.operator]} ${currentProblem.secondNum} = ?`}
+              aria-invalid={isWrong}
+              aria-describedby={isWrong ? 'error-message' : undefined}
+              autoComplete="off"
+            />
+            {isWrong && (
+              <span id="error-message" className="visually-hidden" role="alert">
+                오답입니다. 다시 시도해주세요.
+              </span>
+            )}
+            <button type="submit" className="submit-btn" aria-label="정답 확인">
+              확인
+            </button>
+          </div>
         </form>
       </main>
     </div>

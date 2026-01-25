@@ -1417,68 +1417,81 @@ body {
    Mobile Keyboard Responsive
    ============================================= */
 
-/* 모바일에서 키보드 올라올 때 타이머 고정 */
+/* 모바일 타이머 (기본: 숨김) */
+.mobile-timer {
+  display: none;
+}
+
+/* 모바일에서 키보드 올라올 때 타이머 + 입력창 함께 고정 */
 @media (max-width: 480px) {
   .game-page {
-    position: fixed;
-    inset: 0;
-    overflow: hidden;
+    padding-bottom: 160px;
   }
 
   .game-header {
-    position: sticky;
-    top: 0;
-    background: #fff;
-    z-index: 10;
-    padding: 16px 20px;
-    margin-bottom: 0;
-    border-bottom: 1px solid #f2f4f6;
+    padding: 12px 20px;
+    margin-bottom: 20px;
   }
 
-  .game-timer {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    background: rgba(255, 255, 255, 0.95);
-    padding: 8px 16px;
-    border-radius: 20px;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
-    z-index: 100;
-    font-size: 20px;
+  /* 상단 헤더의 타이머는 숨김 (하단에서 보여줌) */
+  .game-header .game-timer {
+    display: none;
   }
 
-  .game-content {
-    padding-top: 20px;
-    padding-bottom: env(safe-area-inset-bottom, 20px);
-  }
-
+  /* 하단 고정 영역: 타이머 + 입력창 */
   .answer-form {
     position: fixed;
     bottom: 0;
     left: 0;
     right: 0;
     padding: 12px 20px;
-    padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+    padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
     background: #fff;
-    border-top: 1px solid #f2f4f6;
-    box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.05);
-    z-index: 50;
+    border-top: 1px solid #e5e8eb;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08);
+    z-index: 100;
     max-width: none;
     display: flex;
-    justify-content: center;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+
+  /* 모바일 타이머 표시 */
+  .mobile-timer {
+    display: block;
+    font-size: 32px;
+    font-weight: 700;
+    color: #3182f6;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.5px;
+  }
+
+  .input-row {
+    display: flex;
+    width: 100%;
+    max-width: 320px;
     gap: 12px;
   }
 
-  .answer-input {
+  .input-row .answer-input {
     flex: 1;
-    max-width: 200px;
+    height: 52px;
   }
 
-  .submit-btn {
+  .input-row .submit-btn {
     flex-shrink: 0;
+    height: 52px;
   }
 
   .problem-card {
-    margin-bottom: 120px;
+    margin-bottom: 40px;
+  }
+}
+
+/* 데스크탑에서 input-row 스타일 */
+@media (min-width: 481px) {
+  .input-row {
+    display: contents;
   }
 }
