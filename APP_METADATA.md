@@ -116,8 +116,8 @@ icon: 'https://math-time-attack.vercel.app/logo-light-600.png'
 
 | 약관 | URL | 파일 |
 |------|-----|------|
-| **서비스 이용약관** | `https://math-time-attack.vercel.app/terms.html` | `public/terms.html` |
-| **개인정보처리방침** | `https://math-time-attack.vercel.app/privacy.html` | `public/privacy.html` |
+| **서비스 이용약관** | `https://math-time-attack.vercel.app/legal/terms.html` | `public/legal/terms.html` |
+| **개인정보처리방침** | `https://math-time-attack.vercel.app/legal/privacy.html` | `public/legal/privacy.html` |
 
 ---
 
