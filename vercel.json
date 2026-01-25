@@ -1,8 +1,7 @@
 {
+  "trailingSlash": false,
   "rewrites": [
-    {
-      "source": "/((?!legal).*)",
-      "destination": "/index.html"
-    }
+    { "source": "/legal/(.*)", "destination": "/legal/$1" },
+    { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
