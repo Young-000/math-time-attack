@@ -5,11 +5,17 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import type { DifficultyType, RankingItem } from '@domain/entities';
-import { DIFFICULTY_CONFIG } from '@domain/entities';
-import { getTopRankings } from '@data/recordService';
+import { DIFFICULTY_CONFIG, Operation } from '@domain/entities';
+import { getTopRankings, getMyRankInfo } from '@data/recordService';
 import { getCurrentUserId } from '@infrastructure/rankingService';
 import { RankingTab, RankingList, NicknameModal } from '@presentation/components';
 import { useNickname } from '@presentation/hooks/useNickname';
+
+interface MyRankData {
+  easy: number | null;
+  medium: number | null;
+  hard: number | null;
+}
 
 export function RankingPage() {
   const navigate = useNavigate();
@@ -22,12 +28,43 @@ export function RankingPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [myOdlId, setMyOdlId] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [myRanks, setMyRanks] = useState<MyRankData>({ easy: null, medium: null, hard: null });
+  const [isLoadingMyRanks, setIsLoadingMyRanks] = useState(true);
 
   const { nickname, updateUserNickname } = useNickname();
 
-  // 사용자 ID 조회
+  // 사용자 ID 조회 및 모든 난이도 순위 로드
   useEffect(() => {
-    getCurrentUserId().then(setMyOdlId);
+    const loadUserAndRanks = async () => {
+      const userId = await getCurrentUserId();
+      setMyOdlId(userId);
+
+      if (userId) {
+        setIsLoadingMyRanks(true);
+        try {
+          // 세 난이도 순위를 병렬로 조회
+          const [easyRank, mediumRank, hardRank] = await Promise.all([
+            getMyRankInfo(userId, 'easy', Operation.MULTIPLICATION),
+            getMyRankInfo(userId, 'medium', Operation.MULTIPLICATION),
+            getMyRankInfo(userId, 'hard', Operation.MULTIPLICATION),
+          ]);
+
+          setMyRanks({
+            easy: easyRank.rank,
+            medium: mediumRank.rank,
+            hard: hardRank.rank,
+          });
+        } catch (err) {
+          console.error('Failed to load my ranks:', err);
+        } finally {
+          setIsLoadingMyRanks(false);
+        }
+      } else {
+        setIsLoadingMyRanks(false);
+      }
+    };
+
+    loadUserAndRanks();
   }, []);
 
   // 랭킹 데이터 로드
@@ -110,6 +147,28 @@ export function RankingPage() {
         >
           수정
         </button>
+      </div>
+
+      {/* 내 순위 요약 - 초급/중급/고급 */}
+      <div className="my-rank-summary" aria-label="내 순위 요약">
+        {(['easy', 'medium', 'hard'] as const).map((diff) => (
+          <button
+            key={diff}
+            className={`my-rank-item ${selectedDifficulty === diff ? 'active' : ''}`}
+            data-difficulty={diff}
+            onClick={() => handleDifficultyChange(diff)}
+            aria-label={`${DIFFICULTY_CONFIG[diff].label} 내 순위`}
+          >
+            <span className="my-rank-difficulty">{DIFFICULTY_CONFIG[diff].label}</span>
+            {isLoadingMyRanks ? (
+              <span className="my-rank-loading" aria-label="로딩 중" />
+            ) : myRanks[diff] ? (
+              <span className="my-rank-value">{myRanks[diff]}위</span>
+            ) : (
+              <span className="my-rank-value no-rank">-</span>
+            )}
+          </button>
+        ))}
       </div>
 
       <RankingTab

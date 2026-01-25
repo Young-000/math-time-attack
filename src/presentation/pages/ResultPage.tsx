@@ -130,13 +130,18 @@ export function ResultPage() {
           )}
 
           <div className="current-rank">
-            <span className="rank-label">현재 순위</span>
+            <span className="rank-label">내 순위</span>
             {isLoadingRank ? (
               <span className="rank-value loading">로딩 중...</span>
             ) : myRank ? (
-              <span className="rank-value">{myRank}위 / {totalPlayers}명</span>
+              <div className="rank-value">
+                <span className="rank-number">{myRank}위</span>
+                {totalPlayers > 0 && (
+                  <span className="rank-total">전체 {totalPlayers}명 중</span>
+                )}
+              </div>
             ) : (
-              <span className="rank-value none">순위 없음</span>
+              <span className="rank-value none">첫 도전!</span>
             )}
           </div>
         </div>
