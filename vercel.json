@@ -1,16 +1,11 @@
 {
-  "rewrites": [
+  "routes": [
     {
-      "source": "/terms.html",
-      "destination": "/terms.html"
+      "handle": "filesystem"
     },
     {
-      "source": "/privacy.html",
-      "destination": "/privacy.html"
-    },
-    {
-      "source": "/(.*)",
-      "destination": "/index.html"
+      "src": "/(.*)",
+      "dest": "/index.html"
     }
   ]
 }
