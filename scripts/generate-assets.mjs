@@ -102,20 +102,16 @@ async function main() {
   const ogSvg = join(publicDir, 'og-image.svg');
   await svgToPng(ogSvg, join(publicDir, 'og-image.png'), 1200, 630);
 
-  // 화이트/다크 로고 생성 (앱인토스용)
-  const logoSizes = [512, 256, 128];
+  // 앱인토스 공식 로고 (600x600px, 각진 정방형, 배경 필수)
+  // https://developers-apps-in-toss.toss.im/design/miniapp-branding-guide.md
 
-  // 다크 배경용 로고 (흰색 텍스트)
+  // 다크 배경용 로고 (흰색 텍스트) - 600px
   const logoDarkSvg = join(publicDir, 'logo-dark.svg');
-  for (const size of logoSizes) {
-    await svgToPngWithBg(logoDarkSvg, join(publicDir, `logo-dark-${size}.png`), size, size, '#191F28');
-  }
+  await svgToPngWithBg(logoDarkSvg, join(publicDir, 'logo-dark-600.png'), 600, 600, '#191F28');
 
-  // 라이트 배경용 로고 (파란색 텍스트)
+  // 라이트 배경용 로고 (파란색 텍스트) - 600px
   const logoLightSvg = join(publicDir, 'logo-light.svg');
-  for (const size of logoSizes) {
-    await svgToPngWithBg(logoLightSvg, join(publicDir, `logo-light-${size}.png`), size, size, '#FFFFFF');
-  }
+  await svgToPngWithBg(logoLightSvg, join(publicDir, 'logo-light-600.png'), 600, 600, '#FFFFFF');
 
   console.log('\n✅ All assets generated successfully!');
 }
