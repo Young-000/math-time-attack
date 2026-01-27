@@ -47,4 +47,3 @@ playwright/.cache/
 
 # AIT builds
 builds/
-*.ait
