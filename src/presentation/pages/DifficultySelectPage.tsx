@@ -5,7 +5,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { DIFFICULTY_CONFIG, type DifficultyType, Operation } from '@domain/entities';
-import { getBestRecord, getMyRankInfo, isOnlineMode } from '@data/recordService';
+import { getBestRecord, getMyRankInfo, getTimeAttackRankInfo, isOnlineMode } from '@data/recordService';
 import {
   isDailyChallengeCompleted,
   getDailyChallengeCompletion,
@@ -14,18 +14,29 @@ import {
   getDailyChallengeDifficulty,
 } from '@domain/services/dailyChallengeService';
 import { formatTime } from '@lib/utils';
-
-interface RankingPreview {
-  myRank: number | null;
-  totalPlayers: number;
-}
+import { getCurrentUserId } from '@infrastructure/rankingService';
+import { getTimeAttackBestScore, TIME_ATTACK_DURATION_BY_DIFFICULTY } from '@presentation/hooks/useTimeAttack';
+import { StreakBanner } from '@presentation/components';
 
 const difficulties: DifficultyType[] = ['easy', 'medium', 'hard'];
 
+type GameMode = 'classic' | 'timeattack';
+
 export function DifficultySelectPage() {
   const navigate = useNavigate();
-  const [rankingPreview, setRankingPreview] = useState<RankingPreview | null>(null);
+  const [activeTab, setActiveTab] = useState<GameMode>('classic');
+  const [myRanks, setMyRanks] = useState<Record<DifficultyType, number | null>>({
+    easy: null,
+    medium: null,
+    hard: null,
+  });
+  const [myTimeAttackRanks, setMyTimeAttackRanks] = useState<Record<DifficultyType, number | null>>({
+    easy: null,
+    medium: null,
+    hard: null,
+  });
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingTimeAttack, setIsLoadingTimeAttack] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState('');
 
   const online = isOnlineMode();
@@ -45,38 +56,33 @@ export function DifficultySelectPage() {
     return () => clearInterval(interval);
   }, []);
 
-  // 랭킹 프리뷰 데이터 로드
+  // 내 순위 데이터 로드 (모든 난이도)
   useEffect(() => {
     let cancelled = false;
 
-    const loadRankingPreview = async () => {
-      if (!online) {
-        setRankingPreview({ myRank: null, totalPlayers: 0 });
-        return;
-      }
+    const loadMyRanks = async () => {
+      if (!online) return;
 
       setIsLoading(true);
       try {
-        // 내 랭킹 조회 (odl_id가 있다면)
-        const odlId = localStorage.getItem('odl_id') || localStorage.getItem('dev_odl_id') || '';
-        let myRank: number | null = null;
-        let totalPlayers = 0;
+        const userId = await getCurrentUserId();
+        if (!userId) return;
 
-        if (odlId) {
-          // 기본 난이도(easy)로 내 랭킹 조회
-          const rankInfo = await getMyRankInfo(odlId, 'easy', Operation.MULTIPLICATION);
-          myRank = rankInfo.rank;
-          totalPlayers = rankInfo.totalPlayers;
-        }
+        const [easyInfo, mediumInfo, hardInfo] = await Promise.all([
+          getMyRankInfo(userId, 'easy', Operation.MULTIPLICATION),
+          getMyRankInfo(userId, 'medium', Operation.MULTIPLICATION),
+          getMyRankInfo(userId, 'hard', Operation.MULTIPLICATION),
+        ]);
 
         if (!cancelled) {
-          setRankingPreview({ myRank, totalPlayers });
+          setMyRanks({
+            easy: easyInfo.rank,
+            medium: mediumInfo.rank,
+            hard: hardInfo.rank,
+          });
         }
       } catch (error) {
-        console.error('Failed to load ranking preview:', error);
-        if (!cancelled) {
-          setRankingPreview({ myRank: null, totalPlayers: 0 });
-        }
+        console.error('Failed to load my ranks:', error);
       } finally {
         if (!cancelled) {
           setIsLoading(false);
@@ -84,7 +90,48 @@ export function DifficultySelectPage() {
       }
     };
 
-    loadRankingPreview();
+    loadMyRanks();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [online]);
+
+  // 타임어택 내 순위 데이터 로드
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadTimeAttackRanks = async () => {
+      if (!online) return;
+
+      setIsLoadingTimeAttack(true);
+      try {
+        const userId = await getCurrentUserId();
+        if (!userId) return;
+
+        const [easyInfo, mediumInfo, hardInfo] = await Promise.all([
+          getTimeAttackRankInfo(userId, 'easy', Operation.MULTIPLICATION),
+          getTimeAttackRankInfo(userId, 'medium', Operation.MULTIPLICATION),
+          getTimeAttackRankInfo(userId, 'hard', Operation.MULTIPLICATION),
+        ]);
+
+        if (!cancelled) {
+          setMyTimeAttackRanks({
+            easy: easyInfo.rank,
+            medium: mediumInfo.rank,
+            hard: hardInfo.rank,
+          });
+        }
+      } catch (error) {
+        console.error('Failed to load time attack ranks:', error);
+      } finally {
+        if (!cancelled) {
+          setIsLoadingTimeAttack(false);
+        }
+      }
+    };
+
+    loadTimeAttackRanks();
 
     return () => {
       cancelled = true;
@@ -102,6 +149,158 @@ export function DifficultySelectPage() {
   const handleRankingClick = useCallback(() => {
     navigate('/ranking');
   }, [navigate]);
+
+  const handleTimeAttack = useCallback((difficulty: DifficultyType) => {
+    navigate(`/time-attack/${difficulty}`);
+  }, [navigate]);
+
+  // 일일 챌린지 배너 렌더링
+  const renderDailyChallenge = () => (
+    <div className={`daily-challenge-banner ${dailyCompleted ? 'completed' : ''}`}>
+      <div className="daily-challenge-header">
+        <span className="daily-challenge-icon">🔥</span>
+        <span className="daily-challenge-title">오늘의 챌린지</span>
+        {dailyCompleted && (
+          <span className="daily-challenge-badge">✓ 완료</span>
+        )}
+      </div>
+      <div className="daily-challenge-info">
+        <span className="daily-challenge-difficulty">
+          {DIFFICULTY_CONFIG[dailyDifficulty].label} ({DIFFICULTY_CONFIG[dailyDifficulty].min}-{DIFFICULTY_CONFIG[dailyDifficulty].max}단)
+        </span>
+        {dailyCompleted && dailyCompletion ? (
+          <span className="daily-challenge-record">
+            기록: {formatTime(dailyCompletion.time)}
+          </span>
+        ) : (
+          <span className="daily-challenge-timer">
+            남은 시간: {timeRemaining}
+          </span>
+        )}
+      </div>
+      <button
+        className="daily-challenge-btn"
+        onClick={handleDailyChallenge}
+        disabled={dailyCompleted}
+      >
+        {dailyCompleted ? '내일 다시 도전하세요!' : '도전하기'}
+      </button>
+    </div>
+  );
+
+  // 5문제 모드 (클래식) 콘텐츠
+  const renderClassicContent = () => (
+    <>
+      {/* 오늘의 챌린지 - 미완료 시 상단에 표시 */}
+      {!dailyCompleted && renderDailyChallenge()}
+
+      <div className="difficulty-list">
+        {difficulties.map((difficulty) => {
+          const config = DIFFICULTY_CONFIG[difficulty];
+          const record = getBestRecord(difficulty);
+          const myRank = myRanks[difficulty];
+
+          return (
+            <button
+              key={difficulty}
+              className="difficulty-card"
+              onClick={() => handleSelect(difficulty)}
+              data-difficulty={difficulty}
+            >
+              <div className="difficulty-header">
+                <span className="difficulty-label">{config.label}</span>
+                <span className="difficulty-range">
+                  {config.min}-{config.max}단
+                </span>
+              </div>
+              <p className="difficulty-desc">{config.description}</p>
+              <div className="difficulty-stats">
+                <div className="difficulty-record">
+                  {record ? (
+                    <span className="record-time">
+                      🏆 최고 기록: {formatTime(record.time)}
+                    </span>
+                  ) : (
+                    <span className="record-none">기록 없음</span>
+                  )}
+                </div>
+                {online && (
+                  <div className="difficulty-rank">
+                    {isLoading ? (
+                      <span className="rank-loading">...</span>
+                    ) : myRank ? (
+                      <span className="rank-value">🏅 내 순위: {myRank}위</span>
+                    ) : (
+                      <span className="rank-none">순위 없음</span>
+                    )}
+                  </div>
+                )}
+              </div>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* 오늘의 챌린지 - 완료 시 하단에 표시 */}
+      {dailyCompleted && renderDailyChallenge()}
+    </>
+  );
+
+  // 타임어택 모드 콘텐츠
+  const renderTimeAttackContent = () => (
+    <div className="time-attack-content">
+      <p className="time-attack-desc">제한 시간 안에 최대한 많은 문제를 풀어보세요!</p>
+      <div className="difficulty-list">
+        {difficulties.map((difficulty) => {
+          const config = DIFFICULTY_CONFIG[difficulty];
+          const bestScore = getTimeAttackBestScore(difficulty);
+          const durationSec = TIME_ATTACK_DURATION_BY_DIFFICULTY[difficulty] / 1000;
+          const myRank = myTimeAttackRanks[difficulty];
+
+          return (
+            <button
+              key={`timeattack-${difficulty}`}
+              className="difficulty-card time-attack-card"
+              onClick={() => handleTimeAttack(difficulty)}
+              data-difficulty={difficulty}
+            >
+              <div className="difficulty-header">
+                <span className="difficulty-label">{config.label}</span>
+                <span className="difficulty-range time-attack-time">
+                  {durationSec}초
+                </span>
+              </div>
+              <p className="difficulty-desc">
+                {config.min}-{config.max}단 구구단
+              </p>
+              <div className="difficulty-stats">
+                <div className="difficulty-record">
+                  {bestScore !== null ? (
+                    <span className="record-time">
+                      🏆 최고 기록: {bestScore}문제
+                    </span>
+                  ) : (
+                    <span className="record-none">기록 없음</span>
+                  )}
+                </div>
+                {online && (
+                  <div className="difficulty-rank">
+                    {isLoadingTimeAttack ? (
+                      <span className="rank-loading">...</span>
+                    ) : myRank ? (
+                      <span className="rank-value">🏅 내 순위: {myRank}위</span>
+                    ) : (
+                      <span className="rank-none">순위 없음</span>
+                    )}
+                  </div>
+                )}
+              </div>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
 
   return (
     <div className="page">
@@ -122,94 +321,41 @@ export function DifficultySelectPage() {
           </button>
         </div>
         <h1 className="title">구구단 챌린지</h1>
-        <p className="subtitle">5문제를 가장 빠르게 풀어보세요!</p>
+        <p className="subtitle">
+          {activeTab === 'classic'
+            ? '5문제를 가장 빠르게 풀어보세요!'
+            : '제한 시간 안에 최대한 많이!'}
+        </p>
       </header>
 
-      {/* 오늘의 챌린지 배너 */}
-      <div className="daily-challenge-banner">
-        <div className="daily-challenge-header">
-          <span className="daily-challenge-icon">🔥</span>
-          <span className="daily-challenge-title">오늘의 챌린지</span>
-          {dailyCompleted && (
-            <span className="daily-challenge-badge">✓ 완료</span>
-          )}
-        </div>
-        <div className="daily-challenge-info">
-          <span className="daily-challenge-difficulty">
-            {DIFFICULTY_CONFIG[dailyDifficulty].label} ({DIFFICULTY_CONFIG[dailyDifficulty].min}-{DIFFICULTY_CONFIG[dailyDifficulty].max}단)
-          </span>
-          {dailyCompleted && dailyCompletion ? (
-            <span className="daily-challenge-record">
-              기록: {formatTime(dailyCompletion.time)}
-            </span>
-          ) : (
-            <span className="daily-challenge-timer">
-              남은 시간: {timeRemaining}
-            </span>
-          )}
-        </div>
+      {/* 게임 모드 탭 */}
+      <div className="game-mode-tabs" role="tablist">
         <button
-          className="daily-challenge-btn"
-          onClick={handleDailyChallenge}
-          disabled={dailyCompleted}
+          className={`game-mode-tab ${activeTab === 'classic' ? 'active' : ''}`}
+          onClick={() => setActiveTab('classic')}
+          role="tab"
+          aria-selected={activeTab === 'classic'}
         >
-          {dailyCompleted ? '내일 다시 도전하세요!' : '도전하기'}
+          <span className="tab-icon">🎯</span>
+          <span className="tab-label">5문제</span>
+        </button>
+        <button
+          className={`game-mode-tab ${activeTab === 'timeattack' ? 'active' : ''}`}
+          onClick={() => setActiveTab('timeattack')}
+          role="tab"
+          aria-selected={activeTab === 'timeattack'}
+        >
+          <span className="tab-icon">⚡</span>
+          <span className="tab-label">타임어택</span>
         </button>
       </div>
 
-      {/* 랭킹 프리뷰 - 간단한 한 줄 표시 */}
-      <button
-        className="ranking-preview-compact"
-        onClick={handleRankingClick}
-        aria-label="전체 랭킹 보기"
-      >
-        <span className="ranking-preview-icon">🏆</span>
-        <span className="ranking-preview-text">
-          {isLoading ? (
-            '랭킹 로딩 중...'
-          ) : rankingPreview?.myRank ? (
-            `내 순위: ${rankingPreview.myRank}등 / ${rankingPreview.totalPlayers}명`
-          ) : (
-            '랭킹 보기'
-          )}
-        </span>
-        <span className="ranking-preview-arrow">→</span>
-      </button>
-
       <main className="content">
-        <div className="difficulty-list">
-          {difficulties.map((difficulty) => {
-            const config = DIFFICULTY_CONFIG[difficulty];
-            const record = getBestRecord(difficulty);
-
-            return (
-              <button
-                key={difficulty}
-                className="difficulty-card"
-                onClick={() => handleSelect(difficulty)}
-                data-difficulty={difficulty}
-              >
-                <div className="difficulty-header">
-                  <span className="difficulty-label">{config.label}</span>
-                  <span className="difficulty-range">
-                    {config.min}-{config.max}단
-                  </span>
-                </div>
-                <p className="difficulty-desc">{config.description}</p>
-                <div className="difficulty-record">
-                  {record ? (
-                    <span className="record-time">
-                      최고 기록: {formatTime(record.time)}
-                    </span>
-                  ) : (
-                    <span className="record-none">기록 없음</span>
-                  )}
-                </div>
-              </button>
-            );
-          })}
-        </div>
+        {activeTab === 'classic' ? renderClassicContent() : renderTimeAttackContent()}
       </main>
+
+      {/* 연속 출석 배너 - 하단 */}
+      <StreakBanner />
     </div>
   );
 }

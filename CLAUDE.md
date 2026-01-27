@@ -4,6 +4,45 @@
 
 ---
 
+## 🚨 앱인토스 개발 필수 규칙
+
+> **이 프로젝트는 앱인토스(Apps-in-Toss) 미니앱입니다.**
+
+### 개발 시 반드시 먼저 확인할 것
+
+1. **TDS 문서 검색 우선**
+   - UI/UX 수정 전 `knowlege-skills:docs-search` 스킬로 TDS 문서 검색
+   - CSS로 직접 구현하기 전에 TDS 컴포넌트 존재 여부 확인
+
+2. **TDS 컴포넌트 사용 필수**
+   - `@toss/tds-mobile` 패키지의 컴포넌트 우선 사용
+   - 키보드 대응: `FixedBottomCTA` + `fixedAboveKeyboard` prop
+   - 입력 필드: `TextField` 컴포넌트
+   - 버튼: `Button`, `CTAButton` 컴포넌트
+
+3. **검색 쿼리 예시**
+   ```bash
+   # 키보드 위 고정
+   "BottomCTA fixedAboveKeyboard 키보드"
+
+   # 입력 필드
+   "TextField Input 텍스트 입력"
+
+   # 하단 고정 버튼
+   "FixedBottomCTA 하단 고정"
+   ```
+
+### TDS 주요 컴포넌트
+
+| 용도 | 컴포넌트 | import |
+|------|----------|--------|
+| 하단 고정 버튼 | `FixedBottomCTA` | `@toss/tds-mobile` |
+| 키보드 위 고정 | `fixedAboveKeyboard={true}` | prop |
+| 텍스트 입력 | `TextField` | `@toss/tds-mobile` |
+| 버튼 | `Button`, `CTAButton` | `@toss/tds-mobile` |
+
+---
+
 ## 진행상황 체크리스트
 
 | 영역 | 상태 | 배포 URL |

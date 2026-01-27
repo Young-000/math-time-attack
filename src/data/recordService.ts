@@ -573,3 +573,150 @@ export async function getTopRankings(
     return [];
   }
 }
+
+// ============================================
+// 타임어택 랭킹 함수
+// ============================================
+
+/**
+ * 타임어택 기록 타입
+ */
+export interface TimeAttackRankingItem {
+  rank: number;
+  odl_id: string;
+  nickname?: string;
+  score: number;
+  played_at?: string;
+}
+
+/**
+ * 타임어택 기록을 Supabase에 저장
+ */
+export async function saveTimeAttackRecordToServer(
+  odlId: string,
+  difficulty: DifficultyType,
+  score: number,
+  wrongCount: number,
+  operation: OperationType = Operation.MULTIPLICATION
+): Promise<boolean> {
+  const supabase = getSupabaseClient();
+  if (!supabase) {
+    console.warn('Supabase not configured, skipping server save');
+    return false;
+  }
+
+  try {
+    const { error } = await supabase
+      .schema('public')
+      .rpc('insert_time_attack_record', {
+        p_odl_id: odlId || 'anonymous',
+        p_difficulty: difficulty,
+        p_operation: operation,
+        p_score: score,
+        p_wrong_count: wrongCount,
+        p_played_at: new Date().toISOString(),
+      });
+
+    if (error) {
+      console.error('Failed to save time attack record:', error);
+      return false;
+    }
+
+    return true;
+  } catch (err) {
+    console.error('Error saving time attack record:', err);
+    return false;
+  }
+}
+
+/**
+ * 타임어택 랭킹 조회 (닉네임 포함)
+ */
+export async function getTimeAttackRankings(
+  difficulty: DifficultyType,
+  operation: OperationType = Operation.MULTIPLICATION,
+  limit: number = 100
+): Promise<TimeAttackRankingItem[]> {
+  const supabase = getSupabaseClient();
+  if (!supabase) {
+    console.warn('Supabase not configured, returning empty rankings');
+    return [];
+  }
+
+  try {
+    const { data, error } = await supabase
+      .schema('public')
+      .rpc('get_time_attack_rankings', {
+        p_difficulty: difficulty,
+        p_operation: operation,
+        p_limit: limit,
+      });
+
+    if (error) {
+      console.error('Failed to fetch time attack rankings:', error);
+      return [];
+    }
+
+    return (data || []).map((item: {
+      rank: number;
+      odl_id: string;
+      nickname: string | null;
+      best_score: number;
+      played_at: string;
+    }) => ({
+      rank: item.rank,
+      odl_id: item.odl_id,
+      nickname: item.nickname || undefined,
+      score: item.best_score,
+      played_at: item.played_at,
+    }));
+  } catch (err) {
+    console.error('Error fetching time attack rankings:', err);
+    return [];
+  }
+}
+
+/**
+ * 내 타임어택 순위 정보 조회
+ */
+export async function getTimeAttackRankInfo(
+  odlId: string,
+  difficulty: DifficultyType,
+  operation: OperationType = Operation.MULTIPLICATION
+): Promise<{ rank: number | null; bestScore: number | null; percentile: number | null; totalPlayers: number }> {
+  const supabase = getSupabaseClient();
+  if (!supabase || !odlId) {
+    return { rank: null, bestScore: null, percentile: null, totalPlayers: 0 };
+  }
+
+  try {
+    const { data, error } = await supabase
+      .schema('public')
+      .rpc('get_time_attack_rank_info', {
+        p_odl_id: odlId,
+        p_difficulty: difficulty,
+        p_operation: operation,
+      });
+
+    if (error) {
+      console.error('Failed to get time attack rank info:', error);
+      return { rank: null, bestScore: null, percentile: null, totalPlayers: 0 };
+    }
+
+    const result = Array.isArray(data) ? data[0] : data;
+
+    if (!result) {
+      return { rank: null, bestScore: null, percentile: null, totalPlayers: 0 };
+    }
+
+    return {
+      rank: result.my_rank,
+      bestScore: result.my_best_score,
+      percentile: result.my_percentile,
+      totalPlayers: result.total_players ?? 0,
+    };
+  } catch (err) {
+    console.error('Error getting time attack rank info:', err);
+    return { rank: null, bestScore: null, percentile: null, totalPlayers: 0 };
+  }
+}

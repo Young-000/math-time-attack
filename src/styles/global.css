@@ -31,8 +31,8 @@ body {
 /* Header */
 .header {
   text-align: center;
-  margin-bottom: 32px;
-  padding-top: 40px;
+  margin-bottom: 16px;
+  padding-top: 12px;
 }
 
 .title {
@@ -113,13 +113,34 @@ body {
   margin-bottom: 12px;
 }
 
+.difficulty-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 8px;
+}
+
 .difficulty-record {
   font-size: 14px;
+}
+
+.difficulty-rank {
+  font-size: 13px;
 }
 
 .record-time {
   color: #3182f6;
   font-weight: 500;
+}
+
+.rank-value {
+  color: #ff9500;
+  font-weight: 500;
+}
+
+.rank-none,
+.rank-loading {
+  color: #adb5bd;
 }
 
 .record-none {
@@ -129,6 +150,53 @@ body {
 /* Game Page */
 .game-page {
   background: #fff;
+}
+
+/* TDS 컴포넌트 사용 버전 - 키보드 대응 레이아웃 */
+.game-page-tds {
+  padding-bottom: 0;
+  position: relative;
+  min-height: 100dvh;
+}
+
+.game-page-tds .game-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  padding-top: 60px;
+}
+
+.game-page-tds .problem-card {
+  margin-bottom: 0;
+}
+
+/* TDS BottomCTA topAccessory 스타일 */
+.game-input-accessory {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px 20px;
+  background: #fff;
+}
+
+.game-input-accessory .mobile-timer {
+  display: block;
+  text-align: center;
+  font-size: 20px;
+  font-weight: 600;
+  color: #191f28;
+  font-variant-numeric: tabular-nums;
+}
+
+/* TDS TextField 커스텀 스타일 */
+.game-input-accessory input {
+  font-size: 24px !important;
+  text-align: center;
+}
+
+.game-input-accessory .wrong input {
+  border-color: #ff3b30 !important;
 }
 
 .game-header {
@@ -504,7 +572,7 @@ body {
 /* Ranking Page */
 .ranking-page {
   background: #fff;
-  padding-top: 0;
+  padding: 0;
 }
 
 .ranking-header {
@@ -704,13 +772,25 @@ body {
 }
 
 .ranking-nickname.is-me {
+  font-weight: 700;
   color: #3182f6;
+}
+
+/* 내 기록 전체 row bold 처리 */
+.ranking-item.is-me .ranking-nickname,
+.ranking-item.is-me .ranking-time {
+  font-weight: 700;
 }
 
 .ranking-time {
   font-size: 14px;
   color: #6b7684;
   font-variant-numeric: tabular-nums;
+}
+
+.ranking-time.is-me {
+  font-weight: 700;
+  color: #3182f6;
 }
 
 .ranking-badge {
@@ -1031,6 +1111,89 @@ body {
   font-weight: 500;
 }
 
+/* 랭킹 프리뷰 리스트 (메인 페이지) */
+.ranking-preview-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.ranking-preview-item {
+  display: flex;
+  align-items: center;
+  padding: 10px 12px;
+  background: #f8f9fa;
+  border-radius: 10px;
+  transition: background 0.2s;
+}
+
+.ranking-preview-item.is-me {
+  background: #eff6ff;
+  border: 1px solid #3182f6;
+}
+
+.ranking-preview-rank {
+  font-size: 18px;
+  margin-right: 10px;
+}
+
+.ranking-preview-nickname {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 500;
+  color: #191f28;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ranking-preview-nickname.is-me {
+  font-weight: 700;
+  color: #3182f6;
+}
+
+.ranking-preview-time {
+  font-size: 14px;
+  font-weight: 600;
+  color: #3182f6;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 내 순위 표시 */
+.ranking-preview-myrank {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 12px;
+  padding: 10px 12px;
+  background: linear-gradient(135deg, #fff9e6 0%, #fff3cc 100%);
+  border: 1px solid #ffd43b;
+  border-radius: 10px;
+}
+
+.ranking-preview-myrank-label {
+  font-size: 13px;
+  color: #6b7684;
+}
+
+.ranking-preview-myrank-value {
+  font-size: 16px;
+  font-weight: 700;
+  color: #ff9500;
+}
+
+/* 완료된 일일 챌린지 스타일 */
+.daily-challenge-banner.completed {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-color: #dee2e6;
+  opacity: 0.8;
+}
+
+.daily-challenge-banner.completed .daily-challenge-icon {
+  animation: none;
+}
+
 /* 홈 화면 컴팩트 랭킹 프리뷰 */
 .ranking-preview-compact {
   display: flex;
@@ -1039,7 +1202,7 @@ body {
   gap: 8px;
   width: 100%;
   max-width: 280px;
-  margin: 0 auto 16px;
+  margin: 0 auto 12px;
   padding: 10px 16px;
   background: linear-gradient(135deg, #f8f9fa 0%, #fff 100%);
   border: 1px solid #e9ecef;
@@ -1159,8 +1322,8 @@ body {
   background: linear-gradient(135deg, #fff9e6 0%, #fff3cc 100%);
   border: 2px solid #ffd43b;
   border-radius: 16px;
-  padding: 16px;
-  margin: 0 16px 16px;
+  padding: 14px;
+  margin: 0 0 12px;
   text-align: center;
 }
 
@@ -1422,45 +1585,83 @@ body {
   display: none;
 }
 
-/* 모바일에서 키보드 올라올 때 타이머 + 입력창 함께 고정 */
+/* 모바일에서 키보드 올라올 때 - 문제가 가려지지 않도록 */
 @media (max-width: 480px) {
+  /* 게임 페이지 전체 레이아웃 */
   .game-page {
-    padding-bottom: 160px;
+    min-height: 100vh;
+    min-height: 100dvh;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
   }
 
   .game-header {
     padding: 12px 20px;
-    margin-bottom: 20px;
+    margin-bottom: 0;
+    flex-shrink: 0;
   }
 
-  /* 상단 헤더의 타이머는 숨김 (하단에서 보여줌) */
+  /* 상단 헤더의 타이머 표시 유지 */
   .game-header .game-timer {
-    display: none;
+    display: block;
+    font-size: 20px;
   }
 
-  /* 하단 고정 영역: 타이머 + 입력창 */
+  /* game-content: 문제 카드 영역 */
+  .game-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    padding: 20px 20px 0;
+    min-height: 0;
+  }
+
+  /* 문제 카드 - 화면 상단에 고정 */
+  .problem-card {
+    margin-bottom: 24px;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 16px;
+    width: 100%;
+    max-width: 320px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .problem-num {
+    font-size: 36px;
+  }
+
+  .problem-op,
+  .problem-eq {
+    font-size: 28px;
+  }
+
+  .problem-answer {
+    font-size: 36px;
+  }
+
+  /* 입력 폼 - 문제 카드 바로 아래에 배치 */
   .answer-form {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    padding: 12px 20px;
-    padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
-    background: #fff;
-    border-top: 1px solid #e5e8eb;
-    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08);
-    z-index: 100;
-    max-width: none;
+    width: 100%;
+    max-width: 320px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
+    padding: 0;
+    margin: 0 auto;
   }
 
-  /* 모바일 타이머 표시 */
+  /* 모바일 타이머 표시 (입력창 위) */
   .mobile-timer {
     display: block;
-    font-size: 32px;
+    font-size: 28px;
     font-weight: 700;
     color: #3182f6;
     font-variant-numeric: tabular-nums;
@@ -1470,13 +1671,14 @@ body {
   .input-row {
     display: flex;
     width: 100%;
-    max-width: 320px;
     gap: 12px;
   }
 
   .input-row .answer-input {
     flex: 1;
     height: 52px;
+    /* iOS Safari input focus 시 줌 방지 */
+    font-size: 16px;
   }
 
   .input-row .submit-btn {
@@ -1484,8 +1686,34 @@ body {
     height: 52px;
   }
 
-  .problem-card {
-    margin-bottom: 40px;
+  /* TDS 버전 모바일 스타일 */
+  .game-page-tds {
+    padding: 0;
+  }
+
+  .game-page-tds .game-header {
+    padding: 12px 20px;
+  }
+
+  .game-page-tds .game-content {
+    padding: 20px 20px 0;
+    padding-top: 40px;
+  }
+
+  .game-page-tds .problem-card {
+    margin-bottom: 0;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 16px;
+    width: 100%;
+    max-width: 320px;
+  }
+
+  .game-input-accessory .mobile-timer {
+    display: block;
+    font-size: 24px;
+    font-weight: 700;
+    color: #3182f6;
   }
 }
 
@@ -1493,5 +1721,533 @@ body {
 @media (min-width: 481px) {
   .input-row {
     display: contents;
+  }
+}
+
+/* ==========================================
+   게임 모드 탭 (5문제 / 타임어택)
+   ========================================== */
+
+.game-mode-tabs {
+  display: flex;
+  gap: 8px;
+  padding: 0;
+  margin-bottom: 20px;
+  background: #f2f4f6;
+  border-radius: 12px;
+  padding: 4px;
+}
+
+.game-mode-tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 12px 16px;
+  background: transparent;
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #6b7684;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.game-mode-tab:hover {
+  color: #3182f6;
+}
+
+.game-mode-tab.active {
+  background: #fff;
+  color: #191f28;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.tab-icon {
+  font-size: 18px;
+}
+
+.tab-label {
+  font-size: 15px;
+}
+
+/* 타임어택 모드 콘텐츠 */
+.time-attack-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.time-attack-content .time-attack-desc {
+  text-align: center;
+  font-size: 14px;
+  color: #6b7684;
+  margin-bottom: 16px;
+}
+
+/* 타임어택 카드 특별 스타일 */
+.difficulty-card.time-attack-card {
+  border-left: 4px solid #667eea;
+}
+
+.difficulty-card.time-attack-card[data-difficulty="easy"] {
+  border-left: 4px solid #34c759;
+}
+
+.difficulty-card.time-attack-card[data-difficulty="medium"] {
+  border-left: 4px solid #ff9500;
+}
+
+.difficulty-card.time-attack-card[data-difficulty="hard"] {
+  border-left: 4px solid #ff3b30;
+}
+
+.time-attack-time {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  font-weight: 600;
+}
+
+/* 모바일 게임 모드 탭 */
+@media (max-width: 480px) {
+  .game-mode-tabs {
+    margin-bottom: 16px;
+  }
+
+  .game-mode-tab {
+    padding: 10px 12px;
+  }
+
+  .tab-icon {
+    font-size: 16px;
+  }
+
+  .tab-label {
+    font-size: 14px;
+  }
+}
+
+/* ==========================================
+   타임어택 모드 스타일
+   ========================================== */
+
+/* 타임어택 배너 (메인 화면) */
+.time-attack-banner {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 16px;
+  color: #fff;
+}
+
+.time-attack-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.time-attack-icon {
+  font-size: 24px;
+}
+
+.time-attack-title {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.time-attack-badge {
+  background: #ff6b6b;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 8px;
+  margin-left: auto;
+}
+
+.time-attack-desc {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.9);
+  margin-bottom: 16px;
+}
+
+.time-attack-difficulties {
+  display: flex;
+  gap: 8px;
+}
+
+.time-attack-btn {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  border-radius: 12px;
+  padding: 12px 8px;
+  color: #fff;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.time-attack-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.time-attack-btn:active {
+  background: rgba(255, 255, 255, 0.4);
+}
+
+.time-attack-btn-label {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.time-attack-btn-score {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.time-attack-btn[data-difficulty="easy"] {
+  background: rgba(52, 199, 89, 0.4);
+}
+
+.time-attack-btn[data-difficulty="medium"] {
+  background: rgba(255, 149, 0, 0.4);
+}
+
+.time-attack-btn[data-difficulty="hard"] {
+  background: rgba(255, 59, 48, 0.4);
+}
+
+/* 타임어택 게임 페이지 */
+.time-attack-page .game-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.time-attack-badge {
+  display: inline-block;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 12px;
+  margin-bottom: 16px;
+}
+
+.time-attack-score {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.time-attack-progress {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.time-attack-fill {
+  background: linear-gradient(90deg, #34c759, #ff9500, #ff3b30);
+}
+
+.time-attack-timer {
+  font-size: 32px;
+  font-weight: 700;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.2);
+  padding: 8px 16px;
+  border-radius: 12px;
+}
+
+.time-attack-timer.warning {
+  color: #ff3b30;
+  animation: pulse 0.5s ease-in-out infinite;
+}
+
+.time-attack-mobile-timer {
+  font-size: 28px;
+  font-weight: 700;
+  color: #667eea;
+}
+
+.time-attack-mobile-timer .warning {
+  color: #ff3b30;
+  animation: pulse 0.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+/* 타임어택 결과 페이지 */
+.time-attack-result-page .result-card {
+  text-align: center;
+}
+
+.time-attack-badge-result {
+  display: inline-block;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 12px;
+  margin-bottom: 12px;
+}
+
+.result-score {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin: 24px 0;
+}
+
+.score-emoji {
+  font-size: 48px;
+}
+
+.score-main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.score-value {
+  font-size: 64px;
+  font-weight: 700;
+  color: #191f28;
+  line-height: 1;
+}
+
+.score-label {
+  font-size: 16px;
+  color: #6b7684;
+  margin-top: 4px;
+}
+
+.score-message {
+  font-size: 18px;
+  font-weight: 600;
+  color: #667eea;
+}
+
+.result-stats {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  margin: 20px 0;
+  padding: 16px;
+  background: #f8f9fa;
+  border-radius: 12px;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.stat-label {
+  font-size: 12px;
+  color: #6b7684;
+}
+
+.stat-value {
+  font-size: 18px;
+  font-weight: 600;
+  color: #191f28;
+}
+
+.time-attack-result-card {
+  padding-top: 24px;
+}
+
+/* 모바일 타임어택 스타일 */
+@media (max-width: 480px) {
+  .time-attack-banner {
+    margin: 0 -4px 12px;
+    border-radius: 12px;
+    padding: 16px;
+  }
+
+  .time-attack-btn {
+    padding: 10px 6px;
+  }
+
+  .time-attack-btn-label {
+    font-size: 13px;
+  }
+
+  .time-attack-timer {
+    font-size: 24px;
+    padding: 6px 12px;
+  }
+
+  .score-value {
+    font-size: 48px;
+  }
+
+  .result-stats {
+    gap: 16px;
+  }
+}
+
+/* ==========================================
+   연속 출석 스타일
+   ========================================== */
+
+/* 연속 출석 배너 */
+.streak-banner {
+  background: #fff;
+  border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.streak-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.streak-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.streak-icon {
+  font-size: 24px;
+}
+
+.streak-count {
+  font-size: 18px;
+  font-weight: 700;
+  color: #191f28;
+}
+
+.streak-today-badge {
+  background: #34c759;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 12px;
+}
+
+.streak-calendar {
+  display: flex;
+  justify-content: space-between;
+  gap: 4px;
+}
+
+.streak-day {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 4px;
+  border-radius: 8px;
+  background: #f8f9fa;
+  transition: background-color 0.2s;
+}
+
+.streak-day.attended {
+  background: #e8f5e9;
+}
+
+.streak-day.today {
+  border: 2px solid #3182f6;
+}
+
+.streak-day.today.attended {
+  border-color: #34c759;
+}
+
+.streak-day-name {
+  font-size: 11px;
+  color: #6b7684;
+  font-weight: 500;
+}
+
+.streak-day-icon {
+  font-size: 16px;
+  color: #6b7684;
+}
+
+.streak-day.attended .streak-day-icon {
+  color: #34c759;
+  font-weight: 700;
+}
+
+.streak-prompt {
+  text-align: center;
+  font-size: 12px;
+  color: #6b7684;
+  margin-top: 12px;
+}
+
+/* 연속 출석 마일스톤 배너 (결과 화면) */
+.streak-milestone-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: linear-gradient(135deg, #ffd93d 0%, #ff9500 100%);
+  color: #fff;
+  padding: 12px 20px;
+  border-radius: 12px;
+  margin-bottom: 16px;
+  animation: celebratePop 0.5s ease-out;
+}
+
+.streak-milestone-icon {
+  font-size: 24px;
+}
+
+.streak-milestone-text {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+@keyframes celebratePop {
+  0% {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* 모바일 출석 스타일 */
+@media (max-width: 480px) {
+  .streak-banner {
+    margin: 0 -4px 12px;
+    padding: 14px;
+  }
+
+  .streak-day {
+    padding: 6px 2px;
+  }
+
+  .streak-day-name {
+    font-size: 10px;
+  }
+
+  .streak-day-icon {
+    font-size: 14px;
   }
 }

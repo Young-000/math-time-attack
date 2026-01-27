@@ -91,10 +91,6 @@ export function RankingPage() {
     navigate(`/ranking/${difficulty}`, { replace: true });
   };
 
-  const handleBack = () => {
-    navigate('/');
-  };
-
   const handleNicknameSave = async (newNickname: string): Promise<boolean> => {
     const success = await updateUserNickname(newNickname);
     if (success) {
@@ -106,36 +102,7 @@ export function RankingPage() {
 
   return (
     <div className="page ranking-page">
-      <header className="ranking-header">
-        <button
-          className="back-btn"
-          onClick={handleBack}
-          aria-label="뒤로 가기"
-        >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-            <path
-              d="M15 18l-6-6 6-6"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        </button>
-        <h1 className="ranking-title">랭킹</h1>
-        <button
-          className="settings-btn"
-          onClick={() => setIsModalOpen(true)}
-          aria-label="닉네임 변경"
-        >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-            <path
-              d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"
-              fill="currentColor"
-            />
-          </svg>
-        </button>
-      </header>
+      {/* 앱인토스 공통 내비게이션 바 사용 - 자체 헤더 제거 */}
 
       <div className="ranking-nickname-bar">
         <span className="nickname-label">내 닉네임:</span>

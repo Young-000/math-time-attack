@@ -17,19 +17,43 @@ declare global {
   }
 }
 
+const LOCAL_USER_ID_KEY = 'math-time-attack-local-user-id';
+
+/**
+ * 로컬 사용자 ID 생성 또는 조회
+ */
+function getOrCreateLocalUserId(): string {
+  try {
+    let localId = localStorage.getItem(LOCAL_USER_ID_KEY);
+    if (!localId) {
+      // UUID 형식의 로컬 ID 생성
+      localId = `local-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
+      localStorage.setItem(LOCAL_USER_ID_KEY, localId);
+    }
+    return localId;
+  } catch {
+    // localStorage 실패 시 세션 기반 임시 ID
+    return `temp-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
+  }
+}
+
 /**
  * 현재 사용자 ODL ID 가져오기
+ * Apps-in-Toss 환경이 아니면 로컬 ID를 사용 (개발/테스트용)
  */
 export async function getCurrentUserId(): Promise<string | null> {
   try {
     // Apps-in-Toss 환경인지 확인
     if (typeof window !== 'undefined' && window.ODL) {
-      return await window.ODL.getUserId();
+      const odlId = await window.ODL.getUserId();
+      if (odlId) return odlId;
     }
-    return null;
+    // 로컬 환경에서는 localStorage 기반 ID 사용
+    return getOrCreateLocalUserId();
   } catch (err) {
     console.warn('Failed to get user ID from ODL:', err);
-    return null;
+    // 실패해도 로컬 ID 반환
+    return getOrCreateLocalUserId();
   }
 }
 

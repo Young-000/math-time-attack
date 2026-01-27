@@ -51,12 +51,12 @@ export function RankingList({ rankings, myOdlId, isLoading }: RankingListProps) 
               )}
             </div>
             <div className="ranking-info">
-              <span className="ranking-nickname">
+              <span className={`ranking-nickname ${isMe ? 'is-me' : ''}`}>
                 {item.nickname || `플레이어${item.odl_id.slice(-4)}`}
                 {isMe && <span className="ranking-me-badge">나</span>}
               </span>
             </div>
-            <div className="ranking-time">
+            <div className={`ranking-time ${isMe ? 'is-me' : ''}`}>
               {formatTime(item.time)}
             </div>
           </div>

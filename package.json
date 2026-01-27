@@ -16,6 +16,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
+    "build:ait": "./scripts/build-ait.sh",
     "preview": "vite preview",
     "test": "vitest",
     "test:coverage": "vitest --coverage",
@@ -29,6 +30,7 @@
     "@apps-in-toss/web-framework": "^1.7.0",
     "@supabase/supabase-js": "^2.90.1",
     "@toss/tds-mobile": "^2.2.0",
+    "@toss/tds-mobile-ait": "^2.2.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.20.0"

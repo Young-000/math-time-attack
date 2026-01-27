@@ -10,6 +10,7 @@ import { getCurrentUserId } from '@infrastructure/rankingService';
 import { formatTime } from '@lib/utils';
 import { ShareButton } from '@presentation/components';
 import { saveDailyChallengeCompletion } from '@domain/services/dailyChallengeService';
+import { checkIn, getStreakMilestoneMessage } from '@domain/services/streakService';
 
 interface LocationState {
   difficulty: DifficultyType;
@@ -27,6 +28,7 @@ export function ResultPage() {
   const [myRank, setMyRank] = useState<number | null>(null);
   const [totalPlayers, setTotalPlayers] = useState<number>(0);
   const [isLoadingRank, setIsLoadingRank] = useState(false);
+  const [streakMilestone, setStreakMilestone] = useState<{ emoji: string; message: string } | null>(null);
   const hasProcessedRef = useRef(false);
 
   useEffect(() => {
@@ -75,6 +77,13 @@ export function ResultPage() {
         const rankInfo = await getMyRankInfo(userId, difficulty, operation);
         setMyRank(rankInfo.rank);
         setTotalPlayers(rankInfo.totalPlayers);
+
+        // 연속 출석 체크
+        const newStreak = checkIn();
+        const milestone = getStreakMilestoneMessage(newStreak);
+        if (milestone) {
+          setStreakMilestone(milestone);
+        }
       } catch (err) {
         console.error('Failed to process result:', err);
       } finally {
@@ -112,6 +121,13 @@ export function ResultPage() {
           <div className="new-record-banner">
             <span className="new-record-icon">🎉</span>
             <span className="new-record-text">신기록!</span>
+          </div>
+        )}
+
+        {streakMilestone && (
+          <div className="streak-milestone-banner">
+            <span className="streak-milestone-icon">{streakMilestone.emoji}</span>
+            <span className="streak-milestone-text">{streakMilestone.message}</span>
           </div>
         )}
 

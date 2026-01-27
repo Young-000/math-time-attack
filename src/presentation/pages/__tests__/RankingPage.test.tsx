@@ -55,19 +55,12 @@ describe('RankingPage', () => {
   };
 
   describe('렌더링', () => {
-    it('랭킹 페이지 타이틀이 표시되어야 한다', async () => {
-      renderPage();
-      expect(screen.getByRole('heading', { name: '랭킹' })).toBeInTheDocument();
-    });
+    // 앱인토스 공통 내비게이션 바 사용으로 자체 헤더/백버튼 제거됨
+    // 타이틀은 공통 내비게이션 바에서 표시됨
 
-    it('뒤로 가기 버튼이 표시되어야 한다', async () => {
+    it('닉네임 수정 버튼이 표시되어야 한다', async () => {
       renderPage();
-      expect(screen.getByRole('button', { name: '뒤로 가기' })).toBeInTheDocument();
-    });
-
-    it('닉네임 변경 버튼이 표시되어야 한다', async () => {
-      renderPage();
-      expect(screen.getByRole('button', { name: '닉네임 변경' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: '닉네임 수정' })).toBeInTheDocument();
     });
 
     it('난이도 탭들이 표시되어야 한다', async () => {
@@ -137,26 +130,9 @@ describe('RankingPage', () => {
     });
   });
 
-  describe('네비게이션', () => {
-    it('뒤로 가기 버튼 클릭 시 홈으로 이동해야 한다', async () => {
-      renderPage();
-      fireEvent.click(screen.getByRole('button', { name: '뒤로 가기' }));
-      expect(mockNavigate).toHaveBeenCalledWith('/');
-    });
-  });
+  // 앱인토스 공통 내비게이션 바 사용으로 자체 네비게이션 테스트 제거됨
 
   describe('닉네임 모달', () => {
-    it('닉네임 변경 버튼 클릭 시 모달이 열려야 한다', async () => {
-      renderPage();
-
-      fireEvent.click(screen.getByRole('button', { name: '닉네임 변경' }));
-
-      await waitFor(() => {
-        expect(screen.getByRole('dialog')).toBeInTheDocument();
-        expect(screen.getByText('닉네임 변경')).toBeInTheDocument();
-      });
-    });
-
     it('수정 버튼 클릭 시 모달이 열려야 한다', async () => {
       renderPage();
 
