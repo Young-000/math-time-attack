@@ -8,7 +8,6 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useTimeAttack, TIME_ATTACK_DURATION_BY_DIFFICULTY, AD_BONUS_TIME } from '@presentation/hooks/useTimeAttack';
 import { useRewardedAd } from '@presentation/hooks/useRewardedAd';
 import { DIFFICULTY_CONFIG, OPERATION_SYMBOLS, type DifficultyType } from '@domain/entities';
-import { getHeartInfo, useHeart, MAX_HEARTS } from '@domain/services/heartService';
 
 export function TimeAttackPage() {
   const { difficulty } = useParams<{ difficulty: DifficultyType }>();
@@ -31,17 +30,8 @@ export function TimeAttackPage() {
   const [inputValue, setInputValue] = useState('');
   const [isWrong, setIsWrong] = useState(false);
   const [isWatchingAd, setIsWatchingAd] = useState(false);
-  const [heartCount, setHeartCount] = useState(MAX_HEARTS);
   const inputRef = useRef<HTMLInputElement>(null);
   const wrongTimeoutRef = useRef<number | null>(null);
-
-  // 하트 정보 업데이트 (시간 종료 시)
-  useEffect(() => {
-    if (isTimeUp) {
-      const info = getHeartInfo();
-      setHeartCount(info.count);
-    }
-  }, [isTimeUp]);
 
   // 게임 시작
   useEffect(() => {
@@ -112,19 +102,8 @@ export function TimeAttackPage() {
     }
   };
 
-  // 광고 시청 핸들러
+  // 광고 시청 핸들러 (하트 소모 없음 - 광고만 시청)
   const handleWatchAd = () => {
-    // 하트 체크 및 소모
-    if (heartCount <= 0) {
-      return;
-    }
-
-    const used = useHeart();
-    if (!used) {
-      return;
-    }
-
-    setHeartCount(prev => prev - 1);
     setIsWatchingAd(true);
 
     showAd({
@@ -146,19 +125,6 @@ export function TimeAttackPage() {
         skipBonus();
       },
     });
-  };
-
-  // 하트 표시 생성
-  const renderHearts = () => {
-    const hearts = [];
-    for (let i = 0; i < MAX_HEARTS; i++) {
-      hearts.push(
-        <span key={i} className={`heart-icon ${i < heartCount ? 'filled' : 'empty'}`}>
-          {i < heartCount ? '❤️' : '🤍'}
-        </span>
-      );
-    }
-    return hearts;
   };
 
   // 광고 스킵 핸들러
@@ -271,22 +237,14 @@ export function TimeAttackPage() {
               <span className="ad-modal-score-label">문제 정답</span>
             </div>
 
-            {/* 하트 표시 */}
-            <div className="ad-modal-hearts">
-              <div className="hearts-display">{renderHearts()}</div>
-              <span className="hearts-count">{heartCount}/{MAX_HEARTS}</span>
-            </div>
-
             {isAdSupported && (
               <button
                 className="ad-modal-btn primary"
                 onClick={handleWatchAd}
-                disabled={isWatchingAd || heartCount <= 0 || (!isAdLoaded && !isAdLoading)}
+                disabled={isWatchingAd || (!isAdLoaded && !isAdLoading)}
               >
                 {isWatchingAd ? (
                   '광고 로딩 중...'
-                ) : heartCount <= 0 ? (
-                  '하트가 없어요 😢'
                 ) : isAdLoading ? (
                   '광고 준비 중...'
                 ) : (
