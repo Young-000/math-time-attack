@@ -13,9 +13,11 @@ import {
   formatTimeRemaining,
   getDailyChallengeDifficulty,
 } from '@domain/services/dailyChallengeService';
+import { getHeartInfo, useHeart, refillHearts, MAX_HEARTS, type HeartInfo } from '@domain/services/heartService';
 import { formatTime } from '@lib/utils';
 import { getCurrentUserId } from '@infrastructure/rankingService';
 import { getTimeAttackBestScore, TIME_ATTACK_DURATION_BY_DIFFICULTY } from '@presentation/hooks/useTimeAttack';
+import { useRewardedAd } from '@presentation/hooks/useRewardedAd';
 import { StreakBanner } from '@presentation/components';
 
 const difficulties: DifficultyType[] = ['easy', 'medium', 'hard'];
@@ -39,6 +41,14 @@ export function DifficultySelectPage() {
   const [isLoadingTimeAttack, setIsLoadingTimeAttack] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState('');
 
+  // 하트 상태
+  const [heartInfo, setHeartInfo] = useState<HeartInfo>(getHeartInfo());
+  const [showNoHeartsModal, setShowNoHeartsModal] = useState(false);
+  const [pendingAction, setPendingAction] = useState<{ type: 'classic' | 'timeattack' | 'daily'; difficulty: DifficultyType } | null>(null);
+
+  // 광고 훅
+  const { isAdSupported, isAdLoaded, isAdLoading, loadAd, showAd } = useRewardedAd();
+
   const online = isOnlineMode();
   const dailyDifficulty = getDailyChallengeDifficulty();
   const dailyCompleted = isDailyChallengeCompleted();
@@ -55,6 +65,23 @@ export function DifficultySelectPage() {
     const interval = setInterval(updateTimer, 1000);
     return () => clearInterval(interval);
   }, []);
+
+  // 하트 정보 주기적 업데이트
+  useEffect(() => {
+    const updateHeartInfo = () => {
+      setHeartInfo(getHeartInfo());
+    };
+
+    const interval = setInterval(updateHeartInfo, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // 광고 미리 로드
+  useEffect(() => {
+    if (isAdSupported && !isAdLoaded && !isAdLoading) {
+      loadAd();
+    }
+  }, [isAdSupported, isAdLoaded, isAdLoading, loadAd]);
 
   // 내 순위 데이터 로드 (모든 난이도)
   useEffect(() => {
@@ -138,21 +165,90 @@ export function DifficultySelectPage() {
     };
   }, [online]);
 
-  const handleSelect = useCallback((difficulty: DifficultyType) => {
-    navigate(`/game/${difficulty}`);
+  // 하트 체크 후 게임 시작
+  const tryStartGame = useCallback((type: 'classic' | 'timeattack' | 'daily', difficulty: DifficultyType) => {
+    const currentHearts = getHeartInfo();
+
+    if (currentHearts.count <= 0) {
+      // 하트 없음 - 모달 표시
+      setPendingAction({ type, difficulty });
+      setShowNoHeartsModal(true);
+      return;
+    }
+
+    // 하트 소모
+    const used = useHeart();
+    if (!used) {
+      setPendingAction({ type, difficulty });
+      setShowNoHeartsModal(true);
+      return;
+    }
+
+    setHeartInfo(getHeartInfo());
+
+    // 게임 시작
+    if (type === 'classic') {
+      navigate(`/game/${difficulty}`);
+    } else if (type === 'daily') {
+      navigate(`/game/${difficulty}?daily=true`);
+    } else {
+      navigate(`/time-attack/${difficulty}`);
+    }
   }, [navigate]);
 
+  const handleSelect = useCallback((difficulty: DifficultyType) => {
+    tryStartGame('classic', difficulty);
+  }, [tryStartGame]);
+
   const handleDailyChallenge = useCallback(() => {
-    navigate(`/game/${dailyDifficulty}?daily=true`);
-  }, [navigate, dailyDifficulty]);
+    tryStartGame('daily', dailyDifficulty);
+  }, [tryStartGame, dailyDifficulty]);
 
   const handleRankingClick = useCallback(() => {
     navigate('/ranking');
   }, [navigate]);
 
   const handleTimeAttack = useCallback((difficulty: DifficultyType) => {
-    navigate(`/time-attack/${difficulty}`);
-  }, [navigate]);
+    tryStartGame('timeattack', difficulty);
+  }, [tryStartGame]);
+
+  // 광고 시청으로 하트 풀충전
+  const handleWatchAdForHearts = useCallback(() => {
+    showAd({
+      onRewarded: () => {
+        // 하트 풀충전
+        refillHearts();
+        setHeartInfo(getHeartInfo());
+        setShowNoHeartsModal(false);
+
+        // 대기 중인 액션 실행
+        if (pendingAction) {
+          tryStartGame(pendingAction.type, pendingAction.difficulty);
+          setPendingAction(null);
+        }
+        loadAd(); // 다음 광고 로드
+      },
+      onDismiss: () => {
+        // 광고 닫힘
+      },
+      onError: (error) => {
+        console.error('Ad error:', error);
+      },
+    });
+  }, [showAd, loadAd, pendingAction, tryStartGame]);
+
+  // 하트 아이콘 렌더링
+  const renderHearts = () => {
+    const hearts = [];
+    for (let i = 0; i < MAX_HEARTS; i++) {
+      hearts.push(
+        <span key={i} className={`heart-icon-small ${i < heartInfo.count ? 'filled' : 'empty'}`}>
+          {i < heartInfo.count ? '❤️' : '🤍'}
+        </span>
+      );
+    }
+    return hearts;
+  };
 
   // 일일 챌린지 배너 렌더링
   const renderDailyChallenge = () => (
@@ -319,6 +415,12 @@ export function DifficultySelectPage() {
             </svg>
             랭킹
           </button>
+
+          {/* 하트 표시 */}
+          <div className="header-hearts" onClick={handleRankingClick}>
+            <div className="hearts-row">{renderHearts()}</div>
+            <span className="hearts-label">{heartInfo.count}/{MAX_HEARTS}</span>
+          </div>
         </div>
         <h1 className="title">구구단 챌린지</h1>
         <p className="subtitle">
@@ -356,6 +458,69 @@ export function DifficultySelectPage() {
 
       {/* 연속 출석 배너 - 하단 */}
       <StreakBanner />
+
+      {/* 하트 부족 모달 */}
+      {showNoHeartsModal && (
+        <div className="no-hearts-modal-overlay">
+          <div className="no-hearts-modal">
+            <div className="no-hearts-icon">💔</div>
+            <h2 className="no-hearts-title">하트가 부족해요!</h2>
+            <p className="no-hearts-desc">
+              게임을 시작하려면 하트가 필요해요.
+              <br />
+              광고를 보거나 랭킹에서 공유하면 하트를 충전할 수 있어요!
+            </p>
+
+            <div className="no-hearts-status">
+              <div className="hearts-display-large">{renderHearts()}</div>
+              {!heartInfo.isFull && (
+                <span className="hearts-timer">⏱️ {heartInfo.timeUntilNextFormatted} 후 +1</span>
+              )}
+            </div>
+
+            <div className="no-hearts-actions">
+              {isAdSupported && (
+                <button
+                  className="no-hearts-btn primary"
+                  onClick={handleWatchAdForHearts}
+                  disabled={isAdLoading}
+                >
+                  {isAdLoading ? (
+                    '광고 준비 중...'
+                  ) : (
+                    <>
+                      <span className="btn-icon">📺</span>
+                      광고 보고 풀충전
+                    </>
+                  )}
+                </button>
+              )}
+
+              <button
+                className="no-hearts-btn secondary"
+                onClick={() => {
+                  setShowNoHeartsModal(false);
+                  setPendingAction(null);
+                  navigate('/ranking');
+                }}
+              >
+                <span className="btn-icon">📤</span>
+                랭킹에서 공유하기
+              </button>
+
+              <button
+                className="no-hearts-btn tertiary"
+                onClick={() => {
+                  setShowNoHeartsModal(false);
+                  setPendingAction(null);
+                }}
+              >
+                닫기
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

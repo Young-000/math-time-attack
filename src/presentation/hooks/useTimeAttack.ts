@@ -14,6 +14,9 @@ export const TIME_ATTACK_DURATION_BY_DIFFICULTY: Record<DifficultyType, number> 
   hard: 60000,   // 고급: 60초
 };
 
+// 광고 보상 보너스 시간 (10초)
+export const AD_BONUS_TIME = 10000;
+
 export interface TimeAttackState {
   difficulty: DifficultyType;
   operation: OperationType;
@@ -21,7 +24,10 @@ export interface TimeAttackState {
   correctCount: number;
   wrongCount: number;
   isComplete: boolean;
+  isTimeUp: boolean; // 시간 종료 (광고 표시용)
+  hasUsedAdBonus: boolean; // 광고 보너스 사용 여부
   startTime: number | null;
+  bonusTimeUsed: number; // 사용한 보너스 시간 (ms)
 }
 
 export interface TimeAttackResult {
@@ -41,10 +47,14 @@ interface UseTimeAttackReturn {
   correctCount: number;
   wrongCount: number;
   isNewRecord: boolean;
+  isTimeUp: boolean;
+  hasUsedAdBonus: boolean;
   startGame: (difficulty: DifficultyType, operation?: OperationType) => void;
   submitAnswer: (answer: number) => boolean;
   resetGame: () => void;
   saveGameResult: () => Promise<void>;
+  addBonusTime: () => void;
+  skipBonus: () => void;
 }
 
 let problemIdCounter = 0;
@@ -130,17 +140,20 @@ export function useTimeAttack(): UseTimeAttackReturn {
   const [isNewRecord, setIsNewRecord] = useState(false);
   const timerRef = useRef<number | null>(null);
 
-  const isPlaying = gameState !== null && !gameState.isComplete && gameState.startTime !== null;
+  const isPlaying = gameState !== null && !gameState.isComplete && !gameState.isTimeUp && gameState.startTime !== null;
   const currentProblem = gameState?.currentProblem ?? null;
   const correctCount = gameState?.correctCount ?? 0;
   const wrongCount = gameState?.wrongCount ?? 0;
+  const isTimeUp = gameState?.isTimeUp ?? false;
+  const hasUsedAdBonus = gameState?.hasUsedAdBonus ?? false;
 
   // 카운트다운 타이머
   useEffect(() => {
     if (!isPlaying || !gameState?.startTime) return;
 
     const startTime = gameState.startTime;
-    const duration = TIME_ATTACK_DURATION_BY_DIFFICULTY[gameState.difficulty];
+    const bonusTime = gameState.bonusTimeUsed;
+    const duration = TIME_ATTACK_DURATION_BY_DIFFICULTY[gameState.difficulty] + bonusTime;
     const id = window.setInterval(() => {
       const elapsed = Date.now() - startTime;
       const remaining = Math.max(0, duration - elapsed);
@@ -152,17 +165,27 @@ export function useTimeAttack(): UseTimeAttackReturn {
         setGameState(prev => {
           if (!prev) return null;
 
-          // 신기록 확인
-          const isRecord = saveTimeAttackBestScore(
-            prev.difficulty,
-            prev.correctCount,
-            prev.operation
-          );
-          setIsNewRecord(isRecord);
+          // 이미 광고 보너스를 사용했으면 게임 완료
+          if (prev.hasUsedAdBonus) {
+            // 신기록 확인
+            const isRecord = saveTimeAttackBestScore(
+              prev.difficulty,
+              prev.correctCount,
+              prev.operation
+            );
+            setIsNewRecord(isRecord);
 
+            return {
+              ...prev,
+              isComplete: true,
+              isTimeUp: false,
+            };
+          }
+
+          // 광고 보너스 미사용 시 시간 종료 상태로 (광고 표시)
           return {
             ...prev,
-            isComplete: true,
+            isTimeUp: true,
           };
         });
       }
@@ -174,7 +197,7 @@ export function useTimeAttack(): UseTimeAttackReturn {
       clearInterval(id);
       timerRef.current = null;
     };
-  }, [isPlaying, gameState?.startTime]);
+  }, [isPlaying, gameState?.startTime, gameState?.bonusTimeUsed]);
 
   const startGame = useCallback((
     difficulty: DifficultyType,
@@ -191,10 +214,50 @@ export function useTimeAttack(): UseTimeAttackReturn {
       correctCount: 0,
       wrongCount: 0,
       isComplete: false,
+      isTimeUp: false,
+      hasUsedAdBonus: false,
       startTime: Date.now(),
+      bonusTimeUsed: 0,
     });
     setRemainingTime(duration);
     setIsNewRecord(false);
+  }, []);
+
+  // 광고 보너스 시간 추가
+  const addBonusTime = useCallback(() => {
+    setGameState(prev => {
+      if (!prev || prev.isComplete) return prev;
+
+      return {
+        ...prev,
+        isTimeUp: false,
+        hasUsedAdBonus: true,
+        bonusTimeUsed: AD_BONUS_TIME,
+        startTime: Date.now(), // 타이머 재시작
+      };
+    });
+    setRemainingTime(AD_BONUS_TIME);
+  }, []);
+
+  // 보너스 스킵 (결과 페이지로)
+  const skipBonus = useCallback(() => {
+    setGameState(prev => {
+      if (!prev) return null;
+
+      // 신기록 확인
+      const isRecord = saveTimeAttackBestScore(
+        prev.difficulty,
+        prev.correctCount,
+        prev.operation
+      );
+      setIsNewRecord(isRecord);
+
+      return {
+        ...prev,
+        isTimeUp: false,
+        isComplete: true,
+      };
+    });
   }, []);
 
   const submitAnswer = useCallback((answer: number): boolean => {
@@ -243,9 +306,13 @@ export function useTimeAttack(): UseTimeAttackReturn {
     correctCount,
     wrongCount,
     isNewRecord,
+    isTimeUp,
+    hasUsedAdBonus,
     startGame,
     submitAnswer,
     resetGame,
     saveGameResult,
+    addBonusTime,
+    skipBonus,
   };
 }

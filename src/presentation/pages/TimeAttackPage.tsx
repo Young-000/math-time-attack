@@ -5,8 +5,10 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useTimeAttack, TIME_ATTACK_DURATION_BY_DIFFICULTY } from '@presentation/hooks/useTimeAttack';
+import { useTimeAttack, TIME_ATTACK_DURATION_BY_DIFFICULTY, AD_BONUS_TIME } from '@presentation/hooks/useTimeAttack';
+import { useRewardedAd } from '@presentation/hooks/useRewardedAd';
 import { DIFFICULTY_CONFIG, OPERATION_SYMBOLS, type DifficultyType } from '@domain/entities';
+import { getHeartInfo, useHeart, MAX_HEARTS } from '@domain/services/heartService';
 
 export function TimeAttackPage() {
   const { difficulty } = useParams<{ difficulty: DifficultyType }>();
@@ -17,14 +19,29 @@ export function TimeAttackPage() {
     currentProblem,
     correctCount,
     wrongCount,
+    isTimeUp,
     startGame,
     submitAnswer,
+    addBonusTime,
+    skipBonus,
   } = useTimeAttack();
+
+  const { isAdSupported, isAdLoaded, isAdLoading, loadAd, showAd } = useRewardedAd();
 
   const [inputValue, setInputValue] = useState('');
   const [isWrong, setIsWrong] = useState(false);
+  const [isWatchingAd, setIsWatchingAd] = useState(false);
+  const [heartCount, setHeartCount] = useState(MAX_HEARTS);
   const inputRef = useRef<HTMLInputElement>(null);
   const wrongTimeoutRef = useRef<number | null>(null);
+
+  // 하트 정보 업데이트 (시간 종료 시)
+  useEffect(() => {
+    if (isTimeUp) {
+      const info = getHeartInfo();
+      setHeartCount(info.count);
+    }
+  }, [isTimeUp]);
 
   // 게임 시작
   useEffect(() => {
@@ -32,6 +49,13 @@ export function TimeAttackPage() {
       startGame(difficulty);
     }
   }, [difficulty, gameState, startGame]);
+
+  // 광고 미리 로드
+  useEffect(() => {
+    if (isAdSupported && !isAdLoaded && !isAdLoading) {
+      loadAd();
+    }
+  }, [isAdSupported, isAdLoaded, isAdLoading, loadAd]);
 
   // 입력창 포커스
   useEffect(() => {
@@ -88,12 +112,69 @@ export function TimeAttackPage() {
     }
   };
 
+  // 광고 시청 핸들러
+  const handleWatchAd = () => {
+    // 하트 체크 및 소모
+    if (heartCount <= 0) {
+      return;
+    }
+
+    const used = useHeart();
+    if (!used) {
+      return;
+    }
+
+    setHeartCount(prev => prev - 1);
+    setIsWatchingAd(true);
+
+    showAd({
+      onRewarded: () => {
+        // 광고 시청 완료 - 보너스 시간 추가
+        addBonusTime();
+        setIsWatchingAd(false);
+        // 다음을 위해 광고 다시 로드
+        loadAd();
+        // 입력창에 포커스
+        setTimeout(() => inputRef.current?.focus(), 100);
+      },
+      onDismiss: () => {
+        setIsWatchingAd(false);
+      },
+      onError: () => {
+        setIsWatchingAd(false);
+        // 광고 실패 시 그냥 결과 페이지로
+        skipBonus();
+      },
+    });
+  };
+
+  // 하트 표시 생성
+  const renderHearts = () => {
+    const hearts = [];
+    for (let i = 0; i < MAX_HEARTS; i++) {
+      hearts.push(
+        <span key={i} className={`heart-icon ${i < heartCount ? 'filled' : 'empty'}`}>
+          {i < heartCount ? '❤️' : '🤍'}
+        </span>
+      );
+    }
+    return hearts;
+  };
+
+  // 광고 스킵 핸들러
+  const handleSkipAd = () => {
+    skipBonus();
+  };
+
   // 남은 시간 포맷 (초.밀리초)
   const formatRemainingTime = (ms: number): string => {
     const seconds = Math.floor(ms / 1000);
     const tenths = Math.floor((ms % 1000) / 100);
     return `${seconds}.${tenths}`;
   };
+
+  // 보너스 시간 (초)
+  const bonusSeconds = AD_BONUS_TIME / 1000;
 
   // 난이도별 총 시간
   const totalDuration = difficulty ? TIME_ATTACK_DURATION_BY_DIFFICULTY[difficulty] : 60000;
@@ -178,6 +259,55 @@ export function TimeAttackPage() {
           </div>
         </form>
       </main>
+
+      {/* 시간 종료 광고 모달 */}
+      {isTimeUp && (
+        <div className="ad-modal-overlay">
+          <div className="ad-modal">
+            <div className="ad-modal-icon">⏰</div>
+            <h2 className="ad-modal-title">시간 종료!</h2>
+            <div className="ad-modal-score">
+              <span className="ad-modal-score-value">{correctCount}</span>
+              <span className="ad-modal-score-label">문제 정답</span>
+            </div>
+
+            {/* 하트 표시 */}
+            <div className="ad-modal-hearts">
+              <div className="hearts-display">{renderHearts()}</div>
+              <span className="hearts-count">{heartCount}/{MAX_HEARTS}</span>
+            </div>
+
+            {isAdSupported && (
+              <button
+                className="ad-modal-btn primary"
+                onClick={handleWatchAd}
+                disabled={isWatchingAd || heartCount <= 0 || (!isAdLoaded && !isAdLoading)}
+              >
+                {isWatchingAd ? (
+                  '광고 로딩 중...'
+                ) : heartCount <= 0 ? (
+                  '하트가 없어요 😢'
+                ) : isAdLoading ? (
+                  '광고 준비 중...'
+                ) : (
+                  <>
+                    <span className="ad-btn-icon">📺</span>
+                    광고 보고 +{bonusSeconds}초
+                  </>
+                )}
+              </button>
+            )}
+
+            <button
+              className="ad-modal-btn secondary"
+              onClick={handleSkipAd}
+              disabled={isWatchingAd}
+            >
+              결과 확인하기
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -10,6 +10,9 @@ import { getTopRankings, getMyRankInfo } from '@data/recordService';
 import { getCurrentUserId } from '@infrastructure/rankingService';
 import { RankingTab, RankingList, NicknameModal } from '@presentation/components';
 import { useNickname } from '@presentation/hooks/useNickname';
+import { getHeartInfo, refillHearts, MAX_HEARTS, type HeartInfo } from '@domain/services/heartService';
+import { share } from '@apps-in-toss/web-bridge';
+import { useRewardedAd } from '@presentation/hooks/useRewardedAd';
 
 interface MyRankData {
   easy: number | null;
@@ -32,6 +35,86 @@ export function RankingPage() {
   const [isLoadingMyRanks, setIsLoadingMyRanks] = useState(true);
 
   const { nickname, updateUserNickname } = useNickname();
+
+  // 하트 상태
+  const [heartInfo, setHeartInfo] = useState<HeartInfo>(getHeartInfo());
+  const [showShareSuccess, setShowShareSuccess] = useState(false);
+
+  // 광고 훅
+  const { isAdSupported, isAdLoaded, isAdLoading, loadAd, showAd } = useRewardedAd();
+
+  // 하트 정보 주기적 업데이트
+  useEffect(() => {
+    const updateHeartInfo = () => {
+      setHeartInfo(getHeartInfo());
+    };
+
+    const interval = setInterval(updateHeartInfo, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // 광고 미리 로드
+  useEffect(() => {
+    if (isAdSupported && !isAdLoaded && !isAdLoading) {
+      loadAd();
+    }
+  }, [isAdSupported, isAdLoaded, isAdLoading, loadAd]);
+
+  // 광고 시청으로 하트 풀충전
+  const handleWatchAdForHearts = useCallback(() => {
+    showAd({
+      onRewarded: () => {
+        refillHearts();
+        setHeartInfo(getHeartInfo());
+        setShowShareSuccess(true);
+        setTimeout(() => setShowShareSuccess(false), 2000);
+        loadAd();
+      },
+      onDismiss: () => {},
+      onError: (error) => {
+        console.error('Ad error:', error);
+      },
+    });
+  }, [showAd, loadAd]);
+
+  // 공유하기 핸들러 (앱인토스 네이티브 공유 API 사용)
+  const handleShare = useCallback(async (type: 'ranking' | 'game') => {
+    const myRank = myRanks[selectedDifficulty];
+    const difficultyLabel = DIFFICULTY_CONFIG[selectedDifficulty].label;
+
+    let shareText = '';
+    if (type === 'ranking' && myRank) {
+      shareText = `🏆 구구단 챌린지 ${difficultyLabel} 랭킹 ${myRank}위 달성!\n나와 대결해볼래? 🔥`;
+    } else {
+      shareText = '구구단 실력을 테스트해보세요! 타임어택 모드에서 나와 대결해요 🔥';
+    }
+
+    try {
+      // 앱인토스 네이티브 공유 API 사용
+      await share({ message: shareText });
+
+      // 공유 성공 시 하트 풀충전
+      refillHearts();
+      setHeartInfo(getHeartInfo());
+      setShowShareSuccess(true);
+      setTimeout(() => setShowShareSuccess(false), 2000);
+    } catch (error) {
+      console.log('Share cancelled or failed:', error);
+    }
+  }, [myRanks, selectedDifficulty]);
+
+  // 하트 아이콘 렌더링
+  const renderHearts = () => {
+    const hearts = [];
+    for (let i = 0; i < MAX_HEARTS; i++) {
+      hearts.push(
+        <span key={i} className={`heart-mini ${i < heartInfo.count ? 'filled' : 'empty'}`}>
+          {i < heartInfo.count ? '❤️' : '🤍'}
+        </span>
+      );
+    }
+    return hearts;
+  };
 
   // 사용자 ID 조회 및 모든 난이도 순위 로드
   useEffect(() => {
@@ -155,6 +238,52 @@ export function RankingPage() {
           isLoading={isLoading}
         />
       </main>
+
+      {/* 하트 충전 & 공유 섹션 */}
+      <div className="ranking-share-section">
+        <div className="heart-status">
+          <div className="heart-display-mini">{renderHearts()}</div>
+          <span className="heart-count-mini">{heartInfo.count}/{MAX_HEARTS}</span>
+          {!heartInfo.isFull && (
+            <span className="heart-timer-mini">⏱️ {heartInfo.timeUntilNextFormatted}</span>
+          )}
+        </div>
+
+        {showShareSuccess ? (
+          <div className="share-success">
+            ✅ 하트가 충전되었어요!
+          </div>
+        ) : (
+          <div className="share-buttons-grid">
+            {isAdSupported && !heartInfo.isFull && (
+              <button
+                className="share-btn ad-recharge"
+                onClick={handleWatchAdForHearts}
+                disabled={isAdLoading}
+              >
+                <span className="share-icon">📺</span>
+                {isAdLoading ? '준비 중...' : '광고 보기'}
+              </button>
+            )}
+            {myRanks[selectedDifficulty] && (
+              <button
+                className="share-btn ranking-share"
+                onClick={() => handleShare('ranking')}
+              >
+                <span className="share-icon">🏆</span>
+                순위 공유
+              </button>
+            )}
+            <button
+              className="share-btn game-share"
+              onClick={() => handleShare('game')}
+            >
+              <span className="share-icon">📤</span>
+              게임 공유
+            </button>
+          </div>
+        )}
+      </div>
 
       <NicknameModal
         isOpen={isModalOpen}
