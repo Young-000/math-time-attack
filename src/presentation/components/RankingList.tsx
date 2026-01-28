@@ -32,12 +32,12 @@ export function RankingList({ rankings, myOdlId, isLoading }: RankingListProps) 
 
   return (
     <div className="ranking-list" role="list" aria-label="랭킹 목록">
-      {rankings.map((item, index) => {
+      {rankings.map((item) => {
         const isMe = myOdlId && item.odl_id === myOdlId;
 
         return (
           <div
-            key={`ranking-${index}-${item.rank}-${item.time}`}
+            key={item.odl_id}
             className={`ranking-item ${isMe ? 'is-me' : ''}`}
             role="listitem"
           >
