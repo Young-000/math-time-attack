@@ -1,17 +1,23 @@
 /**
  * 랭킹 리스트 컴포넌트
+ * - classic 모드: 시간(빠를수록 좋음) 표시
+ * - timeattack 모드: 점수(높을수록 좋음) 표시
  */
 
 import type { RankingItem } from '@domain/entities';
+import type { TimeAttackRankingItem } from '@data/recordService';
 import { formatTime } from '@lib/utils';
 
+type RankingMode = 'classic' | 'timeattack';
+
 interface RankingListProps {
-  rankings: RankingItem[];
+  rankings: RankingItem[] | TimeAttackRankingItem[];
   myOdlId?: string | null;
   isLoading: boolean;
+  mode?: RankingMode;
 }
 
-export function RankingList({ rankings, myOdlId, isLoading }: RankingListProps) {
+export function RankingList({ rankings, myOdlId, isLoading, mode = 'classic' }: RankingListProps) {
   if (isLoading) {
     return (
       <div className="ranking-loading">
@@ -34,6 +40,9 @@ export function RankingList({ rankings, myOdlId, isLoading }: RankingListProps) 
     <div className="ranking-list" role="list" aria-label="랭킹 목록">
       {rankings.map((item) => {
         const isMe = myOdlId && item.odl_id === myOdlId;
+        const displayValue = mode === 'timeattack'
+          ? `${(item as TimeAttackRankingItem).score}문제`
+          : formatTime((item as RankingItem).time);
 
         return (
           <div
@@ -44,7 +53,7 @@ export function RankingList({ rankings, myOdlId, isLoading }: RankingListProps) 
             <div className="ranking-rank">
               {item.rank <= 3 ? (
                 <span className={`ranking-medal rank-${item.rank}`}>
-                  {item.rank === 1 ? '🥇' : item.rank === 2 ? '🥈' : '🥉'}
+                  {item.rank === 1 ? '\uD83E\uDD47' : item.rank === 2 ? '\uD83E\uDD48' : '\uD83E\uDD49'}
                 </span>
               ) : (
                 <span className="ranking-number">{item.rank}</span>
@@ -57,7 +66,7 @@ export function RankingList({ rankings, myOdlId, isLoading }: RankingListProps) 
               </span>
             </div>
             <div className={`ranking-time ${isMe ? 'is-me' : ''}`}>
-              {formatTime(item.time)}
+              {displayValue}
             </div>
           </div>
         );

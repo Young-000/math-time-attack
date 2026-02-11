@@ -197,6 +197,7 @@ export function useTimeAttack(): UseTimeAttackReturn {
       clearInterval(id);
       timerRef.current = null;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- difficulty는 게임 시작 후 변경되지 않으며, isPlaying/startTime/bonusTimeUsed 변경 시에만 타이머 재설정 필요
   }, [isPlaying, gameState?.startTime, gameState?.bonusTimeUsed]);
 
   const startGame = useCallback((

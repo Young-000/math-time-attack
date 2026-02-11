@@ -13,12 +13,12 @@ import {
   formatTimeRemaining,
   getDailyChallengeDifficulty,
 } from '@domain/services/dailyChallengeService';
-import { getHeartInfo, useHeart, refillHearts, MAX_HEARTS, type HeartInfo } from '@domain/services/heartService';
+import { MAX_HEARTS } from '@domain/services/heartService';
 import { formatTime } from '@lib/utils';
 import { getCurrentUserId } from '@infrastructure/rankingService';
 import { getTimeAttackBestScore, TIME_ATTACK_DURATION_BY_DIFFICULTY } from '@presentation/hooks/useTimeAttack';
-import { useRewardedAd } from '@presentation/hooks/useRewardedAd';
-import { StreakBanner } from '@presentation/components';
+import { useHeartSystem } from '@presentation/hooks/useHeartSystem';
+import { StreakBanner, HeartDisplay, NoHeartsModal } from '@presentation/components';
 
 const difficulties: DifficultyType[] = ['easy', 'medium', 'hard'];
 
@@ -41,13 +41,23 @@ export function DifficultySelectPage() {
   const [isLoadingTimeAttack, setIsLoadingTimeAttack] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState('');
 
-  // 하트 상태
-  const [heartInfo, setHeartInfo] = useState<HeartInfo>(getHeartInfo());
-  const [showNoHeartsModal, setShowNoHeartsModal] = useState(false);
-  const [pendingAction, setPendingAction] = useState<{ type: 'classic' | 'timeattack' | 'daily'; difficulty: DifficultyType } | null>(null);
+  // 하트 시스템 통합 훅
+  const {
+    heartInfo,
+    showNoHeartsModal,
+    showChargeSuccess,
+    showAdError,
+    isAdSupported,
+    isAdLoaded,
+    isAdLoading,
+    setShowNoHeartsModal,
+    handleWatchAdForHearts,
+    handleShareForHearts,
+    tryConsumeHeart,
+  } = useHeartSystem();
 
-  // 광고 훅
-  const { isAdSupported, isAdLoaded, isAdLoading, loadAd, showAd } = useRewardedAd();
+  const [showHeartChargeModal, setShowHeartChargeModal] = useState(false);
+  const [pendingAction, setPendingAction] = useState<{ type: 'classic' | 'timeattack' | 'daily'; difficulty: DifficultyType } | null>(null);
 
   const online = isOnlineMode();
   const dailyDifficulty = getDailyChallengeDifficulty();
@@ -65,23 +75,6 @@ export function DifficultySelectPage() {
     const interval = setInterval(updateTimer, 1000);
     return () => clearInterval(interval);
   }, []);
-
-  // 하트 정보 주기적 업데이트
-  useEffect(() => {
-    const updateHeartInfo = () => {
-      setHeartInfo(getHeartInfo());
-    };
-
-    const interval = setInterval(updateHeartInfo, 1000);
-    return () => clearInterval(interval);
-  }, []);
-
-  // 광고 미리 로드
-  useEffect(() => {
-    if (isAdSupported && !isAdLoaded && !isAdLoading) {
-      loadAd();
-    }
-  }, [isAdSupported, isAdLoaded, isAdLoading, loadAd]);
 
   // 내 순위 데이터 로드 (모든 난이도)
   useEffect(() => {
@@ -167,26 +160,12 @@ export function DifficultySelectPage() {
 
   // 하트 체크 후 게임 시작
   const tryStartGame = useCallback((type: 'classic' | 'timeattack' | 'daily', difficulty: DifficultyType) => {
-    const currentHearts = getHeartInfo();
-
-    if (currentHearts.count <= 0) {
-      // 하트 없음 - 모달 표시
+    const consumed = tryConsumeHeart();
+    if (!consumed) {
       setPendingAction({ type, difficulty });
-      setShowNoHeartsModal(true);
       return;
     }
 
-    // 하트 소모
-    const used = useHeart();
-    if (!used) {
-      setPendingAction({ type, difficulty });
-      setShowNoHeartsModal(true);
-      return;
-    }
-
-    setHeartInfo(getHeartInfo());
-
-    // 게임 시작
     if (type === 'classic') {
       navigate(`/game/${difficulty}`);
     } else if (type === 'daily') {
@@ -194,7 +173,7 @@ export function DifficultySelectPage() {
     } else {
       navigate(`/time-attack/${difficulty}`);
     }
-  }, [navigate]);
+  }, [navigate, tryConsumeHeart]);
 
   const handleSelect = useCallback((difficulty: DifficultyType) => {
     tryStartGame('classic', difficulty);
@@ -212,43 +191,20 @@ export function DifficultySelectPage() {
     tryStartGame('timeattack', difficulty);
   }, [tryStartGame]);
 
-  // 광고 시청으로 하트 풀충전
-  const handleWatchAdForHearts = useCallback(() => {
-    showAd({
-      onRewarded: () => {
-        // 하트 풀충전
-        refillHearts();
-        setHeartInfo(getHeartInfo());
-        setShowNoHeartsModal(false);
-
-        // 대기 중인 액션 실행
-        if (pendingAction) {
-          tryStartGame(pendingAction.type, pendingAction.difficulty);
-          setPendingAction(null);
-        }
-        loadAd(); // 다음 광고 로드
-      },
-      onDismiss: () => {
-        // 광고 닫힘
-      },
-      onError: (error) => {
-        console.error('Ad error:', error);
-      },
-    });
-  }, [showAd, loadAd, pendingAction, tryStartGame]);
-
-  // 하트 아이콘 렌더링
-  const renderHearts = () => {
-    const hearts = [];
-    for (let i = 0; i < MAX_HEARTS; i++) {
-      hearts.push(
-        <span key={i} className={`heart-icon-small ${i < heartInfo.count ? 'filled' : 'empty'}`}>
-          {i < heartInfo.count ? '❤️' : '🤍'}
-        </span>
-      );
+  // 광고/공유 충전 후 대기 액션 실행
+  const executeAfterCharge = useCallback(() => {
+    setShowHeartChargeModal(false);
+    if (pendingAction) {
+      tryStartGame(pendingAction.type, pendingAction.difficulty);
+      setPendingAction(null);
     }
-    return hearts;
-  };
+  }, [pendingAction, tryStartGame]);
+
+  // 헤더 하트 클릭 - 충전 모달 열기
+  const handleHeartClick = useCallback(() => {
+    if (heartInfo.isFull) return;
+    setShowHeartChargeModal(true);
+  }, [heartInfo.isFull]);
 
   // 일일 챌린지 배너 렌더링
   const renderDailyChallenge = () => (
@@ -416,11 +372,21 @@ export function DifficultySelectPage() {
             랭킹
           </button>
 
-          {/* 하트 표시 */}
-          <div className="header-hearts" onClick={handleRankingClick}>
-            <div className="hearts-row">{renderHearts()}</div>
-            <span className="hearts-label">{heartInfo.count}/{MAX_HEARTS}</span>
-          </div>
+          {/* 하트 표시 - 클릭하면 충전 모달 */}
+          <button
+            className={`header-hearts ${heartInfo.isFull ? 'full' : 'chargeable'}`}
+            onClick={handleHeartClick}
+            aria-label={heartInfo.isFull ? '하트 가득 참' : '하트 충전하기'}
+          >
+            <div className="hearts-row"><HeartDisplay heartInfo={heartInfo} size="small" /></div>
+            <div className="hearts-info">
+              <span className="hearts-label">{heartInfo.count}/{MAX_HEARTS}</span>
+              {!heartInfo.isFull && (
+                <span className="hearts-timer-small">{heartInfo.timeUntilNextFormatted}</span>
+              )}
+            </div>
+            {!heartInfo.isFull && <span className="hearts-charge-hint">+</span>}
+          </button>
         </div>
         <h1 className="title">구구단 챌린지</h1>
         <p className="subtitle">
@@ -461,64 +427,43 @@ export function DifficultySelectPage() {
 
       {/* 하트 부족 모달 */}
       {showNoHeartsModal && (
-        <div className="no-hearts-modal-overlay">
-          <div className="no-hearts-modal">
-            <div className="no-hearts-icon">💔</div>
-            <h2 className="no-hearts-title">하트가 부족해요!</h2>
-            <p className="no-hearts-desc">
-              게임을 시작하려면 하트가 필요해요.
-              <br />
-              광고를 보거나 랭킹에서 공유하면 하트를 충전할 수 있어요!
-            </p>
+        <NoHeartsModal
+          heartInfo={heartInfo}
+          isAdSupported={isAdSupported}
+          isAdLoaded={isAdLoaded}
+          isAdLoading={isAdLoading}
+          onWatchAd={() => handleWatchAdForHearts(executeAfterCharge)}
+          onShare={() => handleShareForHearts('구구단 실력을 테스트해보세요! 나와 대결해요!', executeAfterCharge)}
+          onClose={() => { setShowNoHeartsModal(false); setPendingAction(null); }}
+        />
+      )}
 
-            <div className="no-hearts-status">
-              <div className="hearts-display-large">{renderHearts()}</div>
-              {!heartInfo.isFull && (
-                <span className="hearts-timer">⏱️ {heartInfo.timeUntilNextFormatted} 후 +1</span>
-              )}
-            </div>
+      {/* 하트 충전 모달 (상단 하트 클릭 시) */}
+      {showHeartChargeModal && (
+        <NoHeartsModal
+          heartInfo={heartInfo}
+          isAdSupported={isAdSupported}
+          isAdLoaded={isAdLoaded}
+          isAdLoading={isAdLoading}
+          title="하트 충전"
+          icon={'\u2764\uFE0F'}
+          onWatchAd={() => handleWatchAdForHearts(() => setShowHeartChargeModal(false))}
+          onShare={() => handleShareForHearts('구구단 실력을 테스트해보세요! 나와 대결해요!', () => setShowHeartChargeModal(false))}
+          onClose={() => setShowHeartChargeModal(false)}
+        />
+      )}
 
-            <div className="no-hearts-actions">
-              {isAdSupported && (
-                <button
-                  className="no-hearts-btn primary"
-                  onClick={handleWatchAdForHearts}
-                  disabled={isAdLoading}
-                >
-                  {isAdLoading ? (
-                    '광고 준비 중...'
-                  ) : (
-                    <>
-                      <span className="btn-icon">📺</span>
-                      광고 보고 풀충전
-                    </>
-                  )}
-                </button>
-              )}
+      {/* 충전 성공 토스트 */}
+      {showChargeSuccess && (
+        <div className="charge-success-toast">
+          ✅ 하트가 충전되었어요!
+        </div>
+      )}
 
-              <button
-                className="no-hearts-btn secondary"
-                onClick={() => {
-                  setShowNoHeartsModal(false);
-                  setPendingAction(null);
-                  navigate('/ranking');
-                }}
-              >
-                <span className="btn-icon">📤</span>
-                랭킹에서 공유하기
-              </button>
-
-              <button
-                className="no-hearts-btn tertiary"
-                onClick={() => {
-                  setShowNoHeartsModal(false);
-                  setPendingAction(null);
-                }}
-              >
-                닫기
-              </button>
-            </div>
-          </div>
+      {/* 광고 에러 토스트 */}
+      {showAdError && (
+        <div className="charge-error-toast">
+          광고를 불러올 수 없어요. 잠시 후 다시 시도해주세요.
         </div>
       )}
     </div>

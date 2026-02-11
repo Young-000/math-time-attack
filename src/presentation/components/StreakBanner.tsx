@@ -2,7 +2,7 @@
  * 연속 출석 배너 컴포넌트
  */
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
   getStreakData,
   getWeekAttendance,
@@ -11,16 +11,9 @@ import {
 } from '@domain/services/streakService';
 
 export function StreakBanner() {
-  const [streak, setStreak] = useState(0);
-  const [weekAttendance, setWeekAttendance] = useState<boolean[]>([]);
-  const [checkedToday, setCheckedToday] = useState(false);
-
-  useEffect(() => {
-    const data = getStreakData();
-    setStreak(data.currentStreak);
-    setWeekAttendance(getWeekAttendance());
-    setCheckedToday(isCheckedInToday());
-  }, []);
+  const [streak] = useState(() => getStreakData().currentStreak);
+  const [weekAttendance] = useState(() => getWeekAttendance());
+  const [checkedToday] = useState(() => isCheckedInToday());
 
   const todayIndex = new Date().getDay();
 

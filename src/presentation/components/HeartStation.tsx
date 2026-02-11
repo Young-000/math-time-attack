@@ -14,6 +14,8 @@ import {
   type HeartInfo,
 } from '@domain/services/heartService';
 import { useRewardedAd } from '@presentation/hooks/useRewardedAd';
+import { useContactsViral } from '@presentation/hooks/useContactsViral';
+import { share } from '@apps-in-toss/web-framework';
 
 interface HeartStationProps {
   onClose?: () => void;
@@ -25,6 +27,7 @@ export function HeartStation({ onClose }: HeartStationProps) {
   const [showShareSuccess, setShowShareSuccess] = useState(false);
 
   const { isAdSupported, isAdLoaded, isAdLoading, loadAd, showAd } = useRewardedAd();
+  const { isConfigured: isContactsViralConfigured, openContactsViral } = useContactsViral();
 
   // 하트 정보 주기적 업데이트
   useEffect(() => {
@@ -62,42 +65,49 @@ export function HeartStation({ onClose }: HeartStationProps) {
     });
   }, [showAd, loadAd]);
 
-  // 공유하기로 풀충전
-  const handleShare = useCallback(async () => {
+  // 공유 성공 시 풀충전 처리
+  const onShareSuccess = useCallback(() => {
+    refillHearts();
+    setHeartInfo(getHeartInfo());
+    setShowShareSuccess(true);
+    setTimeout(() => setShowShareSuccess(false), 2000);
+  }, []);
+
+  // 공유하기로 풀충전 (contactsViral 우선, fallback으로 share)
+  const handleShare = useCallback(() => {
     setIsSharing(true);
 
-    try {
-      if (navigator.share) {
-        await navigator.share({
-          title: '구구단 챌린지',
-          text: '구구단 실력을 테스트해보세요! 타임어택 모드에서 나와 대결해요 🔥',
-          url: window.location.origin,
+    // contactsViral이 설정되어 있으면 사용 (토스 연락처 기반 공유 리워드)
+    if (isContactsViralConfigured) {
+      openContactsViral({
+        onRewarded: () => {
+          onShareSuccess();
+          setIsSharing(false);
+        },
+        onClose: () => {
+          setIsSharing(false);
+        },
+        onError: (error) => {
+          console.error('ContactsViral error:', error);
+          setIsSharing(false);
+        },
+      });
+    } else {
+      // fallback: Apps-in-Toss share API 사용
+      const shareMessage = '구구단 실력을 테스트해보세요! 타임어택 모드에서 나와 대결해요 🔥';
+
+      share({ message: shareMessage })
+        .then(() => {
+          onShareSuccess();
+        })
+        .catch((error) => {
+          console.log('Share cancelled or failed:', error);
+        })
+        .finally(() => {
+          setIsSharing(false);
         });
-
-        // 공유 성공 시 풀충전
-        refillHearts();
-        setHeartInfo(getHeartInfo());
-        setShowShareSuccess(true);
-        setTimeout(() => setShowShareSuccess(false), 2000);
-      } else {
-        // Web Share API 미지원 시 클립보드 복사
-        await navigator.clipboard.writeText(
-          `구구단 챌린지 - 타임어택 모드에서 나와 대결해요! 🔥\n${window.location.origin}`
-        );
-
-        // 복사 성공 시 풀충전
-        refillHearts();
-        setHeartInfo(getHeartInfo());
-        setShowShareSuccess(true);
-        setTimeout(() => setShowShareSuccess(false), 2000);
-      }
-    } catch (error) {
-      // 사용자가 공유 취소한 경우 등
-      console.log('Share cancelled or failed:', error);
-    } finally {
-      setIsSharing(false);
     }
-  }, []);
+  }, [isContactsViralConfigured, openContactsViral, onShareSuccess]);
 
   // 하트 아이콘 렌더링
   const renderHearts = () => {
@@ -146,7 +156,7 @@ export function HeartStation({ onClose }: HeartStationProps) {
           <button
             className="heart-station-btn ad-btn"
             onClick={handleWatchAd}
-            disabled={isAdLoading || heartInfo.isFull}
+            disabled={isAdLoading || !isAdLoaded || heartInfo.isFull}
           >
             {isAdLoading ? (
               '광고 준비 중...'

@@ -85,7 +85,7 @@ export function getHeartCount(): number {
  * 하트 사용 (1개 차감)
  * @returns 성공 여부
  */
-export function useHeart(): boolean {
+export function consumeHeart(): boolean {
   const data = loadHeartData();
   const updated = calculateRechargedHearts(data);
 

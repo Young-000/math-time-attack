@@ -241,11 +241,11 @@ export function TimeAttackPage() {
               <button
                 className="ad-modal-btn primary"
                 onClick={handleWatchAd}
-                disabled={isWatchingAd || (!isAdLoaded && !isAdLoading)}
+                disabled={isWatchingAd || !isAdLoaded}
               >
                 {isWatchingAd ? (
-                  '광고 로딩 중...'
-                ) : isAdLoading ? (
+                  '광고 시청 중...'
+                ) : !isAdLoaded ? (
                   '광고 준비 중...'
                 ) : (
                   <>

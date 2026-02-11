@@ -15,6 +15,17 @@ import { getSupabaseClient, isSupabaseConfigured } from '../infrastructure/supab
 
 export const STORAGE_KEY = 'math-time-attack-records-v2';
 
+/**
+ * 이번 주 월요일 00:00 (로컬 시간) 반환
+ */
+function getWeekStart(): Date {
+  const now = new Date();
+  const day = now.getDay();
+  const diff = day === 0 ? 6 : day - 1; // 일요일(0)이면 6일 전, 그 외는 day-1일 전
+  const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - diff);
+  return monday;
+}
+
 interface StoredRecordItem {
   time: number;
   achievedAt: string;
@@ -531,7 +542,8 @@ export async function getMyRankInfo(
 export async function getTopRankings(
   difficulty: DifficultyType,
   operation: OperationType = Operation.MULTIPLICATION,
-  limit: number = 100
+  limit: number = 100,
+  period: 'all' | 'weekly' = 'all'
 ): Promise<RankingItem[]> {
   const supabase = getSupabaseClient();
   if (!supabase) {
@@ -540,14 +552,19 @@ export async function getTopRankings(
   }
 
   try {
-    // RPC 함수를 사용하여 서버에서 최적화된 랭킹 조회 (public 스키마 wrapper 사용)
+    const params: Record<string, unknown> = {
+      p_difficulty: difficulty,
+      p_operation: operation,
+      p_limit: limit,
+    };
+
+    if (period === 'weekly') {
+      params.p_since = getWeekStart().toISOString();
+    }
+
     const { data, error } = await supabase
       .schema('public')
-      .rpc('get_top_rankings', {
-        p_difficulty: difficulty,
-        p_operation: operation,
-        p_limit: limit,
-      });
+      .rpc('get_top_rankings', params);
 
     if (error) {
       console.error('Failed to fetch top rankings:', error);
@@ -635,7 +652,8 @@ export async function saveTimeAttackRecordToServer(
 export async function getTimeAttackRankings(
   difficulty: DifficultyType,
   operation: OperationType = Operation.MULTIPLICATION,
-  limit: number = 100
+  limit: number = 100,
+  period: 'all' | 'weekly' = 'all'
 ): Promise<TimeAttackRankingItem[]> {
   const supabase = getSupabaseClient();
   if (!supabase) {
@@ -644,13 +662,19 @@ export async function getTimeAttackRankings(
   }
 
   try {
+    const params: Record<string, unknown> = {
+      p_difficulty: difficulty,
+      p_operation: operation,
+      p_limit: limit,
+    };
+
+    if (period === 'weekly') {
+      params.p_since = getWeekStart().toISOString();
+    }
+
     const { data, error } = await supabase
       .schema('public')
-      .rpc('get_time_attack_rankings', {
-        p_difficulty: difficulty,
-        p_operation: operation,
-        p_limit: limit,
-      });
+      .rpc('get_time_attack_rankings', params);
 
     if (error) {
       console.error('Failed to fetch time attack rankings:', error);

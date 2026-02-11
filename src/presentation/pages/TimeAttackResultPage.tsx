@@ -2,7 +2,7 @@
  * 타임어택 결과 페이지
  */
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { DIFFICULTY_CONFIG, Operation, type DifficultyType, type OperationType } from '@domain/entities';
 import { getTimeAttackBestScore } from '@presentation/hooks/useTimeAttack';
@@ -13,6 +13,8 @@ import {
   isOnlineMode,
 } from '@data/recordService';
 import { getCurrentUserId } from '@infrastructure/rankingService';
+import { useHeartSystem } from '@presentation/hooks/useHeartSystem';
+import { HeartDisplay, NoHeartsModal } from '@presentation/components';
 
 interface LocationState {
   difficulty: DifficultyType;
@@ -32,6 +34,21 @@ export function TimeAttackResultPage() {
   const [totalPlayers, setTotalPlayers] = useState(0);
   const [isLoadingRank, setIsLoadingRank] = useState(false);
   const hasProcessedRef = useRef(false);
+
+  // 하트 시스템 통합 훅
+  const {
+    heartInfo,
+    showNoHeartsModal,
+    showChargeSuccess,
+    showAdError,
+    isAdSupported,
+    isAdLoaded,
+    isAdLoading,
+    setShowNoHeartsModal,
+    handleWatchAdForHearts,
+    handleShareForHearts,
+    tryConsumeHeart,
+  } = useHeartSystem();
 
   const online = isOnlineMode();
 
@@ -94,23 +111,39 @@ export function TimeAttackResultPage() {
     saveAndFetchRank();
   }, [state, navigate, online]);
 
+  // state에서 값 추출 (null일 수 있으므로 기본값 처리)
+  const difficulty = state?.difficulty ?? 'easy';
+  const correctCount = state?.correctCount ?? 0;
+  const wrongCount = state?.wrongCount ?? 0;
+  const operation = state?.operation ?? Operation.MULTIPLICATION;
+
+  // 충전 후 게임 재시작
+  const startGameAfterCharge = useCallback(() => {
+    const consumed = tryConsumeHeart();
+    if (consumed) {
+      navigate(`/time-attack/${difficulty}`);
+    }
+  }, [tryConsumeHeart, navigate, difficulty]);
+
+  // 다시하기 - 하트 체크 후 게임 시작
+  const handleRetry = useCallback(() => {
+    const consumed = tryConsumeHeart();
+    if (!consumed) return;
+    navigate(`/time-attack/${difficulty}`);
+  }, [navigate, difficulty, tryConsumeHeart]);
+
+  const handleHome = useCallback(() => {
+    navigate('/');
+  }, [navigate]);
+
   if (!state) {
     return null;
   }
 
-  const { difficulty, correctCount, wrongCount, operation = Operation.MULTIPLICATION } = state;
   const config = DIFFICULTY_CONFIG[difficulty];
   const bestScore = getTimeAttackBestScore(difficulty, operation);
   const totalAttempts = correctCount + wrongCount;
   const accuracy = totalAttempts > 0 ? Math.round((correctCount / totalAttempts) * 100) : 0;
-
-  const handleRetry = () => {
-    navigate(`/time-attack/${difficulty}`);
-  };
-
-  const handleHome = () => {
-    navigate('/');
-  };
 
   // 점수 평가 메시지
   const getScoreMessage = () => {
@@ -197,6 +230,11 @@ export function TimeAttackResultPage() {
           )}
         </div>
 
+        {/* 하트 정보 표시 */}
+        <div className="result-hearts-info">
+          <HeartDisplay heartInfo={heartInfo} showCount showTimer />
+        </div>
+
         <div className="result-actions">
           <button className="action-btn primary" onClick={handleRetry}>
             다시 도전하기
@@ -206,6 +244,33 @@ export function TimeAttackResultPage() {
           </button>
         </div>
       </main>
+
+      {/* 하트 부족 모달 */}
+      {showNoHeartsModal && (
+        <NoHeartsModal
+          heartInfo={heartInfo}
+          isAdSupported={isAdSupported}
+          isAdLoaded={isAdLoaded}
+          isAdLoading={isAdLoading}
+          onWatchAd={() => handleWatchAdForHearts(startGameAfterCharge)}
+          onShare={() => handleShareForHearts('구구단 타임어택! 제한시간 안에 몇 문제나 풀 수 있을까요? 나와 대결해요!', startGameAfterCharge)}
+          onClose={() => setShowNoHeartsModal(false)}
+        />
+      )}
+
+      {/* 충전 성공 토스트 */}
+      {showChargeSuccess && (
+        <div className="charge-success-toast">
+          ✅ 하트가 충전되었어요!
+        </div>
+      )}
+
+      {/* 광고 에러 토스트 */}
+      {showAdError && (
+        <div className="charge-error-toast">
+          광고를 불러올 수 없어요. 잠시 후 다시 시도해주세요.
+        </div>
+      )}
     </div>
   );
 }

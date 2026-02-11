@@ -1,11 +1,13 @@
 /**
  * Share Service
  * 소셜 공유 기능을 위한 서비스
+ * @see https://developers-apps-in-toss.toss.im/bedrock/reference/framework/공유/share.md
  */
 
 import { DIFFICULTY_CONFIG } from '@domain/entities';
 import type { DifficultyType, OperationType } from '@domain/entities';
 import { formatTime } from '@lib/utils';
+import { share } from '@apps-in-toss/web-framework';
 
 const APP_URL = 'https://math-time-attack.vercel.app';
 const APP_NAME = '구구단 챌린지';
@@ -49,10 +51,11 @@ export function generateChallengeUrl(difficulty?: DifficultyType): string {
 }
 
 /**
- * Web Share API 사용 가능 여부 확인
+ * Apps-in-Toss share API 사용 가능 여부 확인
  */
 export function canUseNativeShare(): boolean {
-  return typeof navigator !== 'undefined' && 'share' in navigator;
+  // 앱인토스 환경에서는 share API 항상 사용 가능
+  return true;
 }
 
 /**
@@ -86,8 +89,8 @@ export async function copyToClipboard(text: string): Promise<boolean> {
 
 /**
  * 결과 공유하기
- * - 모바일: Web Share API 사용
- * - 데스크탑: 클립보드 복사
+ * - Apps-in-Toss share API 사용
+ * - Fallback: 클립보드 복사
  */
 export async function shareResult(options: ShareOptions): Promise<{
   success: boolean;
@@ -95,25 +98,19 @@ export async function shareResult(options: ShareOptions): Promise<{
 }> {
   const shareText = generateShareText(options);
 
-  // 네이티브 공유 시도 (모바일)
-  if (canUseNativeShare()) {
-    try {
-      await navigator.share({
-        title: APP_NAME,
-        text: shareText,
-        url: generateChallengeUrl(options.difficulty),
-      });
-      return { success: true, method: 'native' };
-    } catch (err) {
-      // 사용자가 공유 취소한 경우
-      if (err instanceof Error && err.name === 'AbortError') {
-        return { success: false, method: 'native' };
-      }
-      // 다른 에러는 클립보드 폴백으로
+  // Apps-in-Toss share API 사용
+  try {
+    await share({ message: shareText });
+    return { success: true, method: 'native' };
+  } catch (err) {
+    // 사용자가 공유 취소한 경우
+    if (err instanceof Error && err.name === 'AbortError') {
+      return { success: false, method: 'native' };
     }
+    console.log('Share failed, falling back to clipboard:', err);
   }
 
-  // 클립보드 복사 (데스크탑 또는 네이티브 공유 실패 시)
+  // 클립보드 복사 (공유 실패 시)
   const copied = await copyToClipboard(shareText);
   return { success: copied, method: 'clipboard' };
 }
