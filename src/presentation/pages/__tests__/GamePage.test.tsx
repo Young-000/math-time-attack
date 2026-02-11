@@ -135,7 +135,9 @@ describe('GamePage', () => {
 
     it('타이머가 표시되어야 한다', () => {
       renderPage('easy');
-      expect(screen.getByText('5.00초')).toBeInTheDocument();
+      // 타이머는 헤더와 모바일 타이머 두 곳에 표시됨
+      const timers = screen.getAllByText('5.00초');
+      expect(timers.length).toBeGreaterThanOrEqual(1);
     });
 
     it('입력 필드가 있어야 한다', () => {

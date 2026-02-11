@@ -13,6 +13,8 @@ vi.mock('@presentation/pages', () => ({
   GamePage: () => <div data-testid="game-page">GamePage</div>,
   ResultPage: () => <div data-testid="result-page">ResultPage</div>,
   RankingPage: () => <div data-testid="ranking-page">RankingPage</div>,
+  TimeAttackPage: () => <div data-testid="timeattack-page">TimeAttackPage</div>,
+  TimeAttackResultPage: () => <div data-testid="timeattack-result-page">TimeAttackResultPage</div>,
 }));
 
 describe('App', () => {

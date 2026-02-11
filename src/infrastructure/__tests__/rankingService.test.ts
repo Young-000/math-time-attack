@@ -55,9 +55,11 @@ describe('Ranking Service', () => {
   });
 
   describe('getCurrentUserId', () => {
-    it('should return null when not in Apps-in-Toss environment', async () => {
+    it('should return local fallback ID when not in Apps-in-Toss environment', async () => {
       const result = await getCurrentUserId();
-      expect(result).toBeNull();
+      // ODL 없이도 localStorage 기반 로컬 ID를 반환
+      expect(result).not.toBeNull();
+      expect(result).toMatch(/^local-/);
     });
 
     it('should return user ID from ODL API', async () => {
@@ -70,7 +72,7 @@ describe('Ranking Service', () => {
       expect(result).toBe('test-user-id');
     });
 
-    it('should return null and log warning when ODL throws error', async () => {
+    it('should return local fallback ID and log warning when ODL throws error', async () => {
       const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
       (global.window as unknown as { ODL: object }).ODL = {
@@ -80,7 +82,9 @@ describe('Ranking Service', () => {
 
       const result = await getCurrentUserId();
 
-      expect(result).toBeNull();
+      // ODL 에러 시에도 로컬 ID fallback 반환
+      expect(result).not.toBeNull();
+      expect(result).toMatch(/^local-/);
       expect(consoleWarnSpy).toHaveBeenCalledWith(
         'Failed to get user ID from ODL:',
         expect.any(Error)
@@ -147,9 +151,10 @@ describe('Ranking Service', () => {
   });
 
   describe('fetchMyRank', () => {
-    it('should return null when user is not logged in', async () => {
+    it('should return rank using local fallback ID when not in Apps-in-Toss', async () => {
       const result = await fetchMyRank('easy', 'multiplication');
-      expect(result).toBeNull();
+      // 로컬 fallback ID로 순위 조회가 수행되므로 null이 아닐 수 있음
+      expect(result).toBe(3);
     });
 
     it('should fetch my rank when user is logged in', async () => {
@@ -180,11 +185,12 @@ describe('Ranking Service', () => {
       expect(context.gameMode).toBe('easy_multiplication');
     });
 
-    it('should return null myRank when not logged in', async () => {
+    it('should return myRank using local fallback ID when not in Apps-in-Toss', async () => {
       const context = await fetchRankingContext('easy', 'multiplication');
 
       expect(context.rankings).toHaveLength(2);
-      expect(context.myRank).toBeNull();
+      // 로컬 fallback ID로 순위 조회가 수행됨
+      expect(context.myRank).toBe(3);
       expect(context.error).toBeNull();
     });
 

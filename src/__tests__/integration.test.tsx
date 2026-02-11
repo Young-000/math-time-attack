@@ -117,8 +117,9 @@ describe('통합 테스트', () => {
 
     it('타이머가 표시되어야 한다', () => {
       renderApp('/game/easy');
-
-      expect(screen.getByText('1.00초')).toBeInTheDocument();
+      // 타이머는 헤더와 모바일 타이머 두 곳에 표시됨
+      const timers = screen.getAllByText('1.00초');
+      expect(timers.length).toBeGreaterThanOrEqual(1);
     });
   });
 

@@ -23,8 +23,12 @@ const mockGetTopRankings = vi.fn();
 
 vi.mock('@data/recordService', () => ({
   getTopRankings: (...args: unknown[]) => mockGetTopRankings(...args),
+  getTimeAttackRankings: vi.fn().mockResolvedValue([]),
+  getMyRankInfo: vi.fn().mockResolvedValue({ rank: null, percentile: null, totalPlayers: 0 }),
+  getTimeAttackRankInfo: vi.fn().mockResolvedValue({ rank: null, percentile: null, totalPlayers: 0 }),
   getNickname: vi.fn().mockResolvedValue('테스트유저'),
   updateNickname: vi.fn().mockResolvedValue(true),
+  isOnlineMode: vi.fn(() => false),
 }));
 
 // Mock rankingService
@@ -85,7 +89,7 @@ describe('RankingPage', () => {
       renderPage();
 
       await waitFor(() => {
-        expect(mockGetTopRankings).toHaveBeenCalledWith('easy');
+        expect(mockGetTopRankings).toHaveBeenCalledWith('easy', 'multiplication', 100, 'all');
       });
     });
 
@@ -93,7 +97,7 @@ describe('RankingPage', () => {
       renderPage('/ranking/medium');
 
       await waitFor(() => {
-        expect(mockGetTopRankings).toHaveBeenCalledWith('medium');
+        expect(mockGetTopRankings).toHaveBeenCalledWith('medium', 'multiplication', 100, 'all');
       });
     });
   });
@@ -109,7 +113,7 @@ describe('RankingPage', () => {
       fireEvent.click(screen.getByRole('tab', { name: '중급' }));
 
       await waitFor(() => {
-        expect(mockGetTopRankings).toHaveBeenCalledWith('medium');
+        expect(mockGetTopRankings).toHaveBeenCalledWith('medium', 'multiplication', 100, 'all');
         expect(mockNavigate).toHaveBeenCalledWith('/ranking/medium', { replace: true });
       });
     });
@@ -124,7 +128,7 @@ describe('RankingPage', () => {
       fireEvent.click(screen.getByRole('tab', { name: '고급' }));
 
       await waitFor(() => {
-        expect(mockGetTopRankings).toHaveBeenCalledWith('hard');
+        expect(mockGetTopRankings).toHaveBeenCalledWith('hard', 'multiplication', 100, 'all');
         expect(mockNavigate).toHaveBeenCalledWith('/ranking/hard', { replace: true });
       });
     });
