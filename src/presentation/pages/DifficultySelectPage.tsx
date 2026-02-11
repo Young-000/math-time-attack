@@ -48,7 +48,6 @@ export function DifficultySelectPage() {
     showChargeSuccess,
     showAdError,
     isAdSupported,
-    isAdLoaded,
     isAdLoading,
     setShowNoHeartsModal,
     handleWatchAdForHearts,
@@ -430,7 +429,6 @@ export function DifficultySelectPage() {
         <NoHeartsModal
           heartInfo={heartInfo}
           isAdSupported={isAdSupported}
-          isAdLoaded={isAdLoaded}
           isAdLoading={isAdLoading}
           onWatchAd={() => handleWatchAdForHearts(executeAfterCharge)}
           onShare={() => handleShareForHearts('구구단 실력을 테스트해보세요! 나와 대결해요!', executeAfterCharge)}
@@ -443,7 +441,6 @@ export function DifficultySelectPage() {
         <NoHeartsModal
           heartInfo={heartInfo}
           isAdSupported={isAdSupported}
-          isAdLoaded={isAdLoaded}
           isAdLoading={isAdLoading}
           title="하트 충전"
           icon={'\u2764\uFE0F'}

@@ -55,7 +55,6 @@ export function RankingPage() {
     heartInfo,
     showChargeSuccess: showShareSuccess,
     isAdSupported,
-    isAdLoaded,
     isAdLoading,
     handleWatchAdForHearts,
     handleShareForHearts,
@@ -279,10 +278,10 @@ export function RankingPage() {
               <button
                 className="share-btn ad-recharge"
                 onClick={() => handleWatchAdForHearts()}
-                disabled={isAdLoading || !isAdLoaded}
+                disabled={isAdLoading}
               >
                 <span className="share-icon">{'\uD83D\uDCFA'}</span>
-                {isAdLoading || !isAdLoaded ? '준비 중...' : '광고 보기'}
+                {isAdLoading ? '준비 중...' : '광고 보기'}
               </button>
             )}
             {myRanks[selectedDifficulty] && (

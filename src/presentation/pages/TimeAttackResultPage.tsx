@@ -42,7 +42,6 @@ export function TimeAttackResultPage() {
     showChargeSuccess,
     showAdError,
     isAdSupported,
-    isAdLoaded,
     isAdLoading,
     setShowNoHeartsModal,
     handleWatchAdForHearts,
@@ -250,7 +249,6 @@ export function TimeAttackResultPage() {
         <NoHeartsModal
           heartInfo={heartInfo}
           isAdSupported={isAdSupported}
-          isAdLoaded={isAdLoaded}
           isAdLoading={isAdLoading}
           onWatchAd={() => handleWatchAdForHearts(startGameAfterCharge)}
           onShare={() => handleShareForHearts('구구단 타임어택! 제한시간 안에 몇 문제나 풀 수 있을까요? 나와 대결해요!', startGameAfterCharge)}

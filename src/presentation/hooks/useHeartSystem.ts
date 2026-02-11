@@ -3,7 +3,6 @@
  * - 하트 상태 관리 (주기적 업데이트)
  * - 광고 시청으로 풀충전
  * - 공유하기로 풀충전
- * - 광고 미리 로드
  */
 
 import { useState, useEffect, useCallback } from 'react';
@@ -24,7 +23,6 @@ interface UseHeartSystemReturn {
   showChargeSuccess: boolean;
   showAdError: boolean;
   isAdSupported: boolean;
-  isAdLoaded: boolean;
   isAdLoading: boolean;
   setShowNoHeartsModal: (show: boolean) => void;
   handleWatchAdForHearts: (onSuccess?: () => void) => void;
@@ -39,7 +37,7 @@ export function useHeartSystem(): UseHeartSystemReturn {
   const [showChargeSuccess, setShowChargeSuccess] = useState(false);
   const [showAdError, setShowAdError] = useState(false);
 
-  const { isAdSupported, isAdLoaded, isAdLoading, loadAd, showAd } = useRewardedAd();
+  const { isAdSupported, isAdLoading, loadAndShowAd } = useRewardedAd();
   const { isConfigured: isContactsViralConfigured, openContactsViral } = useContactsViral();
 
   // 하트 정보 주기적 업데이트
@@ -49,13 +47,6 @@ export function useHeartSystem(): UseHeartSystemReturn {
     }, 1000);
     return () => clearInterval(interval);
   }, []);
-
-  // 광고 미리 로드
-  useEffect(() => {
-    if (isAdSupported && !isAdLoaded && !isAdLoading) {
-      loadAd();
-    }
-  }, [isAdSupported, isAdLoaded, isAdLoading, loadAd]);
 
   const refreshHeartInfo = useCallback(() => {
     setHeartInfo(getHeartInfo());
@@ -71,26 +62,23 @@ export function useHeartSystem(): UseHeartSystemReturn {
     setTimeout(() => setShowAdError(false), 2500);
   }, []);
 
-  // 광고 시청으로 하트 풀충전
+  // 광고 시청으로 하트 풀충전 (공식 패턴: 클릭 → load → show 한 플로우)
   const handleWatchAdForHearts = useCallback((onSuccess?: () => void) => {
-    showAd({
+    loadAndShowAd({
       onRewarded: () => {
         refillHearts();
         setHeartInfo(getHeartInfo());
         setShowNoHeartsModal(false);
         showChargeSuccessToast();
         onSuccess?.();
-        loadAd();
       },
       onDismiss: () => {},
       onError: (error) => {
         console.error('Ad error:', error);
         showAdErrorToast();
-        // 에러 후 다시 로드 시도
-        loadAd();
       },
     });
-  }, [showAd, loadAd, showChargeSuccessToast, showAdErrorToast]);
+  }, [loadAndShowAd, showChargeSuccessToast, showAdErrorToast]);
 
   // 공유하기로 하트 풀충전
   const handleShareForHearts = useCallback((shareMessage: string, onSuccess?: () => void) => {
@@ -147,7 +135,6 @@ export function useHeartSystem(): UseHeartSystemReturn {
     showChargeSuccess,
     showAdError,
     isAdSupported,
-    isAdLoaded,
     isAdLoading,
     setShowNoHeartsModal,
     handleWatchAdForHearts,

@@ -25,7 +25,7 @@ export function TimeAttackPage() {
     skipBonus,
   } = useTimeAttack();
 
-  const { isAdSupported, isAdLoaded, isAdLoading, loadAd, showAd } = useRewardedAd();
+  const { isAdSupported, isAdLoading, loadAndShowAd } = useRewardedAd();
 
   const [inputValue, setInputValue] = useState('');
   const [isWrong, setIsWrong] = useState(false);
@@ -39,13 +39,6 @@ export function TimeAttackPage() {
       startGame(difficulty);
     }
   }, [difficulty, gameState, startGame]);
-
-  // 광고 미리 로드
-  useEffect(() => {
-    if (isAdSupported && !isAdLoaded && !isAdLoading) {
-      loadAd();
-    }
-  }, [isAdSupported, isAdLoaded, isAdLoading, loadAd]);
 
   // 입력창 포커스
   useEffect(() => {
@@ -102,17 +95,15 @@ export function TimeAttackPage() {
     }
   };
 
-  // 광고 시청 핸들러 (하트 소모 없음 - 광고만 시청)
+  // 광고 시청 핸들러 (공식 패턴: 클릭 → load → show 한 플로우)
   const handleWatchAd = () => {
     setIsWatchingAd(true);
 
-    showAd({
+    loadAndShowAd({
       onRewarded: () => {
         // 광고 시청 완료 - 보너스 시간 추가
         addBonusTime();
         setIsWatchingAd(false);
-        // 다음을 위해 광고 다시 로드
-        loadAd();
         // 입력창에 포커스
         setTimeout(() => inputRef.current?.focus(), 100);
       },
@@ -241,11 +232,9 @@ export function TimeAttackPage() {
               <button
                 className="ad-modal-btn primary"
                 onClick={handleWatchAd}
-                disabled={isWatchingAd || !isAdLoaded}
+                disabled={isWatchingAd || isAdLoading}
               >
-                {isWatchingAd ? (
-                  '광고 시청 중...'
-                ) : !isAdLoaded ? (
+                {isWatchingAd || isAdLoading ? (
                   '광고 준비 중...'
                 ) : (
                   <>

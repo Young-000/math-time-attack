@@ -1,8 +1,14 @@
 -- 주간 랭킹 필터 지원을 위한 RPC 함수 업데이트
 -- p_since 파라미터 추가 (NULL이면 전체 기간, 값이 있으면 해당 시점 이후만 필터)
 
--- 1. get_top_rankings 업데이트 (클래식 모드)
-CREATE OR REPLACE FUNCTION public.get_top_rankings(
+-- ⚠️ 기존 3-param 함수와의 오버로딩 충돌 방지를 위해 먼저 DROP
+DROP FUNCTION IF EXISTS public.get_top_rankings(VARCHAR, VARCHAR, INTEGER);
+DROP FUNCTION IF EXISTS public.get_top_rankings(VARCHAR, VARCHAR, INTEGER, TIMESTAMPTZ);
+DROP FUNCTION IF EXISTS public.get_time_attack_rankings(VARCHAR, VARCHAR, INTEGER);
+DROP FUNCTION IF EXISTS public.get_time_attack_rankings(VARCHAR, VARCHAR, INTEGER, TIMESTAMPTZ);
+
+-- 1. get_top_rankings (클래식 모드) - p_since DEFAULT NULL
+CREATE FUNCTION public.get_top_rankings(
   p_difficulty VARCHAR,
   p_operation VARCHAR DEFAULT 'multiplication',
   p_limit INTEGER DEFAULT 100,
@@ -52,8 +58,8 @@ BEGIN
 END;
 $$;
 
--- 2. get_time_attack_rankings 업데이트 (타임어택 모드)
-CREATE OR REPLACE FUNCTION public.get_time_attack_rankings(
+-- 2. get_time_attack_rankings (타임어택 모드) - p_since DEFAULT NULL
+CREATE FUNCTION public.get_time_attack_rankings(
   p_difficulty VARCHAR,
   p_operation VARCHAR DEFAULT 'multiplication',
   p_limit INTEGER DEFAULT 100,

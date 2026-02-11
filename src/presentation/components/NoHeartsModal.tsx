@@ -10,7 +10,6 @@ import { HeartDisplay } from './HeartDisplay';
 interface NoHeartsModalProps {
   heartInfo: HeartInfo;
   isAdSupported: boolean;
-  isAdLoaded: boolean;
   isAdLoading: boolean;
   onWatchAd: () => void;
   onShare: () => void;
@@ -22,7 +21,6 @@ interface NoHeartsModalProps {
 export function NoHeartsModal({
   heartInfo,
   isAdSupported,
-  isAdLoaded,
   isAdLoading,
   onWatchAd,
   onShare,
@@ -51,9 +49,9 @@ export function NoHeartsModal({
             <button
               className="no-hearts-btn primary"
               onClick={onWatchAd}
-              disabled={isAdLoading || !isAdLoaded}
+              disabled={isAdLoading}
             >
-              {isAdLoading || !isAdLoaded ? (
+              {isAdLoading ? (
                 '광고 준비 중...'
               ) : (
                 <>

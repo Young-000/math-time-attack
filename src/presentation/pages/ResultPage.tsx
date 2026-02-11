@@ -39,7 +39,6 @@ export function ResultPage() {
     showChargeSuccess,
     showAdError,
     isAdSupported,
-    isAdLoaded,
     isAdLoading,
     setShowNoHeartsModal,
     handleWatchAdForHearts,
@@ -224,7 +223,6 @@ export function ResultPage() {
         <NoHeartsModal
           heartInfo={heartInfo}
           isAdSupported={isAdSupported}
-          isAdLoaded={isAdLoaded}
           isAdLoading={isAdLoading}
           onWatchAd={() => handleWatchAdForHearts(startGameAfterCharge)}
           onShare={() => handleShareForHearts('구구단 실력을 테스트해보세요! 나와 대결해요!', startGameAfterCharge)}

@@ -26,7 +26,7 @@ export function HeartStation({ onClose }: HeartStationProps) {
   const [isSharing, setIsSharing] = useState(false);
   const [showShareSuccess, setShowShareSuccess] = useState(false);
 
-  const { isAdSupported, isAdLoaded, isAdLoading, loadAd, showAd } = useRewardedAd();
+  const { isAdSupported, isAdLoading, loadAndShowAd } = useRewardedAd();
   const { isConfigured: isContactsViralConfigured, openContactsViral } = useContactsViral();
 
   // 하트 정보 주기적 업데이트
@@ -41,29 +41,19 @@ export function HeartStation({ onClose }: HeartStationProps) {
     return () => clearInterval(interval);
   }, []);
 
-  // 광고 미리 로드
-  useEffect(() => {
-    if (isAdSupported && !isAdLoaded && !isAdLoading) {
-      loadAd();
-    }
-  }, [isAdSupported, isAdLoaded, isAdLoading, loadAd]);
-
-  // 광고 시청으로 풀충전
+  // 광고 시청으로 풀충전 (공식 패턴: 클릭 → load → show 한 플로우)
   const handleWatchAd = useCallback(() => {
-    showAd({
+    loadAndShowAd({
       onRewarded: () => {
         refillHearts();
         setHeartInfo(getHeartInfo());
-        loadAd(); // 다음 광고 로드
       },
-      onDismiss: () => {
-        // 광고 닫힘
-      },
+      onDismiss: () => {},
       onError: (error) => {
         console.error('Ad error:', error);
       },
     });
-  }, [showAd, loadAd]);
+  }, [loadAndShowAd]);
 
   // 공유 성공 시 풀충전 처리
   const onShareSuccess = useCallback(() => {
@@ -156,7 +146,7 @@ export function HeartStation({ onClose }: HeartStationProps) {
           <button
             className="heart-station-btn ad-btn"
             onClick={handleWatchAd}
-            disabled={isAdLoading || !isAdLoaded || heartInfo.isFull}
+            disabled={isAdLoading || heartInfo.isFull}
           >
             {isAdLoading ? (
               '광고 준비 중...'
