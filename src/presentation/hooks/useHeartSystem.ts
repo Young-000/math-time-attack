@@ -72,7 +72,7 @@ export function useHeartSystem(): UseHeartSystemReturn {
 
     loadAndShowAd({
       onRewarded: () => {
-        addHearts(1);
+        addHearts(3);
         recordRewardedAdShown();
         setHeartInfo(getHeartInfo());
         setShowNoHeartsModal(false);
@@ -90,7 +90,7 @@ export function useHeartSystem(): UseHeartSystemReturn {
   // 공유하기로 하트 +2 충전
   const handleShareForHearts = useCallback((shareMessage: string, onSuccess?: () => void) => {
     const onShareSuccess = () => {
-      addHearts(2);
+      addHearts(3);
       setHeartInfo(getHeartInfo());
       setShowNoHeartsModal(false);
       showChargeSuccessToast();
