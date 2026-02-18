@@ -12,7 +12,7 @@ import {
   incrementGameCount,
 } from '@domain/services/adFrequencyService';
 
-const AD_GROUP_ID = 'ait.v2.live.c3e1be11131c45f6';
+const INTERSTITIAL_AD_GROUP_ID = 'ait.v2.live.c3e1be11131c45f6';
 
 interface UseInterstitialAdReturn {
   isAdSupported: boolean;
@@ -37,13 +37,13 @@ export function useInterstitialAd(): UseInterstitialAdReturn {
 
     try {
       const cleanup = loadFullScreenAd({
-        options: { adGroupId: AD_GROUP_ID },
+        options: { adGroupId: INTERSTITIAL_AD_GROUP_ID },
         onEvent: (event) => {
           if (event.type === 'loaded') {
             cleanup();
             try {
               showFullScreenAd({
-                options: { adGroupId: AD_GROUP_ID },
+                options: { adGroupId: INTERSTITIAL_AD_GROUP_ID },
                 onEvent: (showEvent) => {
                   if (showEvent.type === 'dismissed' || showEvent.type === 'failedToShow') {
                     recordInterstitialShown();

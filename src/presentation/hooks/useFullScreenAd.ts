@@ -9,7 +9,7 @@
 import { useCallback, useRef, useState } from 'react';
 import { loadFullScreenAd, showFullScreenAd } from '@apps-in-toss/web-framework';
 
-const AD_GROUP_ID = 'ait.v2.live.c3e1be11131c45f6';
+const REWARDED_AD_GROUP_ID = 'ait.v2.live.92b5c5f7d8644dc2';
 
 interface FullScreenAdCallbacks {
   onRewarded: () => void;
@@ -52,13 +52,13 @@ export function useFullScreenAd(): UseFullScreenAdReturn {
 
     try {
       const cleanup = loadFullScreenAd({
-        options: { adGroupId: AD_GROUP_ID },
+        options: { adGroupId: REWARDED_AD_GROUP_ID },
         onEvent: (event) => {
           if (event.type === 'loaded') {
             cleanup();
             try {
               showFullScreenAd({
-                options: { adGroupId: AD_GROUP_ID },
+                options: { adGroupId: REWARDED_AD_GROUP_ID },
                 onEvent: (showEvent) => {
                   switch (showEvent.type) {
                     case 'userEarnedReward':
