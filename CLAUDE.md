@@ -171,13 +171,27 @@ VITE_SUPABASE_ANON_KEY=eyJ...
 ```bash
 npm install            # 의존성 설치
 npm run dev            # 개발 서버 (localhost:5173)
-npm run build          # 프로덕션 빌드
+npm run build          # 프로덕션 빌드 (웹 only)
+npm run build:ait      # AIT 빌드 (필수! 아래 규칙 참고)
 npm run lint           # ESLint 실행
 npm run typecheck      # TypeScript 타입 검사
 npm run test           # 단위 테스트 (Vitest)
 npm run test:coverage  # 테스트 커버리지
 npm run test:e2e       # E2E 테스트 (Playwright)
 ```
+
+### AIT 빌드 규칙 (필수)
+
+> **`npx granite build` 직접 호출 금지. 반드시 `npm run build:ait` 사용.**
+
+| 명령어 | 결과 | 사용 |
+|--------|------|------|
+| `npm run build:ait` | `builds/gugudan-challenge-v{version}-{timestamp}.ait` | O (필수) |
+| `npx granite build` | `gugudan-challenge.ait` (루트, 이름 규칙 미적용) | X (금지) |
+
+- `scripts/build-ait.sh`가 granite build 후 자동으로 버전+타임스탬프 이름 변경 + `builds/` 이동
+- 루트의 `*.ait` 파일은 `.gitignore`에서 차단됨
+- Claude hook으로 `granite build` 직접 호출 시 차단됨
 
 ## 진행상황
 
