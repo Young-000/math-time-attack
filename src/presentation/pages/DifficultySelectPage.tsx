@@ -56,7 +56,6 @@ export function DifficultySelectPage() {
   } = useHeartSystem();
 
   const [showHeartChargeModal, setShowHeartChargeModal] = useState(false);
-  const [pendingAction, setPendingAction] = useState<{ type: 'classic' | 'timeattack' | 'daily'; difficulty: DifficultyType } | null>(null);
   const [showDailyBonus, setShowDailyBonus] = useState(false);
 
   const online = isOnlineMode();
@@ -173,7 +172,6 @@ export function DifficultySelectPage() {
   const tryStartGame = useCallback((type: 'classic' | 'timeattack' | 'daily', difficulty: DifficultyType) => {
     const consumed = tryConsumeHeart();
     if (!consumed) {
-      setPendingAction({ type, difficulty });
       return;
     }
 
@@ -201,15 +199,6 @@ export function DifficultySelectPage() {
   const handleTimeAttack = useCallback((difficulty: DifficultyType) => {
     tryStartGame('timeattack', difficulty);
   }, [tryStartGame]);
-
-  // 광고/공유 충전 후 대기 액션 실행
-  const executeAfterCharge = useCallback(() => {
-    setShowHeartChargeModal(false);
-    if (pendingAction) {
-      tryStartGame(pendingAction.type, pendingAction.difficulty);
-      setPendingAction(null);
-    }
-  }, [pendingAction, tryStartGame]);
 
   // 헤더 하트 클릭 - 충전 모달 열기
   const handleHeartClick = useCallback(() => {
@@ -442,9 +431,9 @@ export function DifficultySelectPage() {
           heartInfo={heartInfo}
           isAdSupported={isAdSupported}
           isAdLoading={isAdLoading}
-          onWatchAd={() => handleWatchAdForHearts(executeAfterCharge)}
-          onShare={() => handleShareForHearts('구구단 실력을 테스트해보세요! 나와 대결해요!', executeAfterCharge)}
-          onClose={() => { setShowNoHeartsModal(false); setPendingAction(null); }}
+          onWatchAd={() => handleWatchAdForHearts()}
+          onShare={() => handleShareForHearts('구구단 실력을 테스트해보세요! 나와 대결해요!')}
+          onClose={() => setShowNoHeartsModal(false)}
         />
       )}
 

@@ -305,6 +305,12 @@ export function RankingPage() {
             </button>
           </div>
         )}
+        <button
+          className="ranking-start-btn"
+          onClick={() => navigate('/')}
+        >
+          🎮 게임 시작하기
+        </button>
       </div>
 
       {/* Game Center 리더보드 */}

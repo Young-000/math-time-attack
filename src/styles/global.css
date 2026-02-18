@@ -2738,9 +2738,27 @@ body {
   font-size: 16px;
 }
 
+.ranking-start-btn {
+  width: 100%;
+  margin-top: 10px;
+  padding: 14px;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.1s;
+}
+
+.ranking-start-btn:active {
+  transform: scale(0.98);
+}
+
 /* 랭킹 콘텐츠 하단 여백 (고정 공유 섹션과 겹치지 않도록) */
 .ranking-page .ranking-content {
-  padding-bottom: 120px;
+  padding-bottom: 180px;
 }
 
 /* ===== 헤더 하트 표시 ===== */

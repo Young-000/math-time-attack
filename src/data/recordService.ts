@@ -602,7 +602,7 @@ export async function getTopRankings(
       return [];
     }
 
-    // RPC 결과를 RankingItem 형식으로 변환
+    // RPC 결과를 RankingItem 형식으로 변환 + rank 기준 정렬 (SQL JOIN이 순서를 보장하지 않음)
     return (data || []).map((item: {
       rank: number;
       odl_id: string;
@@ -615,7 +615,7 @@ export async function getTopRankings(
       nickname: item.nickname || undefined,
       time: item.best_time,
       played_at: item.played_at,
-    }));
+    })).sort((a: RankingItem, b: RankingItem) => a.rank - b.rank);
   } catch (err) {
     console.error('Error fetching top rankings:', err);
     return [];
@@ -713,6 +713,7 @@ export async function getTimeAttackRankings(
       return [];
     }
 
+    // rank 기준 정렬 (SQL JOIN이 순서를 보장하지 않음)
     return (data || []).map((item: {
       rank: number;
       odl_id: string;
@@ -725,7 +726,7 @@ export async function getTimeAttackRankings(
       nickname: item.nickname || undefined,
       score: item.best_score,
       played_at: item.played_at,
-    }));
+    })).sort((a: TimeAttackRankingItem, b: TimeAttackRankingItem) => a.rank - b.rank);
   } catch (err) {
     console.error('Error fetching time attack rankings:', err);
     return [];

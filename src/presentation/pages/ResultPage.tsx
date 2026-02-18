@@ -155,14 +155,6 @@ export function ResultPage() {
   const elapsedTime = state?.elapsedTime ?? 0;
   const operation = state?.operation ?? Operation.MULTIPLICATION;
 
-  // 충전 후 게임 재시작
-  const startGameAfterCharge = useCallback(() => {
-    const consumed = tryConsumeHeart();
-    if (consumed) {
-      navigate(`/game/${difficulty}`);
-    }
-  }, [tryConsumeHeart, navigate, difficulty]);
-
   // 다시하기 - 하트 체크 후 게임 시작
   const handleRetry = useCallback(() => {
     const consumed = tryConsumeHeart();
@@ -265,8 +257,8 @@ export function ResultPage() {
           heartInfo={heartInfo}
           isAdSupported={isAdSupported}
           isAdLoading={isAdLoading}
-          onWatchAd={() => handleWatchAdForHearts(startGameAfterCharge)}
-          onShare={() => handleShareForHearts('구구단 실력을 테스트해보세요! 나와 대결해요!', startGameAfterCharge)}
+          onWatchAd={() => handleWatchAdForHearts()}
+          onShare={() => handleShareForHearts('구구단 실력을 테스트해보세요! 나와 대결해요!')}
           onClose={() => setShowNoHeartsModal(false)}
         />
       )}

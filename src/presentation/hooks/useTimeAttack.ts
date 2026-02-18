@@ -26,6 +26,7 @@ export interface TimeAttackState {
   isComplete: boolean;
   isTimeUp: boolean; // 시간 종료 (광고 표시용)
   hasUsedAdBonus: boolean; // 광고 보너스 사용 여부
+  waitingForBonusStart: boolean; // 보너스 시작 대기 중
   startTime: number | null;
   bonusTimeUsed: number; // 사용한 보너스 시간 (ms)
 }
@@ -49,11 +50,13 @@ interface UseTimeAttackReturn {
   isNewRecord: boolean;
   isTimeUp: boolean;
   hasUsedAdBonus: boolean;
+  waitingForBonusStart: boolean;
   startGame: (difficulty: DifficultyType, operation?: OperationType) => void;
   submitAnswer: (answer: number) => boolean;
   resetGame: () => void;
   saveGameResult: () => Promise<void>;
   addBonusTime: () => void;
+  startBonusRound: () => void;
   skipBonus: () => void;
 }
 
@@ -146,6 +149,7 @@ export function useTimeAttack(): UseTimeAttackReturn {
   const wrongCount = gameState?.wrongCount ?? 0;
   const isTimeUp = gameState?.isTimeUp ?? false;
   const hasUsedAdBonus = gameState?.hasUsedAdBonus ?? false;
+  const waitingForBonusStart = gameState?.waitingForBonusStart ?? false;
 
   // 카운트다운 타이머
   useEffect(() => {
@@ -153,7 +157,10 @@ export function useTimeAttack(): UseTimeAttackReturn {
 
     const startTime = gameState.startTime;
     const bonusTime = gameState.bonusTimeUsed;
-    const duration = TIME_ATTACK_DURATION_BY_DIFFICULTY[gameState.difficulty] + bonusTime;
+    // 보너스 페이즈에서는 startTime이 리셋되므로 bonusTime만 사용
+    const duration = gameState.hasUsedAdBonus
+      ? bonusTime
+      : TIME_ATTACK_DURATION_BY_DIFFICULTY[gameState.difficulty];
     const id = window.setInterval(() => {
       const elapsed = Date.now() - startTime;
       const remaining = Math.max(0, duration - elapsed);
@@ -217,6 +224,7 @@ export function useTimeAttack(): UseTimeAttackReturn {
       isComplete: false,
       isTimeUp: false,
       hasUsedAdBonus: false,
+      waitingForBonusStart: false,
       startTime: Date.now(),
       bonusTimeUsed: 0,
     });
@@ -224,7 +232,7 @@ export function useTimeAttack(): UseTimeAttackReturn {
     setIsNewRecord(false);
   }, []);
 
-  // 광고 보너스 시간 추가
+  // 광고 보너스 시간 추가 (대기 상태로 전환)
   const addBonusTime = useCallback(() => {
     setGameState(prev => {
       if (!prev || prev.isComplete) return prev;
@@ -233,11 +241,25 @@ export function useTimeAttack(): UseTimeAttackReturn {
         ...prev,
         isTimeUp: false,
         hasUsedAdBonus: true,
+        waitingForBonusStart: true,
         bonusTimeUsed: AD_BONUS_TIME,
-        startTime: Date.now(), // 타이머 재시작
+        startTime: null, // 타이머 시작 안 함
       };
     });
     setRemainingTime(AD_BONUS_TIME);
+  }, []);
+
+  // 보너스 라운드 시작 (사용자가 "시작" 클릭 시)
+  const startBonusRound = useCallback(() => {
+    setGameState(prev => {
+      if (!prev) return prev;
+
+      return {
+        ...prev,
+        waitingForBonusStart: false,
+        startTime: Date.now(),
+      };
+    });
   }, []);
 
   // 보너스 스킵 (결과 페이지로)
@@ -314,6 +336,8 @@ export function useTimeAttack(): UseTimeAttackReturn {
     resetGame,
     saveGameResult,
     addBonusTime,
+    startBonusRound,
     skipBonus,
+    waitingForBonusStart,
   };
 }

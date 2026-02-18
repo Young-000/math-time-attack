@@ -155,14 +155,6 @@ export function TimeAttackResultPage() {
   const wrongCount = state?.wrongCount ?? 0;
   const operation = state?.operation ?? Operation.MULTIPLICATION;
 
-  // 충전 후 게임 재시작
-  const startGameAfterCharge = useCallback(() => {
-    const consumed = tryConsumeHeart();
-    if (consumed) {
-      navigate(`/time-attack/${difficulty}`);
-    }
-  }, [tryConsumeHeart, navigate, difficulty]);
-
   // 다시하기 - 하트 체크 후 게임 시작
   const handleRetry = useCallback(() => {
     const consumed = tryConsumeHeart();
@@ -289,8 +281,8 @@ export function TimeAttackResultPage() {
           heartInfo={heartInfo}
           isAdSupported={isAdSupported}
           isAdLoading={isAdLoading}
-          onWatchAd={() => handleWatchAdForHearts(startGameAfterCharge)}
-          onShare={() => handleShareForHearts('구구단 타임어택! 제한시간 안에 몇 문제나 풀 수 있을까요? 나와 대결해요!', startGameAfterCharge)}
+          onWatchAd={() => handleWatchAdForHearts()}
+          onShare={() => handleShareForHearts('구구단 타임어택! 제한시간 안에 몇 문제나 풀 수 있을까요? 나와 대결해요!')}
           onClose={() => setShowNoHeartsModal(false)}
         />
       )}

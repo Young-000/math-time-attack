@@ -22,7 +22,9 @@ export function TimeAttackPage() {
     startGame,
     submitAnswer,
     addBonusTime,
+    startBonusRound,
     skipBonus,
+    waitingForBonusStart,
   } = useTimeAttack();
 
   const { isAdSupported, isAdLoading, loadAndShowAd } = useRewardedAd();
@@ -101,11 +103,9 @@ export function TimeAttackPage() {
 
     loadAndShowAd({
       onRewarded: () => {
-        // 광고 시청 완료 - 보너스 시간 추가
+        // 광고 시청 완료 - 보너스 대기 상태로 전환 (사용자가 "시작" 클릭 시 타이머 시작)
         addBonusTime();
         setIsWatchingAd(false);
-        // 입력창에 포커스
-        setTimeout(() => inputRef.current?.focus(), 100);
       },
       onDismiss: () => {
         setIsWatchingAd(false);
@@ -116,6 +116,12 @@ export function TimeAttackPage() {
         skipBonus();
       },
     });
+  };
+
+  // 보너스 라운드 시작
+  const handleStartBonus = () => {
+    startBonusRound();
+    setTimeout(() => inputRef.current?.focus(), 100);
   };
 
   // 광고 스킵 핸들러
@@ -136,8 +142,9 @@ export function TimeAttackPage() {
   // 난이도별 총 시간
   const totalDuration = difficulty ? TIME_ATTACK_DURATION_BY_DIFFICULTY[difficulty] : 60000;
 
-  // 진행률 계산 (난이도별 시간 기준)
-  const progressPercent = ((totalDuration - remainingTime) / totalDuration) * 100;
+  // 진행률 계산 (보너스 페이즈에서는 보너스 시간 기준)
+  const activeDuration = gameState?.hasUsedAdBonus ? AD_BONUS_TIME : totalDuration;
+  const progressPercent = ((activeDuration - remainingTime) / activeDuration) * 100;
 
   // 남은 시간이 3초 이하면 경고 스타일 (난이도 상관없이)
   const isTimeWarning = remainingTime <= 3000;
@@ -216,6 +223,29 @@ export function TimeAttackPage() {
           </div>
         </form>
       </main>
+
+      {/* 보너스 라운드 시작 대기 */}
+      {waitingForBonusStart && (
+        <div className="ad-modal-overlay">
+          <div className="ad-modal">
+            <div className="ad-modal-icon">🎁</div>
+            <h2 className="ad-modal-title">+{AD_BONUS_TIME / 1000}초 충전 완료!</h2>
+            <p className="ad-modal-desc">
+              준비되면 시작 버튼을 눌러주세요.
+            </p>
+            <div className="ad-modal-score">
+              <span className="ad-modal-score-value">{correctCount}</span>
+              <span className="ad-modal-score-label">문제 정답 중</span>
+            </div>
+            <button
+              className="ad-modal-btn primary"
+              onClick={handleStartBonus}
+            >
+              ▶️ 시작하기
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* 시간 종료 광고 모달 */}
       {isTimeUp && (
