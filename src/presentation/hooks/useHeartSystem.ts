@@ -1,21 +1,22 @@
 /**
  * 하트 시스템 통합 훅
  * - 하트 상태 관리 (주기적 업데이트)
- * - 광고 시청으로 풀충전
- * - 공유하기로 풀충전
+ * - 광고 시청으로 +1 충전
+ * - 공유하기로 +2 충전
  */
 
 import { useState, useEffect, useCallback } from 'react';
 import {
   getHeartInfo,
   consumeHeart,
-  refillHearts,
+  addHearts,
   MAX_HEARTS,
   type HeartInfo,
 } from '@domain/services/heartService';
-import { useRewardedAd } from './useRewardedAd';
+import { useFullScreenAd } from './useFullScreenAd';
 import { useContactsViral } from './useContactsViral';
 import { share } from '@apps-in-toss/web-framework';
+import { recordRewardedAdShown, canShowRewardedAd } from '@domain/services/adFrequencyService';
 
 interface UseHeartSystemReturn {
   heartInfo: HeartInfo;
@@ -37,7 +38,7 @@ export function useHeartSystem(): UseHeartSystemReturn {
   const [showChargeSuccess, setShowChargeSuccess] = useState(false);
   const [showAdError, setShowAdError] = useState(false);
 
-  const { isAdSupported, isAdLoading, loadAndShowAd } = useRewardedAd();
+  const { isAdSupported, isAdLoading, loadAndShowAd } = useFullScreenAd();
   const { isConfigured: isContactsViralConfigured, openContactsViral } = useContactsViral();
 
   // 하트 정보 주기적 업데이트
@@ -62,11 +63,17 @@ export function useHeartSystem(): UseHeartSystemReturn {
     setTimeout(() => setShowAdError(false), 2500);
   }, []);
 
-  // 광고 시청으로 하트 풀충전 (공식 패턴: 클릭 → load → show 한 플로우)
+  // 광고 시청으로 하트 +1 충전
   const handleWatchAdForHearts = useCallback((onSuccess?: () => void) => {
+    if (!canShowRewardedAd()) {
+      showAdErrorToast();
+      return;
+    }
+
     loadAndShowAd({
       onRewarded: () => {
-        refillHearts();
+        addHearts(1);
+        recordRewardedAdShown();
         setHeartInfo(getHeartInfo());
         setShowNoHeartsModal(false);
         showChargeSuccessToast();
@@ -80,10 +87,10 @@ export function useHeartSystem(): UseHeartSystemReturn {
     });
   }, [loadAndShowAd, showChargeSuccessToast, showAdErrorToast]);
 
-  // 공유하기로 하트 풀충전
+  // 공유하기로 하트 +2 충전
   const handleShareForHearts = useCallback((shareMessage: string, onSuccess?: () => void) => {
     const onShareSuccess = () => {
-      refillHearts();
+      addHearts(2);
       setHeartInfo(getHeartInfo());
       setShowNoHeartsModal(false);
       showChargeSuccessToast();

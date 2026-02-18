@@ -13,7 +13,7 @@ import {
   formatTimeRemaining,
   getDailyChallengeDifficulty,
 } from '@domain/services/dailyChallengeService';
-import { MAX_HEARTS } from '@domain/services/heartService';
+import { MAX_HEARTS, claimDailyLoginBonus, hasDailyBonusClaimed } from '@domain/services/heartService';
 import { formatTime } from '@lib/utils';
 import { getCurrentUserId } from '@infrastructure/rankingService';
 import { getTimeAttackBestScore, TIME_ATTACK_DURATION_BY_DIFFICULTY } from '@presentation/hooks/useTimeAttack';
@@ -57,8 +57,20 @@ export function DifficultySelectPage() {
 
   const [showHeartChargeModal, setShowHeartChargeModal] = useState(false);
   const [pendingAction, setPendingAction] = useState<{ type: 'classic' | 'timeattack' | 'daily'; difficulty: DifficultyType } | null>(null);
+  const [showDailyBonus, setShowDailyBonus] = useState(false);
 
   const online = isOnlineMode();
+
+  // 일일 로그인 보너스 체크
+  useEffect(() => {
+    if (!hasDailyBonusClaimed()) {
+      const claimed = claimDailyLoginBonus();
+      if (claimed) {
+        setShowDailyBonus(true);
+        setTimeout(() => setShowDailyBonus(false), 3000);
+      }
+    }
+  }, []);
   const dailyDifficulty = getDailyChallengeDifficulty();
   const dailyCompleted = isDailyChallengeCompleted();
   const dailyCompletion = getDailyChallengeCompletion();
@@ -461,6 +473,13 @@ export function DifficultySelectPage() {
       {showAdError && (
         <div className="charge-error-toast">
           광고를 불러올 수 없어요. 잠시 후 다시 시도해주세요.
+        </div>
+      )}
+
+      {/* 일일 로그인 보너스 토스트 */}
+      {showDailyBonus && (
+        <div className="charge-success-toast">
+          🎁 오늘의 로그인 보너스! 하트 +1
         </div>
       )}
     </div>

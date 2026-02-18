@@ -11,7 +11,7 @@ const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
 // 타입이 적용된 Supabase 클라이언트 타입
-export type TypedSupabaseClient = SupabaseClient<Database>;
+export type TypedSupabaseClient = SupabaseClient<Database, 'math_attack'>;
 
 // Supabase 클라이언트 생성 (싱글톤)
 let supabaseClient: TypedSupabaseClient | null = null;
@@ -27,7 +27,10 @@ export function getSupabaseClient(): TypedSupabaseClient | null {
   }
 
   if (!supabaseClient) {
-    supabaseClient = createClient<Database>(supabaseUrl, supabaseAnonKey, {
+    supabaseClient = createClient<Database, 'math_attack'>(supabaseUrl, supabaseAnonKey, {
+      db: {
+        schema: 'math_attack',
+      },
       auth: {
         persistSession: false, // 앱인토스에서는 세션 저장 불필요
       },

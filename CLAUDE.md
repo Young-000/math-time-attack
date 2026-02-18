@@ -1,38 +1,34 @@
-# 구구단 챌린지
+# 구구단 챌린지 (Math Time Attack)
 
 구구단 연습 앱 (앱인토스 일반 앱)
 
----
+## Overview
 
-## 🚨 앱인토스 개발 필수 규칙
+| 항목 | 값 |
+|------|-----|
+| 배포 URL | https://math-time-attack.vercel.app |
+| Supabase | Project 1 - `ayibvijmjygujjieueny` |
+| 스키마 | `math_attack` |
+| 브랜치 | `fix/code-review-improvements` |
+| 완성도 | 95% |
 
-> **이 프로젝트는 앱인토스(Apps-in-Toss) 미니앱입니다.**
+## 기술 스택
 
-### 개발 시 반드시 먼저 확인할 것
+- React 18 + Vite 5 + TypeScript 5.3
+- Apps-in-Toss (@apps-in-toss/web-framework, @toss/tds-mobile)
+- Supabase (PostgreSQL)
+- Clean Architecture
+- Vitest + RTL (18 단위 테스트) + Playwright E2E (5 스펙)
 
-1. **TDS 문서 검색 우선**
-   - UI/UX 수정 전 `knowlege-skills:docs-search` 스킬로 TDS 문서 검색
-   - CSS로 직접 구현하기 전에 TDS 컴포넌트 존재 여부 확인
+## 앱인토스 개발 필수 규칙
 
-2. **TDS 컴포넌트 사용 필수**
-   - `@toss/tds-mobile` 패키지의 컴포넌트 우선 사용
-   - 키보드 대응: `FixedBottomCTA` + `fixedAboveKeyboard` prop
-   - 입력 필드: `TextField` 컴포넌트
-   - 버튼: `Button`, `CTAButton` 컴포넌트
+> 이 프로젝트는 앱인토스(Apps-in-Toss) 미니앱입니다.
 
-3. **검색 쿼리 예시**
-   ```bash
-   # 키보드 위 고정
-   "BottomCTA fixedAboveKeyboard 키보드"
+### TDS 컴포넌트 사용 필수
 
-   # 입력 필드
-   "TextField Input 텍스트 입력"
-
-   # 하단 고정 버튼
-   "FixedBottomCTA 하단 고정"
-   ```
-
-### TDS 주요 컴포넌트
+- UI/UX 수정 전 TDS 문서 검색 우선
+- CSS로 직접 구현하기 전에 TDS 컴포넌트 존재 여부 확인
+- `@toss/tds-mobile` 패키지의 컴포넌트 우선 사용
 
 | 용도 | 컴포넌트 | import |
 |------|----------|--------|
@@ -41,197 +37,104 @@
 | 텍스트 입력 | `TextField` | `@toss/tds-mobile` |
 | 버튼 | `Button`, `CTAButton` | `@toss/tds-mobile` |
 
----
+## 프로젝트 구조
 
-## 🚨 광고 API (GoogleAdMob) 주의사항
+```
+src/
+  presentation/       # 프레젠테이션 레이어
+    pages/            # 페이지 컴포넌트
+    components/       # UI 컴포넌트
+    hooks/            # 커스텀 훅 (useRewardedAd 등)
+  domain/             # 도메인 레이어
+    game/             # 게임 엔진, 엔티티
+  data/               # 데이터 레이어
+    problem/          # 문제 생성기
+    record/           # 기록 서비스
+  infrastructure/     # 인프라 레이어
+    supabase/         # Supabase 연동
+    ranking/          # 랭킹 시스템
+  lib/                # 라이브러리
+  __tests__/          # 테스트
+  styles/             # 스타일
+e2e/                  # Playwright E2E 테스트 (5 스펙)
+```
 
-> **보상형 광고 구현 시 반드시 확인할 것**
+## 광고 API (v2 Full Screen Ad) 주의사항
 
-### 필수 이벤트 처리 패턴
+### v2 API 패턴 (loadFullScreenAd + showFullScreenAd)
 
 ```typescript
-GoogleAdMob.showAppsInTossAdMob({
+// load → loaded → cleanup → show (한 플로우)
+import { loadFullScreenAd, showFullScreenAd } from '@apps-in-toss/web-framework';
+
+const cleanup = loadFullScreenAd({
   options: { adGroupId: AD_GROUP_ID },
   onEvent: (event) => {
-    switch (event.type) {
-      case 'requested':
-        // ⚠️ 필수: 광고 요청 시 로드 상태 리셋
-        setIsAdLoaded(false);
-        break;
-      case 'userEarnedReward':
-        // 보상 지급 (이 이벤트 기준으로 처리)
-        onRewardCallback();
-        break;
-      case 'dismissed':
-        // 광고 닫힘
-        setIsAdLoaded(false);
-        break;
+    if (event.type === 'loaded') {
+      cleanup();
+      showFullScreenAd({
+        options: { adGroupId: AD_GROUP_ID },
+        onEvent: (showEvent) => {
+          switch (showEvent.type) {
+            case 'userEarnedReward': // 보상 지급
+            case 'dismissed':       // 광고 닫힘
+            case 'failedToShow':    // 표시 실패
+          }
+        },
+        onError: (err) => { /* 에러 처리 */ },
+      });
     }
   },
+  onError: (loadErr) => { /* 로드 에러 */ },
 });
 ```
 
-### 주의사항
+### 광고 빈도 제어
 
-1. **`requested` 이벤트에서 `setIsAdLoaded(false)` 필수**
-   - 문서 공식 패턴임
-   - 누락 시 다음 광고 로드/표시에 문제 발생
+- 전면 광고: 3판마다 1회, 하루 최대 10회
+- 보상형 광고: 최소 60초 간격, 하루 최대 15회
+- `adFrequencyService.ts`에서 관리
 
-2. **보상은 `userEarnedReward` 이벤트 기준**
-   - `dismissed`가 아닌 `userEarnedReward`에서 보상 처리
-   - 사용자가 광고를 끝까지 시청해야 발생
+### 광고 관련 파일
 
-3. **버튼 disabled 조건**
-   - `isAdLoaded`가 true일 때만 활성화
-   - `isAdLoading` 중에는 비활성화 (클릭 시 에러 발생)
-
-### 관련 파일
-- `src/presentation/hooks/useRewardedAd.ts` - 광고 훅
+- `src/presentation/hooks/useFullScreenAd.ts` - v2 보상형 광고 훅
+- `src/presentation/hooks/useInterstitialAd.ts` - v2 전면 광고 훅
+- `src/presentation/hooks/useRewardedAd.ts` - v1 래퍼 (deprecated)
+- `src/domain/services/adFrequencyService.ts` - 광고 빈도 제어
 - `src/presentation/pages/TimeAttackPage.tsx` - 타임어택 +10초 광고
-- `src/presentation/pages/ResultPage.tsx` - 결과 페이지 하트 충전 광고
+- `src/presentation/pages/ResultPage.tsx` - 결과 페이지 전면/보상형 광고
 - `src/presentation/pages/DifficultySelectPage.tsx` - 난이도 선택 하트 충전 광고
 
----
-
-## 🚨 하트 시스템 주의사항
+## 하트 시스템 주의사항
 
 ### 게임 시작 시 하트 체크 필수
 
-모든 게임 시작 경로에서 하트 체크 → 소모 로직이 있어야 함:
+모든 게임 시작 경로에서 하트 체크 -> 소모 로직이 있어야 함:
 
 | 경로 | 파일 | 함수 |
 |------|------|------|
-| 난이도 선택 → 게임 | `DifficultySelectPage.tsx` | `tryStartGame()` |
-| 결과 → 다시하기 | `ResultPage.tsx` | `handleRetry()` |
-| 타임어택 결과 → 다시하기 | `TimeAttackResultPage.tsx` | `handleRetry()` |
+| 난이도 선택 -> 게임 | `DifficultySelectPage.tsx` | `tryStartGame()` |
+| 결과 -> 다시하기 | `ResultPage.tsx` | `handleRetry()` |
+| 타임어택 결과 -> 다시하기 | `TimeAttackResultPage.tsx` | `handleRetry()` |
 
-### 하트 체크 패턴
-
-```typescript
-const handleRetry = () => {
-  const currentHearts = getHeartInfo();
-
-  if (currentHearts.count <= 0) {
-    setShowNoHeartsModal(true);  // 충전 모달 표시
-    return;
-  }
-
-  const used = consumeHeart();
-  if (!used) {
-    setShowNoHeartsModal(true);
-    return;
-  }
-
-  setHeartInfo(getHeartInfo());
-  navigate(`/game/${difficulty}`);
-};
-```
-
-### 주의사항
-
-1. **직접 `navigate()` 금지**: 하트 체크 없이 바로 게임 페이지로 이동하면 안 됨
-2. **결과 페이지에 하트 UI 필수**: 사용자가 남은 하트 확인 가능해야 함
-3. **하트 부족 모달 필수**: 광고/공유로 충전할 수 있는 옵션 제공
-
----
-
-## 진행상황 체크리스트
-
-| 영역 | 상태 | 배포 URL |
-|------|:----:|----------|
-| **Frontend** | ✅ | [math-time-attack.vercel.app](https://math-time-attack.vercel.app) |
-| **Backend** | ✅ | Supabase 직접 연결 |
-| **DB 연결** | ✅ | 스키마 생성 완료 |
-| **배포** | ✅ | Vercel |
-
-<details>
-<summary>상세 체크리스트</summary>
-
-### Frontend
-- [x] 프로젝트 초기화 (Vite)
-- [x] TypeScript 설정
-- [x] 환경 변수 (.env.local)
-
-### Backend
-- [x] Supabase 직접 연결 (별도 백엔드 없음)
-
-### DB 연결
-- [x] Project 1 선택
-- [x] `math_attack` 스키마 생성
-- [x] 테이블 생성 (game_records, user_profiles)
-- [x] 클라이언트 `.schema()` 적용
-- [x] RLS 정책 활성화
-
-### 배포
-- [x] vercel.json
-- [x] 프로덕션 배포
-
-</details>
-
----
-
-## Supabase 설정
-
-> ⚠️ **필수 참조**: [`/SUPABASE_RULES.md`](/SUPABASE_RULES.md)
+### 하트 경제 (v2)
 
 | 항목 | 값 |
 |------|-----|
-| **Project** | Project 1 (게임) |
-| **Project ID** | `ayibvijmjygujjieueny` |
-| **Schema** | `math_attack` |
-| **URL** | `https://ayibvijmjygujjieueny.supabase.co` |
+| 최대 하트 | 3개 |
+| 자동 충전 | 30분마다 1개 |
+| 광고 보상 | +1 |
+| 공유 보상 | +2 |
+| 일일 로그인 보너스 | +1 |
+| 업적 보상 | 업적별 1~3개 |
 
-## 기술 스택
+### 주의사항
 
-- **Frontend**: React + Vite + TypeScript
-- **Styling**: Tailwind CSS
-- **Database**: Supabase (PostgreSQL)
+1. 직접 `navigate()` 금지: 하트 체크 없이 바로 게임 페이지로 이동하면 안 됨
+2. 결과 페이지에 하트 UI 필수: 사용자가 남은 하트 확인 가능해야 함
+3. 하트 부족 모달 필수: 광고/공유로 충전할 수 있는 옵션 제공
 
-## 개발 명령어
-
-### 기본 명령어
-```bash
-npm install      # 의존성 설치
-npm run dev      # 개발 서버 (localhost:5173)
-npm run build    # 프로덕션 빌드
-npm run preview  # 빌드 결과 미리보기
-```
-
-### 코드 품질 검사
-```bash
-npm run lint       # ESLint 실행
-npm run typecheck  # TypeScript 타입 검사
-```
-
-### 테스트 실행
-```bash
-npm run test              # 단위 테스트 (Vitest)
-npm run test:coverage     # 테스트 커버리지 보고서
-npm run test:e2e          # E2E 테스트 (Playwright)
-npm run test:e2e:ui       # E2E 테스트 UI 모드
-npm run test:e2e:headed   # E2E 테스트 헤드 모드
-```
-
-### 배포 전 체크리스트
-```bash
-npm run lint       # 에러 0개
-npm run typecheck  # 에러 0개
-npm run build      # 빌드 성공
-npm test           # 80% 이상 통과
-```
-
-## 환경 변수
-
-`.env.local`:
-```env
-# Supabase Configuration - Project 1 (게임)
-# Schema: math_attack
-
-VITE_SUPABASE_URL=https://ayibvijmjygujjieueny.supabase.co
-VITE_SUPABASE_ANON_KEY=eyJ...
-```
-
-## 테이블 구조
+## DB 테이블
 
 ```sql
 -- game_records: 게임 기록 저장
@@ -256,6 +159,56 @@ CREATE TABLE math_attack.user_profiles (
 );
 ```
 
+## 환경 변수 (.env.local)
+
+```env
+VITE_SUPABASE_URL=https://ayibvijmjygujjieueny.supabase.co
+VITE_SUPABASE_ANON_KEY=eyJ...
+```
+
+## 개발 명령어
+
+```bash
+npm install            # 의존성 설치
+npm run dev            # 개발 서버 (localhost:5173)
+npm run build          # 프로덕션 빌드
+npm run lint           # ESLint 실행
+npm run typecheck      # TypeScript 타입 검사
+npm run test           # 단위 테스트 (Vitest)
+npm run test:coverage  # 테스트 커버리지
+npm run test:e2e       # E2E 테스트 (Playwright)
+```
+
+## 진행상황
+
+- [x] 프로젝트 초기화 (Vite + TypeScript)
+- [x] Clean Architecture 구조 설계
+- [x] 게임 엔진 구현 (난이도별 문제 생성)
+- [x] Supabase DB 연결 (math_attack 스키마)
+- [x] RLS 정책 활성화
+- [x] 앱인토스 TDS UI 적용
+- [x] 하트 시스템 구현
+- [x] 보상형 광고 연동 (GoogleAdMob)
+- [x] 랭킹 시스템
+- [x] 단위 테스트 268개 + E2E 5개
+- [x] Vercel 배포
+- [x] v2 광고 API 마이그레이션 (loadFullScreenAd/showFullScreenAd)
+- [x] 하트 경제 리밸런싱 (MAX 3, 30분 충전, +1/+2)
+- [x] 전면 광고 + 보상형 광고 빈도 제어
+- [x] 업적 시스템 (7개 업적, 하트 보상)
+- [x] 기간별 랭킹 (일간/주간/월간/전체)
+- [x] Game Center SDK 연동 (리더보드)
+- [x] 일일 로그인 보너스
+- [ ] .granite/app.json 수정사항 커밋 필요
+- [ ] fix 브랜치 -> main 머지
+
+## Known Issues (프로젝트 고유)
+
+- `.granite/app.json` 수정사항이 커밋되지 않은 상태
+- `fix/code-review-improvements` 브랜치에서 작업 중 (main 미머지)
+- `supabase.ts` 타입 경고 (Supabase SDK 제네릭 이슈, 런타임 영향 없음)
+- 앱인토스 v2 광고 SDK 패턴: load → loaded → cleanup → show (한 플로우)
+
 ---
 
-*이 프로젝트는 글로벌 규칙 `/CLAUDE.md` 및 `/SUPABASE_RULES.md`를 따릅니다.*
+*전역 설정 참조: `workspace/CLAUDE.md`, `SUPABASE_RULES.md`, `APPS_IN_TOSS_GUIDELINES.md`*

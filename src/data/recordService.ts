@@ -15,6 +15,16 @@ import { getSupabaseClient, isSupabaseConfigured } from '../infrastructure/supab
 
 export const STORAGE_KEY = 'math-time-attack-records-v2';
 
+export type RankingPeriod = 'all' | 'daily' | 'weekly' | 'monthly';
+
+/**
+ * 오늘 00:00 (로컬 시간) 반환
+ */
+function getDayStart(): Date {
+  const now = new Date();
+  return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+}
+
 /**
  * 이번 주 월요일 00:00 (로컬 시간) 반환
  */
@@ -24,6 +34,26 @@ function getWeekStart(): Date {
   const diff = day === 0 ? 6 : day - 1; // 일요일(0)이면 6일 전, 그 외는 day-1일 전
   const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - diff);
   return monday;
+}
+
+/**
+ * 이번 달 1일 00:00 (로컬 시간) 반환
+ */
+function getMonthStart(): Date {
+  const now = new Date();
+  return new Date(now.getFullYear(), now.getMonth(), 1);
+}
+
+/**
+ * 기간에 따른 시작 날짜 반환
+ */
+function getPeriodStart(period: RankingPeriod): string | undefined {
+  switch (period) {
+    case 'daily': return getDayStart().toISOString();
+    case 'weekly': return getWeekStart().toISOString();
+    case 'monthly': return getMonthStart().toISOString();
+    case 'all': return undefined;
+  }
 }
 
 interface StoredRecordItem {
@@ -543,7 +573,7 @@ export async function getTopRankings(
   difficulty: DifficultyType,
   operation: OperationType = Operation.MULTIPLICATION,
   limit: number = 100,
-  period: 'all' | 'weekly' = 'all'
+  period: RankingPeriod = 'all'
 ): Promise<RankingItem[]> {
   const supabase = getSupabaseClient();
   if (!supabase) {
@@ -558,8 +588,9 @@ export async function getTopRankings(
       p_limit: limit,
     };
 
-    if (period === 'weekly') {
-      params.p_since = getWeekStart().toISOString();
+    const since = getPeriodStart(period);
+    if (since) {
+      params.p_since = since;
     }
 
     const { data, error } = await supabase
@@ -653,7 +684,7 @@ export async function getTimeAttackRankings(
   difficulty: DifficultyType,
   operation: OperationType = Operation.MULTIPLICATION,
   limit: number = 100,
-  period: 'all' | 'weekly' = 'all'
+  period: RankingPeriod = 'all'
 ): Promise<TimeAttackRankingItem[]> {
   const supabase = getSupabaseClient();
   if (!supabase) {
@@ -668,8 +699,9 @@ export async function getTimeAttackRankings(
       p_limit: limit,
     };
 
-    if (period === 'weekly') {
-      params.p_since = getWeekStart().toISOString();
+    const since = getPeriodStart(period);
+    if (since) {
+      params.p_since = since;
     }
 
     const { data, error } = await supabase

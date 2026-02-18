@@ -1,69 +1,20 @@
 /**
  * AdBanner 컴포넌트
- * Google AdSense 배너 광고 플레이스홀더
+ * 앱인토스 환경에서는 TossAds 또는 빈 플레이스홀더
+ * (앱인토스에서는 웹 기반 AdSense 사용 불가)
  */
 
-import { useEffect, useRef } from 'react';
-
 interface AdBannerProps {
-  slot?: string;
   className?: string;
 }
 
-declare global {
-  interface Window {
-    adsbygoogle?: object[];
-  }
-}
-
-const ADSENSE_PUBLISHER_ID = import.meta.env.VITE_ADSENSE_PUBLISHER_ID || '';
-
 /**
- * Google AdSense 배너 광고 컴포넌트
- * Publisher ID가 설정되지 않으면 렌더링하지 않음
+ * 앱인토스 환경에서는 배너 광고를 직접 표시할 수 없으므로
+ * 플레이스홀더로 유지합니다.
  */
-export function AdBanner({ slot, className = '' }: AdBannerProps) {
-  const adRef = useRef<HTMLModElement>(null);
-  const isLoaded = useRef(false);
-
-  useEffect(() => {
-    // Publisher ID가 없으면 광고 로드하지 않음
-    if (!ADSENSE_PUBLISHER_ID || !slot) {
-      return;
-    }
-
-    // 이미 로드된 경우 스킵
-    if (isLoaded.current) {
-      return;
-    }
-
-    try {
-      // AdSense 스크립트가 로드된 경우에만 실행
-      if (window.adsbygoogle) {
-        window.adsbygoogle.push({});
-        isLoaded.current = true;
-      }
-    } catch (err) {
-      console.error('AdSense error:', err);
-    }
-  }, [slot]);
-
-  // Publisher ID가 없으면 렌더링하지 않음
-  if (!ADSENSE_PUBLISHER_ID || !slot) {
-    return null;
-  }
-
-  return (
-    <div className={`ad-banner-container ${className}`}>
-      <ins
-        ref={adRef}
-        className="adsbygoogle"
-        style={{ display: 'block' }}
-        data-ad-client={ADSENSE_PUBLISHER_ID}
-        data-ad-slot={slot}
-        data-ad-format="auto"
-        data-full-width-responsive="true"
-      />
-    </div>
-  );
+export function AdBanner({ className = '' }: AdBannerProps) {
+  // 앱인토스 미니앱에서는 웹 배너 광고 미지원
+  // 전면/보상형 광고만 사용 가능
+  if (!className) return null;
+  return null;
 }

@@ -8,10 +8,15 @@ import { DIFFICULTY_CONFIG, Operation, type DifficultyType, type OperationType }
 import { saveRecord, isNewRecord, getBestRecord, getMyRankInfo } from '@data/recordService';
 import { getCurrentUserId } from '@infrastructure/rankingService';
 import { formatTime } from '@lib/utils';
-import { ShareButton, HeartDisplay, NoHeartsModal } from '@presentation/components';
+import { ShareButton, HeartDisplay, NoHeartsModal, AchievementModal } from '@presentation/components';
 import { saveDailyChallengeCompletion } from '@domain/services/dailyChallengeService';
 import { checkIn, getStreakMilestoneMessage } from '@domain/services/streakService';
 import { useHeartSystem } from '@presentation/hooks/useHeartSystem';
+import { useInterstitialAd, incrementGameCount } from '@presentation/hooks/useInterstitialAd';
+import { useGameCenter } from '@presentation/hooks/useGameCenter';
+import { checkAllAchievements, markAchieved } from '@domain/services/achievementService';
+import { addHearts } from '@domain/services/heartService';
+import type { AchievementDefinition } from '@domain/services/achievementDefinitions';
 
 interface LocationState {
   difficulty: DifficultyType;
@@ -30,7 +35,15 @@ export function ResultPage() {
   const [totalPlayers, setTotalPlayers] = useState<number>(0);
   const [isLoadingRank, setIsLoadingRank] = useState(false);
   const [streakMilestone, setStreakMilestone] = useState<{ emoji: string; message: string } | null>(null);
+  const [newAchievements, setNewAchievements] = useState<AchievementDefinition[]>([]);
+  const [showAchievementModal, setShowAchievementModal] = useState(false);
   const hasProcessedRef = useRef(false);
+
+  // 전면 광고
+  const { showInterstitialIfNeeded } = useInterstitialAd();
+
+  // Game Center
+  const { submitScore: submitGameCenterScore } = useGameCenter();
 
   // 하트 시스템 통합 훅
   const {
@@ -99,6 +112,34 @@ export function ResultPage() {
         if (milestone) {
           setStreakMilestone(milestone);
         }
+
+        // 게임 카운트 증가 (전면 광고 빈도 체크용)
+        incrementGameCount();
+
+        // 업적 체크
+        const achieved = checkAllAchievements({
+          gamesPlayed: 1,
+          elapsedTime,
+          difficulty,
+          streakDays: newStreak,
+        });
+        if (achieved.length > 0) {
+          achieved.forEach((a) => {
+            markAchieved(a.key);
+            if (a.heartReward > 0) {
+              addHearts(a.heartReward);
+            }
+          });
+          setNewAchievements(achieved);
+          setShowAchievementModal(true);
+        }
+
+        // Game Center 점수 제출 (시간이 빠를수록 좋으므로 역수 점수)
+        const gameCenterScore = Math.max(0, 999999 - elapsedTime);
+        submitGameCenterScore(gameCenterScore);
+
+        // 전면 광고 표시 (빈도 조건 충족 시)
+        showInterstitialIfNeeded(() => {});
       } catch (err) {
         console.error('Failed to process result:', err);
       } finally {
@@ -107,7 +148,7 @@ export function ResultPage() {
     };
 
     processResult();
-  }, [state, navigate]);
+  }, [state, navigate, showInterstitialIfNeeded, submitGameCenterScore]);
 
   // state에서 값 추출 (null일 수 있으므로 기본값 처리)
   const difficulty = state?.difficulty ?? 'easy';
@@ -242,6 +283,14 @@ export function ResultPage() {
         <div className="charge-error-toast">
           광고를 불러올 수 없어요. 잠시 후 다시 시도해주세요.
         </div>
+      )}
+
+      {/* 업적 달성 모달 */}
+      {showAchievementModal && (
+        <AchievementModal
+          achievements={newAchievements}
+          onClose={() => setShowAchievementModal(false)}
+        />
       )}
     </div>
   );

@@ -15,15 +15,16 @@ import {
   getTimeAttackRankings,
   getTimeAttackRankInfo,
   type TimeAttackRankingItem,
+  type RankingPeriod,
 } from '@data/recordService';
 import { getCurrentUserId } from '@infrastructure/rankingService';
 import { RankingTab, RankingList, NicknameModal, HeartDisplay } from '@presentation/components';
 import { useNickname } from '@presentation/hooks/useNickname';
 import { MAX_HEARTS } from '@domain/services/heartService';
 import { useHeartSystem } from '@presentation/hooks/useHeartSystem';
+import { useGameCenter } from '@presentation/hooks/useGameCenter';
 
 type GameMode = 'classic' | 'timeattack';
-type RankingPeriod = 'all' | 'weekly';
 
 interface MyRankData {
   easy: number | null;
@@ -59,6 +60,8 @@ export function RankingPage() {
     handleWatchAdForHearts,
     handleShareForHearts,
   } = useHeartSystem();
+
+  const { isSupported: isGameCenterSupported, openLeaderboard } = useGameCenter();
 
   const myRanks = gameMode === 'classic' ? myClassicRanks : myTimeAttackRanks;
 
@@ -220,22 +223,22 @@ export function RankingPage() {
       {/* 기간 필터 + 난이도 탭 */}
       <div className="ranking-filters">
         <div className="ranking-period-toggle" role="radiogroup" aria-label="기간 선택">
-          <button
-            className={`period-btn ${period === 'all' ? 'active' : ''}`}
-            onClick={() => setPeriod('all')}
-            role="radio"
-            aria-checked={period === 'all'}
-          >
-            전체
-          </button>
-          <button
-            className={`period-btn ${period === 'weekly' ? 'active' : ''}`}
-            onClick={() => setPeriod('weekly')}
-            role="radio"
-            aria-checked={period === 'weekly'}
-          >
-            이번 주
-          </button>
+          {([
+            { key: 'daily' as const, label: '오늘' },
+            { key: 'weekly' as const, label: '이번 주' },
+            { key: 'monthly' as const, label: '이번 달' },
+            { key: 'all' as const, label: '전체' },
+          ]).map(({ key, label }) => (
+            <button
+              key={key}
+              className={`period-btn ${period === key ? 'active' : ''}`}
+              onClick={() => setPeriod(key)}
+              role="radio"
+              aria-checked={period === key}
+            >
+              {label}
+            </button>
+          ))}
         </div>
 
         <RankingTab
@@ -303,6 +306,20 @@ export function RankingPage() {
           </div>
         )}
       </div>
+
+      {/* Game Center 리더보드 */}
+      {isGameCenterSupported && (
+        <div className="game-center-section">
+          <button
+            className="game-center-btn"
+            onClick={openLeaderboard}
+            aria-label="Game Center 리더보드 열기"
+          >
+            <span className="game-center-icon">🎮</span>
+            Game Center 리더보드
+          </button>
+        </div>
+      )}
 
       <NicknameModal
         isOpen={isModalOpen}

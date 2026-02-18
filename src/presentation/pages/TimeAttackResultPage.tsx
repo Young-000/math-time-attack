@@ -14,7 +14,12 @@ import {
 } from '@data/recordService';
 import { getCurrentUserId } from '@infrastructure/rankingService';
 import { useHeartSystem } from '@presentation/hooks/useHeartSystem';
-import { HeartDisplay, NoHeartsModal } from '@presentation/components';
+import { HeartDisplay, NoHeartsModal, AchievementModal } from '@presentation/components';
+import { useInterstitialAd, incrementGameCount } from '@presentation/hooks/useInterstitialAd';
+import { useGameCenter } from '@presentation/hooks/useGameCenter';
+import { checkAllAchievements, markAchieved } from '@domain/services/achievementService';
+import { addHearts } from '@domain/services/heartService';
+import type { AchievementDefinition } from '@domain/services/achievementDefinitions';
 
 interface LocationState {
   difficulty: DifficultyType;
@@ -33,7 +38,15 @@ export function TimeAttackResultPage() {
   const [myRank, setMyRank] = useState<number | null>(null);
   const [totalPlayers, setTotalPlayers] = useState(0);
   const [isLoadingRank, setIsLoadingRank] = useState(false);
+  const [newAchievements, setNewAchievements] = useState<AchievementDefinition[]>([]);
+  const [showAchievementModal, setShowAchievementModal] = useState(false);
   const hasProcessedRef = useRef(false);
+
+  // 전면 광고
+  const { showInterstitialIfNeeded } = useInterstitialAd();
+
+  // Game Center
+  const { submitScore: submitGameCenterScore } = useGameCenter();
 
   // 하트 시스템 통합 훅
   const {
@@ -78,6 +91,32 @@ export function TimeAttackResultPage() {
       setStreakMilestone(milestone);
     }
 
+    // 게임 카운트 증가
+    incrementGameCount();
+
+    // 업적 체크
+    const achieved = checkAllAchievements({
+      gamesPlayed: 1,
+      correctStreak: correctCount,
+      difficulty,
+    });
+    if (achieved.length > 0) {
+      achieved.forEach((a) => {
+        markAchieved(a.key);
+        if (a.heartReward > 0) {
+          addHearts(a.heartReward);
+        }
+      });
+      setNewAchievements(achieved);
+      setShowAchievementModal(true);
+    }
+
+    // Game Center 점수 제출
+    submitGameCenterScore(correctCount);
+
+    // 전면 광고
+    showInterstitialIfNeeded(() => {});
+
     // 서버에 기록 저장 및 순위 조회
     const saveAndFetchRank = async () => {
       if (!online) return;
@@ -108,7 +147,7 @@ export function TimeAttackResultPage() {
     };
 
     saveAndFetchRank();
-  }, [state, navigate, online]);
+  }, [state, navigate, online, showInterstitialIfNeeded, submitGameCenterScore]);
 
   // state에서 값 추출 (null일 수 있으므로 기본값 처리)
   const difficulty = state?.difficulty ?? 'easy';
@@ -268,6 +307,14 @@ export function TimeAttackResultPage() {
         <div className="charge-error-toast">
           광고를 불러올 수 없어요. 잠시 후 다시 시도해주세요.
         </div>
+      )}
+
+      {/* 업적 달성 모달 */}
+      {showAchievementModal && (
+        <AchievementModal
+          achievements={newAchievements}
+          onClose={() => setShowAchievementModal(false)}
+        />
       )}
     </div>
   );

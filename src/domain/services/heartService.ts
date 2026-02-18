@@ -1,14 +1,16 @@
 /**
  * 하트(기회) 시스템 서비스
- * - 최대 5개
- * - 1시간마다 1개 자동 충전
- * - 광고 시청 시 풀충전
- * - 공유 시 풀충전
+ * - 최대 3개
+ * - 30분마다 1개 자동 충전
+ * - 광고 시청 시 +1
+ * - 공유 시 +2
+ * - 일일 로그인 보너스 +1
  */
 
 const STORAGE_KEY = 'math-time-attack-hearts';
-const MAX_HEARTS = 5;
-const RECHARGE_INTERVAL_MS = 60 * 60 * 1000; // 1시간
+const MAX_HEARTS = 3;
+const RECHARGE_INTERVAL_MS = 30 * 60 * 1000; // 30분
+const DAILY_BONUS_KEY = 'math-attack-daily-bonus';
 
 interface HeartData {
   count: number;
@@ -112,6 +114,50 @@ export function refillHearts(): void {
 }
 
 /**
+ * 하트 N개 추가 (최대치 초과 불가)
+ */
+export function addHearts(amount: number): void {
+  const data = loadHeartData();
+  const updated = calculateRechargedHearts(data);
+  const newCount = Math.min(MAX_HEARTS, updated.count + amount);
+  saveHeartData({
+    count: newCount,
+    lastRechargeTime: updated.lastRechargeTime,
+  });
+}
+
+/**
+ * 일일 로그인 보너스 수령 (+1 하트)
+ * @returns 성공 여부 (이미 수령했으면 false)
+ */
+export function claimDailyLoginBonus(): boolean {
+  const today = new Date().toISOString().slice(0, 10);
+  try {
+    const lastClaimed = localStorage.getItem(DAILY_BONUS_KEY);
+    if (lastClaimed === today) {
+      return false;
+    }
+    addHearts(1);
+    localStorage.setItem(DAILY_BONUS_KEY, today);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * 오늘 일일 보너스를 이미 받았는지 확인
+ */
+export function hasDailyBonusClaimed(): boolean {
+  const today = new Date().toISOString().slice(0, 10);
+  try {
+    return localStorage.getItem(DAILY_BONUS_KEY) === today;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * 다음 하트 충전까지 남은 시간 (ms)
  * 이미 풀충전이면 0 반환
  */
@@ -176,4 +222,4 @@ export function getHeartInfo(): HeartInfo {
 }
 
 // 상수 export
-export { MAX_HEARTS, RECHARGE_INTERVAL_MS };
+export { MAX_HEARTS, RECHARGE_INTERVAL_MS, DAILY_BONUS_KEY };

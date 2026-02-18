@@ -56,7 +56,7 @@ export function NoHeartsModal({
               ) : (
                 <>
                   <span className="btn-icon">{'\uD83D\uDCFA'}</span>
-                  광고 보고 풀충전
+                  광고 보고 +1 충전
                 </>
               )}
             </button>
@@ -67,7 +67,7 @@ export function NoHeartsModal({
             onClick={onShare}
           >
             <span className="btn-icon">{'\uD83D\uDCE4'}</span>
-            공유하고 풀충전
+            공유하고 +2 충전
           </button>
 
           <button
