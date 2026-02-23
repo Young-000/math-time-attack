@@ -22,6 +22,9 @@ const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
 // 캐시 TTL: AccessToken 만료보다 약간 짧게 (50분, 토큰 유효기간 60분 기준)
 const CACHE_TTL_MS = 50 * 60 * 1000;
 
+// Edge Function 요청 타임아웃 (5초)
+const EDGE_FUNCTION_TIMEOUT_MS = 5_000;
+
 let cachedUserKey: string | null = null;
 
 // --- 환경 감지 ---
@@ -104,24 +107,38 @@ interface AuthErrorResponse {
 
 /**
  * authorizationCode를 Edge Function에 전송하여 userKey를 받아온다.
+ * AbortController로 5초 타임아웃을 적용한다.
  */
 async function exchangeAuthCode(authorizationCode: string): Promise<string> {
-  const response = await fetch(EDGE_FUNCTION_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-    },
-    body: JSON.stringify({ authorizationCode }),
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), EDGE_FUNCTION_TIMEOUT_MS);
 
-  if (!response.ok) {
-    const error = await response.json() as AuthErrorResponse;
-    throw new Error(error.error ?? `HTTP ${response.status}`);
+  try {
+    const response = await fetch(EDGE_FUNCTION_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+      },
+      body: JSON.stringify({ authorizationCode }),
+      signal: controller.signal,
+    });
+
+    if (!response.ok) {
+      const error = await response.json() as AuthErrorResponse;
+      throw new Error(error.error ?? `HTTP ${response.status}`);
+    }
+
+    const data = await response.json() as AuthResponse;
+    return data.userKey;
+  } catch (err) {
+    if (err instanceof Error && err.name === 'AbortError') {
+      throw new Error(`Edge Function 타임아웃 (${EDGE_FUNCTION_TIMEOUT_MS}ms)`);
+    }
+    throw err;
+  } finally {
+    clearTimeout(timeoutId);
   }
-
-  const data = await response.json() as AuthResponse;
-  return data.userKey;
 }
 
 // --- 메인 초기화 ---
