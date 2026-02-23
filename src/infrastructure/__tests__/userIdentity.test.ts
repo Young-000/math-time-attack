@@ -305,6 +305,19 @@ describe('userIdentity', () => {
 
       warnSpy.mockRestore();
     });
+
+    it('Edge Function 타임아웃(AbortError) 시 fallback ID를 반환한다', async () => {
+      const abortError = new DOMException('The operation was aborted.', 'AbortError');
+      mockFetch.mockRejectedValue(abortError);
+
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const userId = await initializeUserIdentity();
+
+      expect(userId).toMatch(/^local-/);
+      expect(warnSpy).toHaveBeenCalled();
+
+      warnSpy.mockRestore();
+    });
   });
 
   describe('getUserId', () => {
