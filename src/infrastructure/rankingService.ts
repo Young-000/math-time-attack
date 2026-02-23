@@ -1,6 +1,15 @@
 /**
- * Apps-in-Toss 랭킹 시스템 연동 서비스
- * Toss 앱 내 랭킹 시스템과 통합
+ * 랭킹 시스템 서비스
+ *
+ * ## userKey 기반 전환 (Cycle 3)
+ *
+ * 기존 getUserKeyForGame() hash 기반 odl_id에서
+ * appLogin() 기반 토스 userKey로 전환되었다.
+ *
+ * - 컬럼명 `odl_id` 는 유지 (DB 마이그레이션 불필요)
+ * - 저장되는 값이 hash → appLogin userKey로 변경됨
+ * - 기존 hash 기반 데이터는 레거시로 보존 (조회 시 혼재 가능)
+ * - userKey는 `getUserId()` (userIdentity.ts) 통해 획득
  */
 
 import type { DifficultyType, OperationType, RankingItem, GameModeKey } from '@domain/entities';
@@ -10,6 +19,10 @@ import { getUserId, isAppsInTossEnvironment } from '@infrastructure/userIdentity
 
 /**
  * 현재 사용자 ID 가져오기 (하위 호환 — userIdentity로 위임)
+ *
+ * 반환값:
+ * - AIT 환경: appLogin userKey (토스 유저 고유키)
+ * - 비AIT/fallback: localStorage 기반 local-{timestamp}-{random}
  */
 export async function getCurrentUserId(): Promise<string | null> {
   return getUserId();
