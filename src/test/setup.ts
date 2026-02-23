@@ -33,7 +33,7 @@ vi.mock('@apps-in-toss/web-framework', () => ({
     vi.fn(() => Promise.resolve({ statusCode: 'PROFILE_NOT_FOUND' })),
     { isSupported: vi.fn(() => false) },
   ),
-  // 게임 로그인 (getUserKeyForGame) -- 레거시, promotionService가 아직 참조
+  // 게임 로그인 (getUserKeyForGame) -- 레거시
   getUserKeyForGame: Object.assign(
     vi.fn(() => Promise.resolve(undefined)),
     { isSupported: vi.fn(() => false) },
@@ -43,7 +43,7 @@ vi.mock('@apps-in-toss/web-framework', () => ({
     vi.fn(() => Promise.resolve(undefined)),
     { isSupported: vi.fn(() => false) },
   ),
-  // 프로모션 리워드 (grantPromotionRewardForGame)
+  // 프로모션 리워드 (grantPromotionRewardForGame) -- 레거시, Edge Function으로 대체됨
   grantPromotionRewardForGame: Object.assign(
     vi.fn(() => Promise.resolve(undefined)),
     { isSupported: vi.fn(() => false) },
