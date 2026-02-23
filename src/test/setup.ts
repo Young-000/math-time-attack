@@ -33,8 +33,13 @@ vi.mock('@apps-in-toss/web-framework', () => ({
     vi.fn(() => Promise.resolve({ statusCode: 'PROFILE_NOT_FOUND' })),
     { isSupported: vi.fn(() => false) },
   ),
-  // 게임 로그인 (getUserKeyForGame)
+  // 게임 로그인 (getUserKeyForGame) -- 레거시, promotionService가 아직 참조
   getUserKeyForGame: Object.assign(
+    vi.fn(() => Promise.resolve(undefined)),
+    { isSupported: vi.fn(() => false) },
+  ),
+  // appLogin (비게임 인증 -- getUserKeyForGame 대체)
+  appLogin: Object.assign(
     vi.fn(() => Promise.resolve(undefined)),
     { isSupported: vi.fn(() => false) },
   ),
