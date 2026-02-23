@@ -33,6 +33,16 @@ vi.mock('@apps-in-toss/web-framework', () => ({
     vi.fn(() => Promise.resolve({ statusCode: 'PROFILE_NOT_FOUND' })),
     { isSupported: vi.fn(() => false) },
   ),
+  // 게임 로그인 (getUserKeyForGame)
+  getUserKeyForGame: Object.assign(
+    vi.fn(() => Promise.resolve(undefined)),
+    { isSupported: vi.fn(() => false) },
+  ),
+  // 프로모션 리워드 (grantPromotionRewardForGame)
+  grantPromotionRewardForGame: Object.assign(
+    vi.fn(() => Promise.resolve(undefined)),
+    { isSupported: vi.fn(() => false) },
+  ),
   // 기타
   share: vi.fn(() => Promise.resolve()),
   contactsViral: vi.fn(() => vi.fn()),

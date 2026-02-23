@@ -1,11 +1,9 @@
 /**
  * Apps-in-Toss 랭킹 서비스 테스트
  */
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   getCurrentUserId,
-  getCurrentUserInfo,
-  isAppsInTossEnvironment,
   fetchRankings,
   fetchMyRank,
   fetchRankingContext,
@@ -23,112 +21,21 @@ vi.mock('@data/recordService', () => ({
   getMyRank: vi.fn(() => Promise.resolve(3)),
 }));
 
+// userIdentity 모킹
+vi.mock('@infrastructure/userIdentity', () => ({
+  getUserId: vi.fn(() => Promise.resolve('mock-local-user-id')),
+  isAppsInTossEnvironment: vi.fn(() => false),
+}));
+
 describe('Ranking Service', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    // window.ODL 초기화
-    if (typeof global.window !== 'undefined') {
-      delete (global.window as unknown as { ODL?: unknown }).ODL;
-    }
-  });
-
-  afterEach(() => {
-    // 원래 상태로 복원
-    if (typeof global.window !== 'undefined') {
-      delete (global.window as unknown as { ODL?: unknown }).ODL;
-    }
-  });
-
-  describe('isAppsInTossEnvironment', () => {
-    it('should return false when window.ODL is not defined', () => {
-      expect(isAppsInTossEnvironment()).toBe(false);
-    });
-
-    it('should return true when window.ODL is defined', () => {
-      (global.window as unknown as { ODL: object }).ODL = {
-        getUserId: vi.fn(),
-        getUserInfo: vi.fn(),
-      };
-
-      expect(isAppsInTossEnvironment()).toBe(true);
-    });
   });
 
   describe('getCurrentUserId', () => {
-    it('should return local fallback ID when not in Apps-in-Toss environment', async () => {
+    it('should delegate to userIdentity.getUserId', async () => {
       const result = await getCurrentUserId();
-      // ODL 없이도 localStorage 기반 로컬 ID를 반환
-      expect(result).not.toBeNull();
-      expect(result).toMatch(/^local-/);
-    });
-
-    it('should return user ID from ODL API', async () => {
-      (global.window as unknown as { ODL: object }).ODL = {
-        getUserId: vi.fn(() => Promise.resolve('test-user-id')),
-        getUserInfo: vi.fn(),
-      };
-
-      const result = await getCurrentUserId();
-      expect(result).toBe('test-user-id');
-    });
-
-    it('should return local fallback ID and log warning when ODL throws error', async () => {
-      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-
-      (global.window as unknown as { ODL: object }).ODL = {
-        getUserId: vi.fn(() => Promise.reject(new Error('ODL Error'))),
-        getUserInfo: vi.fn(),
-      };
-
-      const result = await getCurrentUserId();
-
-      // ODL 에러 시에도 로컬 ID fallback 반환
-      expect(result).not.toBeNull();
-      expect(result).toMatch(/^local-/);
-      expect(consoleWarnSpy).toHaveBeenCalledWith(
-        'Failed to get user ID from ODL:',
-        expect.any(Error)
-      );
-
-      consoleWarnSpy.mockRestore();
-    });
-  });
-
-  describe('getCurrentUserInfo', () => {
-    it('should return null when not in Apps-in-Toss environment', async () => {
-      const result = await getCurrentUserInfo();
-      expect(result).toBeNull();
-    });
-
-    it('should return user info from ODL API', async () => {
-      const mockUserInfo = { id: 'test-user-id', nickname: 'TestUser' };
-
-      (global.window as unknown as { ODL: object }).ODL = {
-        getUserId: vi.fn(),
-        getUserInfo: vi.fn(() => Promise.resolve(mockUserInfo)),
-      };
-
-      const result = await getCurrentUserInfo();
-      expect(result).toEqual(mockUserInfo);
-    });
-
-    it('should return null and log warning when ODL throws error', async () => {
-      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-
-      (global.window as unknown as { ODL: object }).ODL = {
-        getUserId: vi.fn(),
-        getUserInfo: vi.fn(() => Promise.reject(new Error('ODL Error'))),
-      };
-
-      const result = await getCurrentUserInfo();
-
-      expect(result).toBeNull();
-      expect(consoleWarnSpy).toHaveBeenCalledWith(
-        'Failed to get user info from ODL:',
-        expect.any(Error)
-      );
-
-      consoleWarnSpy.mockRestore();
+      expect(result).toBe('mock-local-user-id');
     });
   });
 
@@ -151,31 +58,14 @@ describe('Ranking Service', () => {
   });
 
   describe('fetchMyRank', () => {
-    it('should return rank using local fallback ID when not in Apps-in-Toss', async () => {
+    it('should return rank using userId from userIdentity', async () => {
       const result = await fetchMyRank('easy', 'multiplication');
-      // 로컬 fallback ID로 순위 조회가 수행되므로 null이 아닐 수 있음
-      expect(result).toBe(3);
-    });
-
-    it('should fetch my rank when user is logged in', async () => {
-      (global.window as unknown as { ODL: object }).ODL = {
-        getUserId: vi.fn(() => Promise.resolve('test-user-id')),
-        getUserInfo: vi.fn(),
-      };
-
-      const result = await fetchMyRank('easy', 'multiplication');
-
       expect(result).toBe(3);
     });
   });
 
   describe('fetchRankingContext', () => {
     it('should fetch complete ranking context', async () => {
-      (global.window as unknown as { ODL: object }).ODL = {
-        getUserId: vi.fn(() => Promise.resolve('test-user-id')),
-        getUserInfo: vi.fn(),
-      };
-
       const context = await fetchRankingContext('easy', 'multiplication');
 
       expect(context.rankings).toHaveLength(2);
@@ -183,15 +73,6 @@ describe('Ranking Service', () => {
       expect(context.isLoading).toBe(false);
       expect(context.error).toBeNull();
       expect(context.gameMode).toBe('easy_multiplication');
-    });
-
-    it('should return myRank using local fallback ID when not in Apps-in-Toss', async () => {
-      const context = await fetchRankingContext('easy', 'multiplication');
-
-      expect(context.rankings).toHaveLength(2);
-      // 로컬 fallback ID로 순위 조회가 수행됨
-      expect(context.myRank).toBe(3);
-      expect(context.error).toBeNull();
     });
 
     it('should handle errors gracefully', async () => {
@@ -221,10 +102,8 @@ describe('Ranking Service', () => {
     });
 
     it('should log ranking update in Apps-in-Toss environment', async () => {
-      (global.window as unknown as { ODL: object }).ODL = {
-        getUserId: vi.fn(),
-        getUserInfo: vi.fn(),
-      };
+      const { isAppsInTossEnvironment } = await import('@infrastructure/userIdentity');
+      (isAppsInTossEnvironment as unknown as ReturnType<typeof vi.fn>).mockReturnValueOnce(true);
 
       const consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
 

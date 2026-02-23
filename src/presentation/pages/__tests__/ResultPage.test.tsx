@@ -35,7 +35,7 @@ vi.mock('@data/recordService', () => ({
 
 // Mock rankingService
 vi.mock('@infrastructure/rankingService', () => ({
-  getCurrentUserId: vi.fn().mockResolvedValue(null),
+  getCurrentUserId: vi.fn().mockResolvedValue('test-local-user'),
 }));
 
 describe('ResultPage', () => {

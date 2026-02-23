@@ -77,15 +77,8 @@ export function ResultPage() {
     const processResult = async () => {
       setIsLoadingRank(true);
       try {
-        // 개발 환경용 로컬 ID 생성/조회
-        let userId = await getCurrentUserId();
-        if (!userId) {
-          userId = localStorage.getItem('dev_odl_id');
-          if (!userId) {
-            userId = `dev_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-            localStorage.setItem('dev_odl_id', userId);
-          }
-        }
+        const userId = await getCurrentUserId();
+        if (!userId) return;
 
         // 신기록 여부 확인
         const newRecord = isNewRecord(difficulty, elapsedTime, operation);
