@@ -16,7 +16,6 @@ import {
 import { MAX_HEARTS, claimDailyLoginBonus, hasDailyBonusClaimed } from '@domain/services/heartService';
 import { formatTime } from '@lib/utils';
 import { getCurrentUserId } from '@infrastructure/rankingService';
-import { claimPromotion } from '@domain/services/promotionService';
 import { getTimeAttackBestScore, TIME_ATTACK_DURATION_BY_DIFFICULTY } from '@presentation/hooks/useTimeAttack';
 import { useHeartSystem } from '@presentation/hooks/useHeartSystem';
 import { StreakBanner, HeartDisplay, NoHeartsModal } from '@presentation/components';
@@ -29,7 +28,6 @@ export function DifficultySelectPage() {
   const navigate = useNavigate();
 
   const [activeTab, setActiveTab] = useState<GameMode>('classic');
-  const [promoResult, setPromoResult] = useState<string | null>(null);
   const [myRanks, setMyRanks] = useState<Record<DifficultyType, number | null>>({
     easy: null,
     medium: null,
@@ -208,16 +206,6 @@ export function DifficultySelectPage() {
     if (heartInfo.isFull) return;
     setShowHeartChargeModal(true);
   }, [heartInfo.isFull]);
-
-  // 프로모션 테스트
-  const handlePromotionTest = useCallback(async () => {
-    const TEST_CODE = 'TEST_01KHRY05GMV8Q502AMZPFZX6J1';
-    const userKey = await getCurrentUserId() ?? undefined;
-    const result = await claimPromotion(TEST_CODE, 10, userKey);
-    const message = result.success ? result.message : result.error;
-    setPromoResult(message);
-    setTimeout(() => setPromoResult(null), 3000);
-  }, []);
 
   // 일일 챌린지 배너 렌더링
   const renderDailyChallenge = () => (
@@ -408,13 +396,6 @@ export function DifficultySelectPage() {
             : '제한 시간 안에 최대한 많이!'}
         </p>
 
-        {/* 프로모션 API 테스트 배너 (임시 - 테스트 후 제거) */}
-        <button
-          className="action-btn secondary"
-          onClick={handlePromotionTest}
-        >
-          🎁 프로모션 API 테스트 (10P 지급)
-        </button>
       </header>
 
       {/* 게임 모드 탭 */}
@@ -494,12 +475,6 @@ export function DifficultySelectPage() {
       )}
 
 
-      {/* 프로모션 결과 토스트 */}
-      {promoResult && (
-        <div className="charge-success-toast">
-          {promoResult}
-        </div>
-      )}
     </div>
   );
 }
