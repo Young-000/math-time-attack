@@ -212,7 +212,8 @@ export function DifficultySelectPage() {
   // 프로모션 테스트
   const handlePromotionTest = useCallback(async () => {
     const TEST_CODE = 'TEST_01KHRY05GMV8Q502AMZPFZX6J1';
-    const result = await claimPromotion(TEST_CODE, 10);
+    const userKey = await getCurrentUserId() ?? undefined;
+    const result = await claimPromotion(TEST_CODE, 10, userKey);
     const message = result.success ? result.message : result.error;
     setPromoResult(message);
     setTimeout(() => setPromoResult(null), 3000);

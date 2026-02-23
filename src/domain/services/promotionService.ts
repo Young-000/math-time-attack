@@ -1,23 +1,47 @@
 /**
  * 프로모션(토스 포인트) 지급 서비스
  *
- * grantPromotionRewardForGame()을 래핑하여 중복 지급 방지 + 결과 처리 제공.
- * getUserKeyForGame()의 hash가 내부적으로 사용됨 → initializeUserIdentity() 선행 필요.
+ * 서버 사이드 프로모션 API (Supabase Edge Function) 기반.
+ * 비게임 카테고리에서는 grantPromotionRewardForGame()이 동작하지 않으므로,
+ * Edge Function을 통해 mTLS 인증된 토스 프로모션 API를 호출한다.
+ *
+ * 플로우:
+ * 1. 클라이언트 localStorage 중복 체크
+ * 2. userKey 조회 (userIdentity)
+ * 3. Edge Function POST /functions/v1/promotion
+ *    → 서버: get-key → execute-promotion → execution-result (polling)
+ * 4. 클라이언트 localStorage 지급 완료 기록
  */
 
-import { grantPromotionRewardForGame } from '@apps-in-toss/web-framework';
-// TODO: 프로모션 테스트 완료 후 복원
-// import { isAppsInTossEnvironment } from '@infrastructure/userIdentity';
+import { isAppsInTossEnvironment } from '@infrastructure/userIdentity';
+
+// --- 상수 ---
 
 const CLAIMED_KEY = 'math-attack-promo-claimed';
+const EDGE_FUNCTION_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/promotion`;
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
 
-type PromotionResult =
+// --- 타입 ---
+
+export type PromotionResult =
   | { success: true; message: string }
   | { success: false; error: string };
 
-/**
- * 이미 지급된 프로모션인지 확인 (클라이언트 방어)
- */
+interface PromotionSuccessResponse {
+  success: true;
+  key: string;
+}
+
+interface PromotionErrorResponse {
+  success: false;
+  error: string;
+  message: string;
+}
+
+type EdgeFunctionResponse = PromotionSuccessResponse | PromotionErrorResponse;
+
+// --- localStorage 중복 방지 (클라이언트 방어) ---
+
 function isAlreadyClaimed(promotionCode: string): boolean {
   try {
     const claimed = JSON.parse(localStorage.getItem(CLAIMED_KEY) ?? '[]') as string[];
@@ -27,9 +51,6 @@ function isAlreadyClaimed(promotionCode: string): boolean {
   }
 }
 
-/**
- * 지급 완료 기록
- */
 function markClaimed(promotionCode: string): void {
   try {
     const claimed = JSON.parse(localStorage.getItem(CLAIMED_KEY) ?? '[]') as string[];
@@ -42,52 +63,76 @@ function markClaimed(promotionCode: string): void {
   }
 }
 
+// --- Edge Function 호출 ---
+
+async function callPromotionEdgeFunction(
+  promotionCode: string,
+  amount: number,
+  userKey: string,
+): Promise<EdgeFunctionResponse> {
+  const response = await fetch(EDGE_FUNCTION_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+    },
+    body: JSON.stringify({ promotionCode, amount, userKey }),
+  });
+
+  const data = (await response.json()) as EdgeFunctionResponse;
+  return data;
+}
+
+// --- Public API ---
+
 /**
  * 프로모션 리워드 지급
  *
  * @param promotionCode 콘솔에서 생성한 프로모션 코드 (예: TEST_01KHRY05GMV8Q502AMZPFZX6J1)
  * @param amount 지급 금액 (토스 포인트)
+ * @param userKey 토스 유저 고유 식별키 (userIdentity에서 획득)
  */
 export async function claimPromotion(
   promotionCode: string,
   amount: number,
+  userKey?: string,
 ): Promise<PromotionResult> {
-  // TODO: 프로모션 테스트 완료 후 환경 체크 복원
-  // if (!isAppsInTossEnvironment()) {
-  //   return { success: false, error: 'AIT 환경이 아닙니다 (웹 브라우저에서는 사용 불가)' };
-  // }
+  // 비AIT 환경 체크
+  if (!isAppsInTossEnvironment()) {
+    return { success: false, error: 'AIT 환경이 아닙니다 (웹 브라우저에서는 사용 불가)' };
+  }
 
+  // 클라이언트 중복 체크
   if (isAlreadyClaimed(promotionCode)) {
     return { success: false, error: '이미 지급된 프로모션입니다' };
   }
 
+  // userKey 필수
+  if (!userKey) {
+    return { success: false, error: 'userKey가 필요합니다. 로그인 후 다시 시도해주세요.' };
+  }
+
   try {
-    const result = await grantPromotionRewardForGame({
-      params: { promotionCode, amount },
-    });
+    const result = await callPromotionEdgeFunction(promotionCode, amount, userKey);
 
-    // undefined → 앱 버전 미지원
-    if (result === undefined) {
-      return { success: false, error: '지원하지 않는 앱 버전입니다' };
-    }
-
-    // 'ERROR' 문자열 → 알 수 없는 오류
-    if (result === 'ERROR') {
-      return { success: false, error: '포인트 지급 중 오류가 발생했습니다' };
-    }
-
-    // { key: string } → 성공
-    if ('key' in result) {
+    if (result.success) {
       markClaimed(promotionCode);
-      return { success: true, message: `${amount} 포인트 지급 성공! (key: ${result.key})` };
+      return {
+        success: true,
+        message: `${amount} 포인트 지급 성공! (key: ${result.key})`,
+      };
     }
 
-    // { errorCode: string, message: string } → 실패
-    if ('errorCode' in result) {
-      return { success: false, error: `[${result.errorCode}] ${result.message}` };
+    // 서버 측 중복 체크
+    if (result.error === 'ALREADY_CLAIMED') {
+      markClaimed(promotionCode);
+      return { success: false, error: '이미 지급된 프로모션입니다' };
     }
 
-    return { success: false, error: `알 수 없는 응답: ${JSON.stringify(result)}` };
+    return {
+      success: false,
+      error: `[${result.error}] ${result.message}`,
+    };
   } catch (err) {
     const message = err instanceof Error ? err.message : '알 수 없는 오류';
     return { success: false, error: `프로모션 요청 실패: ${message}` };
