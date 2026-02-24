@@ -7,7 +7,6 @@
  * 환경변수:
  * - TOSS_MTLS_CERT: 클라이언트 인증서 (base64 PEM)
  * - TOSS_MTLS_KEY: 클라이언트 개인키 (base64 PEM)
- * - TOSS_MTLS_CA: CA 인증서 (base64 PEM)
  * - TOSS_API_BASE_URL: 토스 파트너 API 베이스 URL
  * - TOSS_APP_KEY: 앱 식별 키
  */
@@ -54,19 +53,16 @@ async function tossApiFetch(
 ): Promise<Response> {
   const certEncoded = getRequiredEnv('TOSS_MTLS_CERT');
   const keyEncoded = getRequiredEnv('TOSS_MTLS_KEY');
-  const caEncoded = getRequiredEnv('TOSS_MTLS_CA');
   const baseUrl = Deno.env.get('TOSS_API_BASE_URL') ?? 'https://api-partner.toss.im';
   const appKey = getRequiredEnv('TOSS_APP_KEY');
 
   const cert = decodePem(certEncoded);
   const key = decodePem(keyEncoded);
-  const caCerts = [decodePem(caEncoded)];
 
-  // Deno의 Deno.createHttpClient로 mTLS 설정
+  // Deno의 Deno.createHttpClient로 mTLS 설정 (CA는 시스템 기본 사용)
   const client = Deno.createHttpClient({
     certChain: cert,
     privateKey: key,
-    caCerts,
   });
 
   try {
