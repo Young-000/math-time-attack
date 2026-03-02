@@ -11,8 +11,7 @@ import {
   recordInterstitialShown,
   incrementGameCount,
 } from '@domain/services/adFrequencyService';
-
-const INTERSTITIAL_AD_GROUP_ID = 'ait.v2.live.c3e1be11131c45f6';
+import { INTERSTITIAL_AD_GROUP_ID } from '@constants/ad';
 
 interface UseInterstitialAdReturn {
   isAdSupported: boolean;

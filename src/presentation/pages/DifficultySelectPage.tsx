@@ -18,7 +18,7 @@ import { formatTime } from '@lib/utils';
 import { getCurrentUserId } from '@infrastructure/rankingService';
 import { getTimeAttackBestScore, TIME_ATTACK_DURATION_BY_DIFFICULTY } from '@presentation/hooks/useTimeAttack';
 import { useHeartSystem } from '@presentation/hooks/useHeartSystem';
-import { StreakBanner, HeartDisplay, NoHeartsModal } from '@presentation/components';
+import { StreakBanner, HeartDisplay, NoHeartsModal, BannerAd } from '@presentation/components';
 
 const difficulties: DifficultyType[] = ['easy', 'medium', 'hard'];
 
@@ -423,6 +423,9 @@ export function DifficultySelectPage() {
       <main className="content">
         {activeTab === 'classic' ? renderClassicContent() : renderTimeAttackContent()}
       </main>
+
+      {/* 배너 광고 */}
+      <BannerAd className="banner-ad-home" />
 
       {/* 연속 출석 배너 - 하단 */}
       <StreakBanner />

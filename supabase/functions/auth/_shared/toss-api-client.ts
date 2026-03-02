@@ -157,46 +157,65 @@ export async function generateToken(
 
   if (!response.ok) {
     const errorBody = await response.text();
+    console.error(`[auth] Toss API error (HTTP ${response.status}):`, errorBody);
 
     try {
-      const errorJson = JSON.parse(errorBody) as TossApiErrorResponse;
+      const errorJson = JSON.parse(errorBody) as Record<string, unknown>;
+
+      // 토스 API 에러 코드 추출 (두 가지 형식 지원)
+      // 형식 1: { errorCode, message } (auth API)
+      // 형식 2: { resultType: 'FAIL', error: { errorCode, reason } } (promotion/일반 API)
+      let errorCode: string | undefined;
+      let errorMessage: string | undefined;
+
+      if (typeof errorJson.errorCode === 'string') {
+        errorCode = errorJson.errorCode;
+        errorMessage = errorJson.message as string;
+      } else if (
+        errorJson.resultType === 'FAIL' &&
+        errorJson.error &&
+        typeof errorJson.error === 'object'
+      ) {
+        const err = errorJson.error as Record<string, unknown>;
+        errorCode = err.errorCode as string;
+        errorMessage = err.reason as string;
+      }
 
       // 토스 API 에러 코드 매핑
-      if (errorJson.errorCode === 'INVALID_AUTHORIZATION_CODE') {
+      if (errorCode === 'INVALID_AUTHORIZATION_CODE') {
         throw new Error(
-          `${ErrorCode.INVALID_AUTH_CODE}: ${errorJson.message}`
+          `${ErrorCode.INVALID_AUTH_CODE}: ${errorMessage ?? 'Invalid authorization code'}`
         );
       }
-      if (errorJson.errorCode === 'EXPIRED_AUTHORIZATION_CODE') {
+      if (errorCode === 'EXPIRED_AUTHORIZATION_CODE') {
         throw new Error(
-          `${ErrorCode.EXPIRED_AUTH_CODE}: ${errorJson.message}`
+          `${ErrorCode.EXPIRED_AUTH_CODE}: ${errorMessage ?? 'Expired authorization code'}`
         );
       }
 
       // 401 = mTLS 인증 실패
       if (response.status === 401) {
         throw new Error(
-          `${ErrorCode.SERVER_AUTH_FAILED}: ${errorJson.message}`
+          `${ErrorCode.SERVER_AUTH_FAILED}: ${errorMessage ?? errorBody}`
         );
       }
 
-      // 기타 서버 에러
+      // 기타 서버 에러 (원본 응답 포함)
       throw new Error(
-        `${ErrorCode.TOSS_SERVER_ERROR}: [${errorJson.errorCode}] ${errorJson.message}`
+        `${ErrorCode.TOSS_SERVER_ERROR}: [${errorCode ?? 'UNKNOWN'}] ${errorMessage ?? errorBody}`
       );
     } catch (parseErr) {
-      // JSON 파싱 실패 시
-      if (parseErr instanceof Error && parseErr.message.startsWith('INVALID_AUTH_CODE')) {
-        throw parseErr;
-      }
-      if (parseErr instanceof Error && parseErr.message.startsWith('EXPIRED_AUTH_CODE')) {
-        throw parseErr;
-      }
-      if (parseErr instanceof Error && parseErr.message.startsWith('SERVER_AUTH_FAILED')) {
-        throw parseErr;
-      }
-      if (parseErr instanceof Error && parseErr.message.startsWith('TOSS_SERVER_ERROR')) {
-        throw parseErr;
+      // 이미 우리가 던진 에러는 그대로 전파
+      if (parseErr instanceof Error) {
+        const knownPrefixes = [
+          ErrorCode.INVALID_AUTH_CODE,
+          ErrorCode.EXPIRED_AUTH_CODE,
+          ErrorCode.SERVER_AUTH_FAILED,
+          ErrorCode.TOSS_SERVER_ERROR,
+        ];
+        if (knownPrefixes.some((p) => parseErr.message.startsWith(p))) {
+          throw parseErr;
+        }
       }
 
       throw new Error(

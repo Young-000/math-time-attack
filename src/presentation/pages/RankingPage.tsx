@@ -18,7 +18,7 @@ import {
   type RankingPeriod,
 } from '@data/recordService';
 import { getCurrentUserId } from '@infrastructure/rankingService';
-import { RankingTab, RankingList, NicknameModal, HeartDisplay } from '@presentation/components';
+import { RankingTab, RankingList, NicknameModal, HeartDisplay, BannerAd } from '@presentation/components';
 import { useNickname } from '@presentation/hooks/useNickname';
 import { MAX_HEARTS } from '@domain/services/heartService';
 import { useHeartSystem } from '@presentation/hooks/useHeartSystem';
@@ -257,6 +257,9 @@ export function RankingPage() {
           mode={gameMode}
         />
       </main>
+
+      {/* 배너 광고 */}
+      <BannerAd className="banner-ad-ranking" />
 
       {/* 하트 충전 & 공유 섹션 */}
       <div className="ranking-share-section">

@@ -7,7 +7,7 @@ export { RankingList } from './RankingList';
 export { NicknameModal } from './NicknameModal';
 export { ShareButton } from './ShareButton';
 export { Toast } from './Toast';
-export { AdBanner } from './AdBanner';
+export { BannerAd } from './BannerAd';
 export { AdInterstitial, incrementGameCount } from './AdInterstitial';
 export { StreakBanner } from './StreakBanner';
 export { HeartDisplay } from './HeartDisplay';

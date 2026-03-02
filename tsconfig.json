@@ -21,7 +21,8 @@
       "@data/*": ["src/data/*"],
       "@infrastructure/*": ["src/infrastructure/*"],
       "@presentation/*": ["src/presentation/*"],
-      "@lib/*": ["src/lib/*"]
+      "@lib/*": ["src/lib/*"],
+      "@constants/*": ["src/constants/*"]
     }
   },
   "include": ["src"],

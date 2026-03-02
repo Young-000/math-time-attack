@@ -25,6 +25,21 @@ vi.mock('@apps-in-toss/web-framework', () => ({
     vi.fn(() => Promise.resolve(undefined)),
     { isSupported: vi.fn(() => false) },
   ),
+  // TossAds (배너 광고)
+  TossAds: {
+    initialize: Object.assign(vi.fn(), {
+      isSupported: vi.fn(() => false),
+    }),
+    attach: Object.assign(vi.fn(), {
+      isSupported: vi.fn(() => false),
+    }),
+    destroy: Object.assign(vi.fn(), {
+      isSupported: vi.fn(() => false),
+    }),
+    destroyAll: Object.assign(vi.fn(), {
+      isSupported: vi.fn(() => false),
+    }),
+  },
   // 기타
   share: vi.fn(() => Promise.resolve()),
   contactsViral: vi.fn(() => vi.fn()),

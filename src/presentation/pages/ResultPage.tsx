@@ -8,7 +8,7 @@ import { DIFFICULTY_CONFIG, Operation, type DifficultyType, type OperationType }
 import { saveRecord, isNewRecord, getBestRecord, getMyRankInfo } from '@data/recordService';
 import { getCurrentUserId } from '@infrastructure/rankingService';
 import { formatTime } from '@lib/utils';
-import { ShareButton, HeartDisplay, NoHeartsModal, AchievementModal } from '@presentation/components';
+import { ShareButton, HeartDisplay, NoHeartsModal, AchievementModal, BannerAd } from '@presentation/components';
 import { saveDailyChallengeCompletion } from '@domain/services/dailyChallengeService';
 import { checkIn, getStreakMilestoneMessage } from '@domain/services/streakService';
 import { useHeartSystem } from '@presentation/hooks/useHeartSystem';
@@ -215,6 +215,9 @@ export function ResultPage() {
         <div className="result-hearts-info">
           <HeartDisplay heartInfo={heartInfo} showCount showTimer />
         </div>
+
+        {/* 배너 광고 */}
+        <BannerAd className="banner-ad-result" />
 
         <div className="result-actions">
           <ShareButton

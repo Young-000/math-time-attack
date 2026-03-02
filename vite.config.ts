@@ -11,6 +11,7 @@ export default defineConfig({
       '@infrastructure': path.resolve(__dirname, './src/infrastructure'),
       '@presentation': path.resolve(__dirname, './src/presentation'),
       '@lib': path.resolve(__dirname, './src/lib'),
+      '@constants': path.resolve(__dirname, './src/constants'),
     },
   },
   server: {

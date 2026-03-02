@@ -14,7 +14,7 @@ import {
 } from '@data/recordService';
 import { getCurrentUserId } from '@infrastructure/rankingService';
 import { useHeartSystem } from '@presentation/hooks/useHeartSystem';
-import { HeartDisplay, NoHeartsModal, AchievementModal } from '@presentation/components';
+import { HeartDisplay, NoHeartsModal, AchievementModal, BannerAd } from '@presentation/components';
 import { useInterstitialAd, incrementGameCount } from '@presentation/hooks/useInterstitialAd';
 import { checkAllAchievements, markAchieved } from '@domain/services/achievementService';
 import { addHearts } from '@domain/services/heartService';
@@ -257,6 +257,9 @@ export function TimeAttackResultPage() {
         <div className="result-hearts-info">
           <HeartDisplay heartInfo={heartInfo} showCount showTimer />
         </div>
+
+        {/* 배너 광고 */}
+        <BannerAd className="banner-ad-result" />
 
         <div className="result-actions">
           <button className="action-btn primary" onClick={handleRetry}>

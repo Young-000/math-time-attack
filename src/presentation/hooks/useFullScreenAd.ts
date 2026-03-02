@@ -8,8 +8,7 @@
 
 import { useCallback, useRef, useState } from 'react';
 import { loadFullScreenAd, showFullScreenAd } from '@apps-in-toss/web-framework';
-
-const REWARDED_AD_GROUP_ID = 'ait.v2.live.92b5c5f7d8644dc2';
+import { REWARDED_AD_GROUP_ID } from '@constants/ad';
 
 interface FullScreenAdCallbacks {
   onRewarded: () => void;
