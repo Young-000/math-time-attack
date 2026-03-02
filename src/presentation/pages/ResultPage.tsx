@@ -13,7 +13,6 @@ import { saveDailyChallengeCompletion } from '@domain/services/dailyChallengeSer
 import { checkIn, getStreakMilestoneMessage } from '@domain/services/streakService';
 import { useHeartSystem } from '@presentation/hooks/useHeartSystem';
 import { useInterstitialAd, incrementGameCount } from '@presentation/hooks/useInterstitialAd';
-import { useGameCenter } from '@presentation/hooks/useGameCenter';
 import { checkAllAchievements, markAchieved } from '@domain/services/achievementService';
 import { addHearts } from '@domain/services/heartService';
 import type { AchievementDefinition } from '@domain/services/achievementDefinitions';
@@ -41,9 +40,6 @@ export function ResultPage() {
 
   // 전면 광고
   const { showInterstitialIfNeeded } = useInterstitialAd();
-
-  // Game Center
-  const { submitScore: submitGameCenterScore } = useGameCenter();
 
   // 하트 시스템 통합 훅
   const {
@@ -127,10 +123,6 @@ export function ResultPage() {
           setShowAchievementModal(true);
         }
 
-        // Game Center 점수 제출 (시간이 빠를수록 좋으므로 역수 점수)
-        const gameCenterScore = Math.max(0, 999999 - elapsedTime);
-        submitGameCenterScore(gameCenterScore);
-
         // 전면 광고 표시 (빈도 조건 충족 시)
         showInterstitialIfNeeded(() => {});
       } catch (err) {
@@ -141,7 +133,7 @@ export function ResultPage() {
     };
 
     processResult();
-  }, [state, navigate, showInterstitialIfNeeded, submitGameCenterScore]);
+  }, [state, navigate, showInterstitialIfNeeded]);
 
   // state에서 값 추출 (null일 수 있으므로 기본값 처리)
   const difficulty = state?.difficulty ?? 'easy';

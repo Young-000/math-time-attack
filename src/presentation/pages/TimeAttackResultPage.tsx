@@ -16,7 +16,6 @@ import { getCurrentUserId } from '@infrastructure/rankingService';
 import { useHeartSystem } from '@presentation/hooks/useHeartSystem';
 import { HeartDisplay, NoHeartsModal, AchievementModal } from '@presentation/components';
 import { useInterstitialAd, incrementGameCount } from '@presentation/hooks/useInterstitialAd';
-import { useGameCenter } from '@presentation/hooks/useGameCenter';
 import { checkAllAchievements, markAchieved } from '@domain/services/achievementService';
 import { addHearts } from '@domain/services/heartService';
 import type { AchievementDefinition } from '@domain/services/achievementDefinitions';
@@ -44,9 +43,6 @@ export function TimeAttackResultPage() {
 
   // 전면 광고
   const { showInterstitialIfNeeded } = useInterstitialAd();
-
-  // Game Center
-  const { submitScore: submitGameCenterScore } = useGameCenter();
 
   // 하트 시스템 통합 훅
   const {
@@ -111,9 +107,6 @@ export function TimeAttackResultPage() {
       setShowAchievementModal(true);
     }
 
-    // Game Center 점수 제출
-    submitGameCenterScore(correctCount);
-
     // 전면 광고
     showInterstitialIfNeeded(() => {});
 
@@ -147,7 +140,7 @@ export function TimeAttackResultPage() {
     };
 
     saveAndFetchRank();
-  }, [state, navigate, online, showInterstitialIfNeeded, submitGameCenterScore]);
+  }, [state, navigate, online, showInterstitialIfNeeded]);
 
   // state에서 값 추출 (null일 수 있으므로 기본값 처리)
   const difficulty = state?.difficulty ?? 'easy';

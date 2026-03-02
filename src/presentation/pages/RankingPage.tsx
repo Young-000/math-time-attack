@@ -22,7 +22,6 @@ import { RankingTab, RankingList, NicknameModal, HeartDisplay } from '@presentat
 import { useNickname } from '@presentation/hooks/useNickname';
 import { MAX_HEARTS } from '@domain/services/heartService';
 import { useHeartSystem } from '@presentation/hooks/useHeartSystem';
-import { useGameCenter } from '@presentation/hooks/useGameCenter';
 
 type GameMode = 'classic' | 'timeattack';
 
@@ -60,8 +59,6 @@ export function RankingPage() {
     handleWatchAdForHearts,
     handleShareForHearts,
   } = useHeartSystem();
-
-  const { isSupported: isGameCenterSupported, openLeaderboard } = useGameCenter();
 
   const myRanks = gameMode === 'classic' ? myClassicRanks : myTimeAttackRanks;
 
@@ -312,20 +309,6 @@ export function RankingPage() {
           🎮 게임 시작하기
         </button>
       </div>
-
-      {/* Game Center 리더보드 */}
-      {isGameCenterSupported && (
-        <div className="game-center-section">
-          <button
-            className="game-center-btn"
-            onClick={openLeaderboard}
-            aria-label="Game Center 리더보드 열기"
-          >
-            <span className="game-center-icon">🎮</span>
-            Game Center 리더보드
-          </button>
-        </div>
-      )}
 
       <NicknameModal
         isOpen={isModalOpen}

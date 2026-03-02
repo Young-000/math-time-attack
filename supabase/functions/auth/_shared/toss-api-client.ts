@@ -53,16 +53,16 @@ async function tossApiFetch(
 ): Promise<Response> {
   const certEncoded = getRequiredEnv('TOSS_MTLS_CERT');
   const keyEncoded = getRequiredEnv('TOSS_MTLS_KEY');
-  const baseUrl = Deno.env.get('TOSS_API_BASE_URL') ?? 'https://api-partner.toss.im';
+  const baseUrl = Deno.env.get('TOSS_API_BASE_URL') ?? 'https://apps-in-toss-api.toss.im';
   const appKey = getRequiredEnv('TOSS_APP_KEY');
 
-  const cert = decodePem(certEncoded);
-  const key = decodePem(keyEncoded);
+  const certPem = decodePem(certEncoded);
+  const keyPem = decodePem(keyEncoded);
 
   // Deno의 Deno.createHttpClient로 mTLS 설정 (CA는 시스템 기본 사용)
   const client = Deno.createHttpClient({
-    certChain: cert,
-    privateKey: key,
+    cert: certPem,
+    key: keyPem,
   });
 
   try {

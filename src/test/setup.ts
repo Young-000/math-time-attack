@@ -20,31 +20,8 @@ vi.mock('@apps-in-toss/web-framework', () => ({
   showFullScreenAd: Object.assign(vi.fn(() => vi.fn()), {
     isSupported: vi.fn(() => false),
   }),
-  // Game Center SDK
-  submitGameCenterLeaderBoardScore: Object.assign(
-    vi.fn(() => Promise.resolve({ statusCode: 'SUCCESS' })),
-    { isSupported: vi.fn(() => false) },
-  ),
-  openGameCenterLeaderboard: Object.assign(
-    vi.fn(() => Promise.resolve()),
-    { isSupported: vi.fn(() => false) },
-  ),
-  getGameCenterGameProfile: Object.assign(
-    vi.fn(() => Promise.resolve({ statusCode: 'PROFILE_NOT_FOUND' })),
-    { isSupported: vi.fn(() => false) },
-  ),
-  // 게임 로그인 (getUserKeyForGame) -- 레거시
-  getUserKeyForGame: Object.assign(
-    vi.fn(() => Promise.resolve(undefined)),
-    { isSupported: vi.fn(() => false) },
-  ),
   // appLogin (비게임 인증 -- getUserKeyForGame 대체)
   appLogin: Object.assign(
-    vi.fn(() => Promise.resolve(undefined)),
-    { isSupported: vi.fn(() => false) },
-  ),
-  // 프로모션 리워드 (grantPromotionRewardForGame) -- 레거시, Edge Function으로 대체됨
-  grantPromotionRewardForGame: Object.assign(
     vi.fn(() => Promise.resolve(undefined)),
     { isSupported: vi.fn(() => false) },
   ),

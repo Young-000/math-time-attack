@@ -3158,35 +3158,3 @@ body {
   background: #2563eb;
 }
 
-/* ==============================
-   Game Center 섹션
-   ============================== */
-
-.game-center-section {
-  padding: 12px 16px;
-  border-top: 1px solid #eee;
-}
-
-.game-center-btn {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 14px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border: none;
-  border-radius: 12px;
-  font-size: 15px;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.game-center-btn:active {
-  opacity: 0.9;
-}
-
-.game-center-icon {
-  font-size: 20px;
-}
