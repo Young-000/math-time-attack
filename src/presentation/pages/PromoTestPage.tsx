@@ -14,6 +14,7 @@ import {
   getCachedUserId,
   isAppsInTossEnvironment,
   initializeUserIdentity,
+  resetUserIdentityCache,
 } from '@infrastructure/userIdentity';
 import { claimPromotion, resetPromotionClaims } from '@domain/services/promotionService';
 
@@ -43,6 +44,8 @@ export default function PromoTestPage(): JSX.Element {
     setAuthStatus('loading');
     setAuthError(null);
     try {
+      // 기존 캐시 초기화 → 강제로 appLogin 재실행
+      resetUserIdentityCache();
       const key = await initializeUserIdentity();
       setUserKey(key);
       setAuthStatus('success');
@@ -167,9 +170,18 @@ export default function PromoTestPage(): JSX.Element {
 
       <Section title="Debug Info">
         <Row label="SUPABASE_URL" value={import.meta.env.VITE_SUPABASE_URL ?? 'NOT SET'} />
-        <Row label="userKey starts" value={userKey ? `${userKey.substring(0, 20)}...` : '-'} />
-        <Row label="isLocal" value={userKey?.startsWith('local-') ? 'YES (fallback)' : 'NO (real)'} />
+        <Row label="ANON_KEY" value={import.meta.env.VITE_SUPABASE_ANON_KEY ? `${String(import.meta.env.VITE_SUPABASE_ANON_KEY).substring(0, 20)}...` : 'NOT SET'} />
+        <Row label="userKey full" value={userKey ?? '-'} />
+        <Row label="isLocal" value={userKey?.startsWith('local-') || userKey?.startsWith('temp-') ? 'YES (fallback) - appLogin 실패!' : userKey ? 'NO (real userKey)' : '-'} />
       </Section>
+
+      {userKey?.startsWith('local-') && (
+        <div style={{ padding: 12, background: '#fff3cd', borderRadius: 8, margin: '0 0 16px', fontSize: 13 }}>
+          <strong>appLogin이 실패하여 로컬 fallback ID를 사용 중입니다.</strong><br />
+          &quot;Run appLogin&quot; 버튼을 눌러 캐시를 초기화하고 다시 시도하세요.<br />
+          토스 앱 내에서만 appLogin이 동작합니다.
+        </div>
+      )}
     </div>
   );
 }
