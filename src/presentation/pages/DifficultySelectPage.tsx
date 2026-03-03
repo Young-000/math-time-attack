@@ -477,24 +477,6 @@ export function DifficultySelectPage() {
         </div>
       )}
 
-      {/* 프로모션 테스트 진입 (임시) */}
-      <button
-        onClick={() => navigate('/promo-test')}
-        style={{
-          margin: '16px auto',
-          display: 'block',
-          padding: '8px 16px',
-          fontSize: 12,
-          color: '#999',
-          background: 'none',
-          border: '1px dashed #ccc',
-          borderRadius: 4,
-          cursor: 'pointer',
-        }}
-      >
-        [DEV] Promotion Test
-      </button>
-
     </div>
   );
 }

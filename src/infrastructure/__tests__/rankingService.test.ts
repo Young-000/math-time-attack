@@ -111,29 +111,15 @@ describe('Ranking Service', () => {
   });
 
   describe('notifyRankingUpdate', () => {
-    it('should not log when not in Apps-in-Toss environment', async () => {
-      const consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-
-      await notifyRankingUpdate(1, 'easy', 'multiplication');
-
-      expect(consoleLogSpy).not.toHaveBeenCalled();
-
-      consoleLogSpy.mockRestore();
+    it('should return without error when not in Apps-in-Toss environment', async () => {
+      await expect(notifyRankingUpdate(1, 'easy', 'multiplication')).resolves.toBeUndefined();
     });
 
-    it('should log ranking update in Apps-in-Toss environment', async () => {
+    it('should return without error in Apps-in-Toss environment', async () => {
       const { isAppsInTossEnvironment } = await import('@infrastructure/userIdentity');
       (isAppsInTossEnvironment as unknown as ReturnType<typeof vi.fn>).mockReturnValueOnce(true);
 
-      const consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-
-      await notifyRankingUpdate(5, 'medium', 'addition');
-
-      expect(consoleLogSpy).toHaveBeenCalledWith(
-        'New ranking: 5 for medium/addition'
-      );
-
-      consoleLogSpy.mockRestore();
+      await expect(notifyRankingUpdate(5, 'medium', 'addition')).resolves.toBeUndefined();
     });
   });
 });

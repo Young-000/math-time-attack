@@ -100,10 +100,9 @@ export async function fetchRankingContext(
  * 랭킹 업데이트 알림 (선택적 - Toss 알림 시스템 연동)
  */
 export async function notifyRankingUpdate(
-  newRank: number,
-  difficulty: DifficultyType,
-  operation: OperationType
+  _newRank: number,
+  _difficulty: DifficultyType,
+  _operation: OperationType
 ): Promise<void> {
   if (!isAppsInTossEnvironment()) return;
-  console.log(`New ranking: ${newRank} for ${difficulty}/${operation}`);
 }

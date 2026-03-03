@@ -91,7 +91,7 @@ export function HeartStation({ onClose }: HeartStationProps) {
           onShareSuccess();
         })
         .catch((error) => {
-          console.log('Share cancelled or failed:', error);
+          console.warn('Share cancelled or failed:', error);
         })
         .finally(() => {
           setIsSharing(false);

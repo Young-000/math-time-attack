@@ -45,14 +45,10 @@ export function useContactsViral(): UseContactsViralReturn {
               // 공유 완료 - 리워드 지급
               // 샌드박스 환경에서는 수량을 1로 고정 (테스트 용도)
               const rewardAmount = isSandbox ? 1 : event.data.rewardAmount;
-              console.log('공유 리워드 지급:', rewardAmount, event.data.rewardUnit);
               onRewarded(rewardAmount);
               break;
             }
             case 'close':
-              // 모듈 종료
-              console.log('공유 모듈 종료:', event.data.closeReason);
-              console.log('공유 완료한 친구 수:', event.data.sentRewardsCount);
               onClose?.();
               // cleanup 호출
               cleanup();

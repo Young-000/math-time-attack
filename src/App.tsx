@@ -7,7 +7,6 @@ import {
   TimeAttackPage,
   TimeAttackResultPage,
 } from '@presentation/pages';
-import PromoTestPage from '@presentation/pages/PromoTestPage';
 import { TossAdsProvider } from '@presentation/providers/TossAdsProvider';
 
 function App() {
@@ -22,8 +21,6 @@ function App() {
         {/* 타임어택 모드 */}
         <Route path="/time-attack/:difficulty" element={<TimeAttackPage />} />
         <Route path="/time-attack/result" element={<TimeAttackResultPage />} />
-        {/* 프로모션 테스트 (임시) */}
-        <Route path="/promo-test" element={<PromoTestPage />} />
       </Routes>
     </TossAdsProvider>
   );

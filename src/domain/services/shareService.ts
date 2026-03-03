@@ -107,7 +107,7 @@ export async function shareResult(options: ShareOptions): Promise<{
     if (err instanceof Error && err.name === 'AbortError') {
       return { success: false, method: 'native' };
     }
-    console.log('Share failed, falling back to clipboard:', err);
+    console.warn('Share failed, falling back to clipboard:', err);
   }
 
   // 클립보드 복사 (공유 실패 시)
