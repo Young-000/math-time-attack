@@ -6,7 +6,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { TossAds } from '@apps-in-toss/web-framework';
 import { useTossAds } from '@presentation/providers/TossAdsProvider';
-import { BANNER_AD_GROUP_ID } from '@constants/ad';
+import { BANNER_IMAGE_AD_GROUP_ID } from '@constants/ad';
 
 type UseBannerAdOptions = {
   adGroupId?: string;
@@ -18,7 +18,7 @@ type UseBannerAdReturn = {
 };
 
 export function useBannerAd(options?: UseBannerAdOptions): UseBannerAdReturn {
-  const { adGroupId = BANNER_AD_GROUP_ID } = options ?? {};
+  const { adGroupId = BANNER_IMAGE_AD_GROUP_ID } = options ?? {};
   const { isInitialized, isSupported } = useTossAds();
   const bannerRef = useRef<HTMLDivElement>(null);
   const [isAdVisible, setIsAdVisible] = useState(false);
