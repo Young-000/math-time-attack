@@ -1489,7 +1489,7 @@ body {
    Google AdSense Styles
    ============================================= */
 
-/* 배너 광고 컨테이너 */
+/* 배너 광고 컨테이너 (레거시) */
 .ad-banner-container {
   width: 100%;
   max-width: 728px;
@@ -1497,6 +1497,16 @@ body {
   text-align: center;
   min-height: 90px;
   background: #f8f9fa;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* TossAds 배너 광고 (BannerAd 컴포넌트) */
+.banner-ad-home,
+.banner-ad-result,
+.banner-ad-ranking {
+  width: 100%;
+  margin: 12px 0;
   border-radius: 8px;
   overflow: hidden;
 }
@@ -2857,6 +2867,24 @@ body {
   }
 }
 
+/* 프로모션 성공 토스트 */
+.promotion-success-toast {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, #3182f6, #6366f1);
+  color: #fff;
+  padding: 14px 28px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 700;
+  z-index: 1200;
+  animation: toastIn 0.3s ease-out;
+  box-shadow: 0 4px 20px rgba(49, 130, 246, 0.4);
+  white-space: nowrap;
+}
+
 /* 하트 충전 성공 토스트 */
 .charge-success-toast {
   position: fixed;
@@ -3156,5 +3184,119 @@ body {
 
 .achievement-close-btn:active {
   background: #2563eb;
+}
+
+/* ==============================
+   챌린지 배너
+   ============================== */
+
+.challenge-banner {
+  background: linear-gradient(135deg, #3182f6, #6366f1);
+  border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 16px;
+  color: #fff;
+}
+
+.challenge-tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.challenge-tab {
+  flex: 1;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: none;
+  background: rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.challenge-tab.active {
+  background: rgba(255, 255, 255, 0.95);
+  color: #3182f6;
+}
+
+.challenge-info {
+  text-align: center;
+  margin-bottom: 12px;
+}
+
+.challenge-period {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.challenge-timer {
+  font-size: 13px;
+  opacity: 0.9;
+  margin-bottom: 12px;
+}
+
+.challenge-rewards {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+}
+
+.reward-item {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.challenge-hall-link {
+  display: block;
+  width: 100%;
+  padding: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 10px;
+  background: transparent;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+  transition: background 0.2s;
+}
+
+.challenge-hall-link:active {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.challenge-countdown {
+  font-size: 12px;
+  color: #6b7684;
+}
+
+/* 챌린지 배너 모바일 */
+@media (max-width: 480px) {
+  .challenge-banner {
+    margin: 0 -4px 12px;
+    border-radius: 12px;
+    padding: 14px;
+  }
+
+  .challenge-tab {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+
+  .challenge-period {
+    font-size: 16px;
+  }
+
+  .challenge-rewards {
+    gap: 12px;
+  }
+
+  .reward-item {
+    font-size: 12px;
+  }
 }
 

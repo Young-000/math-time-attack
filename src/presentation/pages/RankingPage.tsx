@@ -18,7 +18,7 @@ import {
   type RankingPeriod,
 } from '@data/recordService';
 import { getCurrentUserId } from '@infrastructure/rankingService';
-import { RankingTab, RankingList, NicknameModal, HeartDisplay, BannerAd } from '@presentation/components';
+import { RankingTab, RankingList, NicknameModal, HeartDisplay, BannerAd, ChallengeBanner } from '@presentation/components';
 import { useNickname } from '@presentation/hooks/useNickname';
 import { MAX_HEARTS } from '@domain/services/heartService';
 import { useHeartSystem } from '@presentation/hooks/useHeartSystem';
@@ -174,6 +174,8 @@ export function RankingPage() {
           수정
         </button>
       </div>
+
+      <ChallengeBanner />
 
       {/* 게임 모드 탭 */}
       <div className="ranking-mode-tabs" role="tablist" aria-label="게임 모드">
