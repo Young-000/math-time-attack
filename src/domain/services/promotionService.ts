@@ -112,6 +112,14 @@ export async function claimPromotion(
     return { success: false, error: 'userKey가 필요합니다. 로그인 후 다시 시도해주세요.' };
   }
 
+  // local/temp fallback userKey는 프로모션 불가 (appLogin 실패 상태)
+  if (userKey.startsWith('local-') || userKey.startsWith('temp-')) {
+    return {
+      success: false,
+      error: '토스 로그인이 필요합니다. appLogin 인증이 완료되지 않아 프로모션을 지급할 수 없습니다.',
+    };
+  }
+
   try {
     const result = await callPromotionEdgeFunction(promotionCode, amount, userKey);
 

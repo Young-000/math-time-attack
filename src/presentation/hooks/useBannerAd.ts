@@ -22,10 +22,9 @@ export function useBannerAd(options?: UseBannerAdOptions): UseBannerAdReturn {
   const { isInitialized, isSupported } = useTossAds();
   const bannerRef = useRef<HTMLDivElement>(null);
   const [isAdVisible, setIsAdVisible] = useState(false);
-  const attachedRef = useRef(false);
 
   useEffect(() => {
-    if (!isSupported || !isInitialized || !bannerRef.current || attachedRef.current) {
+    if (!isSupported || !isInitialized || !bannerRef.current) {
       return;
     }
 
@@ -36,10 +35,10 @@ export function useBannerAd(options?: UseBannerAdOptions): UseBannerAdReturn {
       return;
     }
 
-    attachedRef.current = true;
+    const target = bannerRef.current;
 
     try {
-      TossAds.attach(adGroupId, bannerRef.current, {
+      TossAds.attach(adGroupId, target, {
         theme: 'light',
         callbacks: {
           onAdRendered: () => {
@@ -56,10 +55,10 @@ export function useBannerAd(options?: UseBannerAdOptions): UseBannerAdReturn {
       });
     } catch (error) {
       console.error('배너 광고 부착 실패:', error);
+      return;
     }
 
     return () => {
-      attachedRef.current = false;
       try {
         TossAds.destroyAll();
       } catch {

@@ -26,6 +26,7 @@ const CACHE_TTL_MS = 50 * 60 * 1000;
 const EDGE_FUNCTION_TIMEOUT_MS = 5_000;
 
 let cachedUserKey: string | null = null;
+let lastAuthError: string | null = null;
 
 // --- 환경 감지 ---
 
@@ -180,7 +181,11 @@ export async function initializeUserIdentity(): Promise<string> {
       setCachedUserKey(userKey);
       return userKey;
     } catch (err) {
-      console.warn('[userIdentity] appLogin 플로우 실패:', err);
+      const errorMsg = err instanceof Error
+        ? `${err.name}: ${err.message}`
+        : String(err);
+      console.warn('[userIdentity] appLogin 플로우 실패:', errorMsg);
+      lastAuthError = errorMsg;
       return fallbackToLocalId();
     }
   }
@@ -208,10 +213,18 @@ export function getCachedUserId(): string | null {
 }
 
 /**
+ * 마지막 appLogin 에러 메시지 (디버깅용)
+ */
+export function getLastAuthError(): string | null {
+  return lastAuthError;
+}
+
+/**
  * 캐시 초기화 (테스트/로그아웃용)
  */
 export function resetUserIdentityCache(): void {
   cachedUserKey = null;
+  lastAuthError = null;
   try {
     localStorage.removeItem(USER_KEY_CACHE);
     localStorage.removeItem(USER_KEY_EXPIRY);

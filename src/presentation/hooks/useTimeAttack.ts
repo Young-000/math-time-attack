@@ -309,7 +309,7 @@ export function useTimeAttack(): UseTimeAttackReturn {
     if (!gameState || !gameState.isComplete) return;
 
     // 로컬 저장은 타이머 종료 시 이미 처리됨
-    // TODO: 서버 랭킹 저장 추가
+    // 서버 랭킹 저장은 TimeAttackResultPage에서 처리
   }, [gameState]);
 
   const resetGame = useCallback(() => {

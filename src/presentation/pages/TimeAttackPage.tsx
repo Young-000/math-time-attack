@@ -6,7 +6,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTimeAttack, TIME_ATTACK_DURATION_BY_DIFFICULTY, AD_BONUS_TIME } from '@presentation/hooks/useTimeAttack';
-import { useRewardedAd } from '@presentation/hooks/useRewardedAd';
+import { useFullScreenAd } from '@presentation/hooks/useFullScreenAd';
 import { DIFFICULTY_CONFIG, OPERATION_SYMBOLS, type DifficultyType } from '@domain/entities';
 
 export function TimeAttackPage() {
@@ -27,7 +27,7 @@ export function TimeAttackPage() {
     waitingForBonusStart,
   } = useTimeAttack();
 
-  const { isAdSupported, isAdLoading, loadAndShowAd } = useRewardedAd();
+  const { isAdSupported, isAdLoading, loadAndShowAd } = useFullScreenAd();
 
   const [inputValue, setInputValue] = useState('');
   const [isWrong, setIsWrong] = useState(false);
