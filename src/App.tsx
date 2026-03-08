@@ -6,6 +6,8 @@ import {
   RankingPage,
   TimeAttackPage,
   TimeAttackResultPage,
+  PromoTestPage,
+  HallOfFamePage,
 } from '@presentation/pages';
 import { TossAdsProvider } from '@presentation/providers/TossAdsProvider';
 
@@ -21,6 +23,10 @@ function App() {
         {/* 타임어택 모드 */}
         <Route path="/time-attack/:difficulty" element={<TimeAttackPage />} />
         <Route path="/time-attack/result" element={<TimeAttackResultPage />} />
+        {/* 명예의 전당 */}
+        <Route path="/hall-of-fame" element={<HallOfFamePage />} />
+        {/* 프로모션 테스트 (샌드박스 전용) */}
+        <Route path="/promo-test" element={<PromoTestPage />} />
       </Routes>
     </TossAdsProvider>
   );

@@ -4,3 +4,5 @@ export { ResultPage } from './ResultPage';
 export { RankingPage } from './RankingPage';
 export { TimeAttackPage } from './TimeAttackPage';
 export { TimeAttackResultPage } from './TimeAttackResultPage';
+export { PromoTestPage } from './PromoTestPage';
+export { HallOfFamePage } from './HallOfFamePage';

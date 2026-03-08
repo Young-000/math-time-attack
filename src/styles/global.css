@@ -3300,3 +3300,187 @@ body {
   }
 }
 
+/* Hall of Fame */
+.hall-of-fame-page {
+  padding: 0 16px 24px;
+  min-height: 100dvh;
+  background: #fafafa;
+}
+
+.hof-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 0;
+  position: sticky;
+  top: 0;
+  background: #fafafa;
+  z-index: 10;
+}
+
+.hof-back-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: white;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.hof-back-btn:active {
+  opacity: 0.7;
+  transform: scale(0.95);
+}
+
+.hof-title {
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.hof-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.hof-tab {
+  flex: 1;
+  padding: 10px;
+  border-radius: 12px;
+  border: 2px solid #e5e7eb;
+  background: white;
+  font-size: 14px;
+  font-weight: 600;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.hof-tab.active {
+  border-color: #3182f6;
+  background: #3182f6;
+  color: white;
+}
+
+.hof-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-bottom: 80px;
+}
+
+.hof-loading {
+  text-align: center;
+  padding: 48px 0;
+  color: #9ca3af;
+  font-size: 14px;
+}
+
+.hof-empty {
+  text-align: center;
+  padding: 48px 16px;
+}
+
+.hof-empty-icon {
+  font-size: 48px;
+  margin-bottom: 12px;
+}
+
+.hof-empty-text {
+  font-size: 16px;
+  font-weight: 600;
+  color: #374151;
+  margin: 0 0 4px;
+}
+
+.hof-empty-sub {
+  font-size: 14px;
+  color: #9ca3af;
+  margin: 0;
+}
+
+.hof-period-card {
+  background: white;
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.hof-period-label {
+  font-size: 14px;
+  font-weight: 700;
+  color: #6b7280;
+  margin: 0 0 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.hof-winners {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.hof-winner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px;
+  border-radius: 10px;
+  transition: background 0.2s;
+}
+
+.hof-winner.rank-1 {
+  background: #fef9c3;
+}
+
+.hof-winner.rank-2 {
+  background: #f3f4f6;
+}
+
+.hof-winner.rank-3 {
+  background: #fed7aa;
+}
+
+.hof-trophy {
+  font-size: 24px;
+  width: 36px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.hof-winner-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.hof-winner-name {
+  display: block;
+  font-size: 15px;
+  font-weight: 600;
+  color: #111827;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hof-winner-score {
+  display: block;
+  font-size: 12px;
+  color: #9ca3af;
+  margin-top: 2px;
+}
+
+.hof-winner-stars {
+  font-size: 13px;
+  font-weight: 700;
+  color: #f59e0b;
+  white-space: nowrap;
+}
+
