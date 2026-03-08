@@ -307,6 +307,26 @@ export function RankingPage() {
             </button>
           </div>
         )}
+        <div className="ranking-nav-links">
+          <button
+            className="ranking-nav-btn"
+            onClick={() => navigate('/hall-of-fame')}
+          >
+            🏛️ 명예의 전당
+          </button>
+          <button
+            className="ranking-nav-btn"
+            onClick={() => navigate('/my-points')}
+          >
+            ⭐ 내 별
+          </button>
+          <button
+            className="ranking-nav-btn"
+            onClick={() => navigate('/exchange')}
+          >
+            💰 토스포인트 교환
+          </button>
+        </div>
         <button
           className="ranking-start-btn"
           onClick={() => navigate('/')}

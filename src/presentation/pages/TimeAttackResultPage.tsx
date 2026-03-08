@@ -16,8 +16,12 @@ import { getCurrentUserId } from '@infrastructure/rankingService';
 import { useHeartSystem } from '@presentation/hooks/useHeartSystem';
 import { HeartDisplay, NoHeartsModal, AchievementModal, BannerAd } from '@presentation/components';
 import { useInterstitialAd, incrementGameCount } from '@presentation/hooks/useInterstitialAd';
+import { usePromotion } from '@presentation/hooks/usePromotion';
+import { WELCOME_PROMO_AMOUNT } from '@constants/promotion';
 import { checkAllAchievements, markAchieved } from '@domain/services/achievementService';
 import { addHearts } from '@domain/services/heartService';
+import { usePoints } from '@presentation/hooks/usePoints';
+import { GAME_COMPLETE_STARS } from '@constants/points';
 import type { AchievementDefinition } from '@domain/services/achievementDefinitions';
 
 interface LocationState {
@@ -39,10 +43,17 @@ export function TimeAttackResultPage() {
   const [isLoadingRank, setIsLoadingRank] = useState(false);
   const [newAchievements, setNewAchievements] = useState<AchievementDefinition[]>([]);
   const [showAchievementModal, setShowAchievementModal] = useState(false);
+  const [showStarToast, setShowStarToast] = useState(false);
   const hasProcessedRef = useRef(false);
 
   // 전면 광고
   const { showInterstitialIfNeeded } = useInterstitialAd();
+
+  // 웰컴 프로모션
+  const { showPromotionToast, tryClaimWelcome } = usePromotion();
+
+  // 별 시스템
+  const { onGameComplete } = usePoints();
 
   // 하트 시스템 통합 훅
   const {
@@ -110,8 +121,26 @@ export function TimeAttackResultPage() {
     // 전면 광고
     showInterstitialIfNeeded(() => {});
 
+    // 게임 완료 별 지급
+    onGameComplete().then((bal) => {
+      if (bal > 0) {
+        setShowStarToast(true);
+        setTimeout(() => setShowStarToast(false), 3000);
+      }
+    }).catch(() => {});
+
     // 서버에 기록 저장 및 순위 조회
     const saveAndFetchRank = async () => {
+      // 웰컴 프로모션 (온/오프라인 무관하게 시도)
+      try {
+        const userId = await getCurrentUserId();
+        if (userId) {
+          tryClaimWelcome(userId).catch(() => {});
+        }
+      } catch {
+        // 프로모션 실패가 게임 플로우를 막지 않음
+      }
+
       if (!online) return;
 
       setIsLoadingRank(true);
@@ -140,7 +169,8 @@ export function TimeAttackResultPage() {
     };
 
     saveAndFetchRank();
-  }, [state, navigate, online, showInterstitialIfNeeded]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state, navigate, online, showInterstitialIfNeeded, tryClaimWelcome, onGameComplete]);
 
   // state에서 값 추출 (null일 수 있으므로 기본값 처리)
   const difficulty = state?.difficulty ?? 'easy';
@@ -283,6 +313,13 @@ export function TimeAttackResultPage() {
         />
       )}
 
+      {/* 프로모션 성공 토스트 */}
+      {showPromotionToast && (
+        <div className="promotion-success-toast">
+          {WELCOME_PROMO_AMOUNT} 토스포인트가 지급되었어요!
+        </div>
+      )}
+
       {/* 충전 성공 토스트 */}
       {showChargeSuccess && (
         <div className="charge-success-toast">
@@ -294,6 +331,13 @@ export function TimeAttackResultPage() {
       {showAdError && (
         <div className="charge-error-toast">
           광고를 불러올 수 없어요. 잠시 후 다시 시도해주세요.
+        </div>
+      )}
+
+      {/* 별 획득 토스트 */}
+      {showStarToast && (
+        <div className="charge-success-toast">
+          ⭐ +{GAME_COMPLETE_STARS}별 획득!
         </div>
       )}
 

@@ -13,8 +13,12 @@ import { saveDailyChallengeCompletion } from '@domain/services/dailyChallengeSer
 import { checkIn, getStreakMilestoneMessage } from '@domain/services/streakService';
 import { useHeartSystem } from '@presentation/hooks/useHeartSystem';
 import { useInterstitialAd, incrementGameCount } from '@presentation/hooks/useInterstitialAd';
+import { usePromotion } from '@presentation/hooks/usePromotion';
+import { WELCOME_PROMO_AMOUNT } from '@constants/promotion';
 import { checkAllAchievements, markAchieved } from '@domain/services/achievementService';
 import { addHearts } from '@domain/services/heartService';
+import { usePoints } from '@presentation/hooks/usePoints';
+import { GAME_COMPLETE_STARS } from '@constants/points';
 import type { AchievementDefinition } from '@domain/services/achievementDefinitions';
 
 interface LocationState {
@@ -36,10 +40,17 @@ export function ResultPage() {
   const [streakMilestone, setStreakMilestone] = useState<{ emoji: string; message: string } | null>(null);
   const [newAchievements, setNewAchievements] = useState<AchievementDefinition[]>([]);
   const [showAchievementModal, setShowAchievementModal] = useState(false);
+  const [showStarToast, setShowStarToast] = useState(false);
   const hasProcessedRef = useRef(false);
 
   // 전면 광고
   const { showInterstitialIfNeeded } = useInterstitialAd();
+
+  // 웰컴 프로모션
+  const { showPromotionToast, tryClaimWelcome } = usePromotion();
+
+  // 별 시스템
+  const { onGameComplete } = usePoints();
 
   // 하트 시스템 통합 훅
   const {
@@ -123,6 +134,17 @@ export function ResultPage() {
           setShowAchievementModal(true);
         }
 
+        // 게임 완료 별 지급
+        onGameComplete().then((bal) => {
+          if (bal > 0) {
+            setShowStarToast(true);
+            setTimeout(() => setShowStarToast(false), 3000);
+          }
+        }).catch(() => {});
+
+        // 웰컴 프로모션 지급 (첫 게임 완료 시, 중복 방지는 서비스에서 처리)
+        tryClaimWelcome(userId).catch(() => {});
+
         // 전면 광고 표시 (빈도 조건 충족 시)
         showInterstitialIfNeeded(() => {});
       } catch (err) {
@@ -133,7 +155,8 @@ export function ResultPage() {
     };
 
     processResult();
-  }, [state, navigate, showInterstitialIfNeeded]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state, navigate, showInterstitialIfNeeded, tryClaimWelcome, onGameComplete]);
 
   // state에서 값 추출 (null일 수 있으므로 기본값 처리)
   const difficulty = state?.difficulty ?? 'easy';
@@ -251,6 +274,13 @@ export function ResultPage() {
         />
       )}
 
+      {/* 프로모션 성공 토스트 */}
+      {showPromotionToast && (
+        <div className="promotion-success-toast">
+          {WELCOME_PROMO_AMOUNT} 토스포인트가 지급되었어요!
+        </div>
+      )}
+
       {/* 충전 성공 토스트 */}
       {showChargeSuccess && (
         <div className="charge-success-toast">
@@ -262,6 +292,13 @@ export function ResultPage() {
       {showAdError && (
         <div className="charge-error-toast">
           광고를 불러올 수 없어요. 잠시 후 다시 시도해주세요.
+        </div>
+      )}
+
+      {/* 별 획득 토스트 */}
+      {showStarToast && (
+        <div className="charge-success-toast">
+          ⭐ +{GAME_COMPLETE_STARS}별 획득!
         </div>
       )}
 

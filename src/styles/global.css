@@ -3816,3 +3816,70 @@ body {
   color: #ef4444;
 }
 
+/* ======================== */
+/* Phase 6: Navigation Integration */
+/* ======================== */
+
+/* Header Stars Button */
+.header-stars {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  border: none;
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
+  font-size: 14px;
+  font-weight: 600;
+  color: #92400e;
+  cursor: pointer;
+  transition: transform 0.15s;
+}
+
+.header-stars:active {
+  transform: scale(0.95);
+}
+
+.stars-icon {
+  font-size: 16px;
+}
+
+.stars-balance {
+  min-width: 20px;
+  text-align: center;
+}
+
+/* Subtitle bonus hint */
+.subtitle-bonus {
+  font-size: 12px;
+  color: #f59e0b;
+  font-weight: 500;
+  margin-top: 2px;
+}
+
+/* Ranking page nav links */
+.ranking-nav-links {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.ranking-nav-btn {
+  flex: 1;
+  padding: 10px 8px;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: center;
+}
+
+.ranking-nav-btn:active {
+  transform: scale(0.97);
+  background: #f3f4f6;
+}
+

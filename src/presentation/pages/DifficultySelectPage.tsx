@@ -18,6 +18,8 @@ import { formatTime } from '@lib/utils';
 import { getCurrentUserId } from '@infrastructure/rankingService';
 import { getTimeAttackBestScore, TIME_ATTACK_DURATION_BY_DIFFICULTY } from '@presentation/hooks/useTimeAttack';
 import { useHeartSystem } from '@presentation/hooks/useHeartSystem';
+import { usePoints } from '@presentation/hooks/usePoints';
+import { DAILY_LOGIN_STARS, GAME_COMPLETE_STARS } from '@constants/points';
 import { StreakBanner, HeartDisplay, NoHeartsModal, BannerAd } from '@presentation/components';
 
 const difficulties: DifficultyType[] = ['easy', 'medium', 'hard'];
@@ -58,10 +60,14 @@ export function DifficultySelectPage() {
 
   const [showHeartChargeModal, setShowHeartChargeModal] = useState(false);
   const [showDailyBonus, setShowDailyBonus] = useState(false);
+  const [showStarBonus, setShowStarBonus] = useState(false);
+
+  // 별 시스템
+  const { balance: starBalance, isLoading: isStarLoading, checkDailyLogin } = usePoints();
 
   const online = isOnlineMode();
 
-  // 일일 로그인 보너스 체크
+  // 일일 로그인 보너스 체크 (하트 + 별)
   useEffect(() => {
     if (!hasDailyBonusClaimed()) {
       const claimed = claimDailyLoginBonus();
@@ -70,6 +76,14 @@ export function DifficultySelectPage() {
         setTimeout(() => setShowDailyBonus(false), 3000);
       }
     }
+    // 별 일일 출석 보너스
+    checkDailyLogin().then((result) => {
+      if (result !== null) {
+        setShowStarBonus(true);
+        setTimeout(() => setShowStarBonus(false), 3000);
+      }
+    }).catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const dailyDifficulty = getDailyChallengeDifficulty();
   const dailyCompleted = isDailyChallengeCompleted();
@@ -373,6 +387,16 @@ export function DifficultySelectPage() {
             랭킹
           </button>
 
+          {/* 별 잔액 - 클릭하면 내 포인트 */}
+          <button
+            className="header-stars"
+            onClick={() => navigate('/my-points')}
+            aria-label="내 별 보기"
+          >
+            <span className="stars-icon">⭐</span>
+            <span className="stars-balance">{isStarLoading ? '...' : starBalance}</span>
+          </button>
+
           {/* 하트 표시 - 클릭하면 충전 모달 */}
           <button
             className={`header-hearts ${heartInfo.isFull ? 'full' : 'chargeable'}`}
@@ -395,6 +419,7 @@ export function DifficultySelectPage() {
             ? '5문제를 가장 빠르게 풀어보세요!'
             : '제한 시간 안에 최대한 많이!'}
         </p>
+        <p className="subtitle-bonus">게임 완료 시 +{GAME_COMPLETE_STARS}별</p>
 
       </header>
 
@@ -429,6 +454,19 @@ export function DifficultySelectPage() {
 
       {/* 연속 출석 배너 - 하단 */}
       <StreakBanner />
+
+      {/* 프로모션 테스트 (개발용) */}
+      <button
+        className="promo-test-link"
+        onClick={() => navigate('/promo-test')}
+        style={{
+          position: 'fixed', bottom: 4, right: 4,
+          fontSize: 10, color: '#999', background: 'none',
+          border: 'none', padding: '4px 8px', opacity: 0.5,
+        }}
+      >
+        promo test
+      </button>
 
       {/* 하트 부족 모달 */}
       {showNoHeartsModal && (
@@ -474,6 +512,13 @@ export function DifficultySelectPage() {
       {showDailyBonus && (
         <div className="charge-success-toast">
           🎁 오늘의 로그인 보너스! 하트 +1
+        </div>
+      )}
+
+      {/* 별 일일 출석 보너스 토스트 */}
+      {showStarBonus && (
+        <div className="charge-success-toast">
+          ⭐ 출석 보너스! +{DAILY_LOGIN_STARS}별
         </div>
       )}
 
