@@ -27,7 +27,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@apps-in-toss/web-framework": "^1.7.0",
+    "@apps-in-toss/web-framework": "^2.0.1",
     "@supabase/supabase-js": "^2.90.1",
     "@toss/tds-mobile": "^2.2.0",
     "@toss/tds-mobile-ait": "^2.2.1",

@@ -20,7 +20,7 @@ mkdir -p "$BUILDS_DIR"
 echo -e "${BLUE}📦 Building $APP_NAME v$VERSION...${NC}"
 
 # granite 빌드 실행
-npx granite build
+npx ait build
 
 # 빌드된 파일 확인
 if [ ! -f "$APP_NAME.ait" ]; then
