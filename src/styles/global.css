@@ -3484,3 +3484,335 @@ body {
   white-space: nowrap;
 }
 
+/* ===================== Exchange Page ===================== */
+
+.exchange-page {
+  padding: 0 16px 24px;
+  min-height: 100dvh;
+  background: #fafafa;
+}
+
+.exchange-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 0;
+}
+
+.exchange-back-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: white;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.exchange-title {
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.exchange-balance-card {
+  background: linear-gradient(135deg, #f59e0b, #f97316);
+  border-radius: 16px;
+  padding: 24px;
+  color: white;
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.exchange-balance-label {
+  display: block;
+  font-size: 14px;
+  opacity: 0.9;
+  margin-bottom: 8px;
+}
+
+.exchange-balance-value {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.exchange-star-icon {
+  font-size: 32px;
+}
+
+.exchange-star-count {
+  font-size: 36px;
+  font-weight: 800;
+}
+
+.exchange-rate-info {
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.exchange-rate-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.exchange-rate-arrow {
+  color: #9ca3af;
+}
+
+.exchange-max-info {
+  font-size: 13px;
+  color: #6b7280;
+  margin: 8px 0 0;
+}
+
+.exchange-btn {
+  width: 100%;
+  padding: 16px;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: 12px;
+}
+
+.exchange-btn.active {
+  background: #3182f6;
+  color: white;
+}
+
+.exchange-btn.active:active {
+  opacity: 0.8;
+  transform: scale(0.98);
+}
+
+.exchange-btn.disabled {
+  background: #e5e7eb;
+  color: #9ca3af;
+  cursor: not-allowed;
+}
+
+.exchange-toast {
+  padding: 12px 16px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  text-align: center;
+  animation: fadeIn 0.3s ease;
+}
+
+.exchange-toast.success {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.exchange-toast.error {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.exchange-disclaimer {
+  background: #f9fafb;
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+}
+
+.exchange-disclaimer p {
+  font-size: 12px;
+  color: #6b7280;
+  margin: 4px 0;
+  line-height: 1.4;
+}
+
+.exchange-history-link {
+  display: block;
+  width: 100%;
+  padding: 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: white;
+  font-size: 15px;
+  font-weight: 600;
+  color: #374151;
+  cursor: pointer;
+  text-align: center;
+  margin-bottom: 16px;
+  transition: background 0.2s;
+}
+
+.exchange-history-link:active {
+  background: #f9fafb;
+}
+
+/* ===================== My Points Page ===================== */
+
+.my-points-page {
+  padding: 0 16px 24px;
+  min-height: 100dvh;
+  background: #fafafa;
+}
+
+.mp-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 0;
+}
+
+.mp-back-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: white;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.mp-title {
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.mp-balance-card {
+  background: linear-gradient(135deg, #f59e0b, #f97316);
+  border-radius: 16px;
+  padding: 24px;
+  color: white;
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.mp-balance-main {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.mp-star-icon {
+  font-size: 32px;
+}
+
+.mp-balance-number {
+  font-size: 36px;
+  font-weight: 800;
+}
+
+.mp-balance-sub {
+  font-size: 14px;
+  opacity: 0.85;
+}
+
+.mp-exchange-btn {
+  width: 100%;
+  padding: 14px;
+  border: none;
+  border-radius: 12px;
+  background: #3182f6;
+  color: white;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-bottom: 24px;
+  transition: opacity 0.2s;
+}
+
+.mp-exchange-btn:active {
+  opacity: 0.8;
+}
+
+.mp-history-title {
+  font-size: 16px;
+  font-weight: 700;
+  margin: 0 0 12px;
+  color: #111827;
+}
+
+.mp-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+.mp-history-loading,
+.mp-history-empty {
+  text-align: center;
+  padding: 32px 0;
+  color: #9ca3af;
+  font-size: 14px;
+}
+
+.mp-history-empty-sub {
+  font-size: 13px;
+  margin-top: 4px;
+}
+
+.mp-history-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: white;
+  padding: 12px 16px;
+  border-radius: 10px;
+}
+
+.mp-history-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.mp-history-type {
+  font-size: 14px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.mp-history-desc {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.mp-history-date {
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+.mp-history-amount {
+  font-size: 15px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.mp-history-amount.positive {
+  color: #f59e0b;
+}
+
+.mp-history-amount.negative {
+  color: #ef4444;
+}
+

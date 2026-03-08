@@ -6,3 +6,5 @@ export { TimeAttackPage } from './TimeAttackPage';
 export { TimeAttackResultPage } from './TimeAttackResultPage';
 export { PromoTestPage } from './PromoTestPage';
 export { HallOfFamePage } from './HallOfFamePage';
+export { ExchangePage } from './ExchangePage';
+export { MyPointsPage } from './MyPointsPage';

@@ -8,6 +8,8 @@ import {
   TimeAttackResultPage,
   PromoTestPage,
   HallOfFamePage,
+  ExchangePage,
+  MyPointsPage,
 } from '@presentation/pages';
 import { TossAdsProvider } from '@presentation/providers/TossAdsProvider';
 
@@ -25,6 +27,9 @@ function App() {
         <Route path="/time-attack/result" element={<TimeAttackResultPage />} />
         {/* 명예의 전당 */}
         <Route path="/hall-of-fame" element={<HallOfFamePage />} />
+        {/* 토스 포인트 교환 */}
+        <Route path="/exchange" element={<ExchangePage />} />
+        <Route path="/my-points" element={<MyPointsPage />} />
         {/* 프로모션 테스트 (샌드박스 전용) */}
         <Route path="/promo-test" element={<PromoTestPage />} />
       </Routes>
