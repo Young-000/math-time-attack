@@ -62,6 +62,47 @@ export interface Database {
           updated_at?: string;
         };
       };
+      hall_of_fame: {
+        Row: {
+          id: string;
+          user_key: string;
+          nickname: string | null;
+          challenge_type: 'weekly' | 'monthly';
+          period_key: string;
+          period_label: string;
+          rank: number;
+          score: number;
+          difficulty: string;
+          points_awarded: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_key: string;
+          nickname?: string | null;
+          challenge_type: 'weekly' | 'monthly';
+          period_key: string;
+          period_label: string;
+          rank: number;
+          score: number;
+          difficulty: string;
+          points_awarded: number;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_key?: string;
+          nickname?: string | null;
+          challenge_type?: 'weekly' | 'monthly';
+          period_key?: string;
+          period_label?: string;
+          rank?: number;
+          score?: number;
+          difficulty?: string;
+          points_awarded?: number;
+          created_at?: string;
+        };
+      };
     };
     Functions: {
       get_my_rank_info: {

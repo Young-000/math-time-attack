@@ -26,8 +26,8 @@ export async function fetchHallOfFame(
   const supabase = getSupabaseClient();
   if (!supabase) return [];
 
-  const { data, error } = await (supabase
-    .from('hall_of_fame' as never) as any)
+  const { data, error } = await supabase
+    .from('hall_of_fame')
     .select('*')
     .eq('challenge_type', type)
     .order('period_key', { ascending: false })
