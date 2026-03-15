@@ -6,7 +6,6 @@ import {
   RankingPage,
   TimeAttackPage,
   TimeAttackResultPage,
-  PromoTestPage,
   HallOfFamePage,
   ExchangePage,
   MyPointsPage,
@@ -30,8 +29,6 @@ function App() {
         {/* 토스 포인트 교환 */}
         <Route path="/exchange" element={<ExchangePage />} />
         <Route path="/my-points" element={<MyPointsPage />} />
-        {/* 프로모션 테스트 (샌드박스 전용) */}
-        <Route path="/promo-test" element={<PromoTestPage />} />
       </Routes>
     </TossAdsProvider>
   );
