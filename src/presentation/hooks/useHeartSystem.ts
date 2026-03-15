@@ -17,6 +17,8 @@ import { useFullScreenAd } from './useFullScreenAd';
 import { useContactsViral } from './useContactsViral';
 import { share } from '@apps-in-toss/web-framework';
 import { recordRewardedAdShown, canShowRewardedAd } from '@domain/services/adFrequencyService';
+import { grantRewardedAdBonus } from '@domain/services/pointService';
+import { getCachedUserId } from '@infrastructure/userIdentity';
 
 interface UseHeartSystemReturn {
   heartInfo: HeartInfo;
@@ -63,7 +65,7 @@ export function useHeartSystem(): UseHeartSystemReturn {
     setTimeout(() => setShowAdError(false), 2500);
   }, []);
 
-  // 광고 시청으로 하트 +1 충전
+  // 광고 시청으로 하트 충전 + 별 지급
   const handleWatchAdForHearts = useCallback((onSuccess?: () => void) => {
     if (!canShowRewardedAd()) {
       showAdErrorToast();
@@ -77,6 +79,13 @@ export function useHeartSystem(): UseHeartSystemReturn {
         setHeartInfo(getHeartInfo());
         setShowNoHeartsModal(false);
         showChargeSuccessToast();
+
+        // 보상형 광고 별 지급 (+20별)
+        const userKey = getCachedUserId();
+        if (userKey && !userKey.startsWith('local-') && !userKey.startsWith('temp-')) {
+          grantRewardedAdBonus(userKey).catch(() => {});
+        }
+
         onSuccess?.();
       },
       onDismiss: () => {},

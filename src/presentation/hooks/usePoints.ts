@@ -7,10 +7,19 @@ import {
   getPointBalance,
   getPointHistory,
   grantGameCompleteBonus,
+  grantRoundBonus,
+  grantRewardedAdBonus,
+  grantMissionReward,
   grantDailyLoginBonus,
   type PointBalance,
   type PointTransaction,
 } from '@domain/services/pointService';
+import {
+  GAME_COMPLETE_STARS,
+  ROUND_BONUS_STARS,
+  REWARDED_AD_STARS,
+  DAILY_LOGIN_STARS,
+} from '@constants/points';
 import { getCachedUserId } from '@infrastructure/userIdentity';
 
 type UsePointsReturn = {
@@ -20,8 +29,15 @@ type UsePointsReturn = {
   history: PointTransaction[];
   refresh: () => Promise<void>;
   onGameComplete: () => Promise<number>;
+  onRoundComplete: () => Promise<number>;
+  onRewardedAd: () => Promise<number>;
+  onMissionReward: (amount: number, title: string) => Promise<number>;
   checkDailyLogin: () => Promise<number | null>;
 };
+
+function isValidUserKey(key: string | null): key is string {
+  return !!key && !key.startsWith('local-') && !key.startsWith('temp-');
+}
 
 export function usePoints(): UsePointsReturn {
   const [pointBalance, setPointBalance] = useState<PointBalance>({
@@ -33,7 +49,7 @@ export function usePoints(): UsePointsReturn {
   const userKey = getCachedUserId();
 
   const refresh = useCallback(async () => {
-    if (!userKey || userKey.startsWith('local-') || userKey.startsWith('temp-')) {
+    if (!isValidUserKey(userKey)) {
       setIsLoading(false);
       return;
     }
@@ -54,24 +70,57 @@ export function usePoints(): UsePointsReturn {
   useEffect(() => { refresh(); }, [refresh]);
 
   const onGameComplete = useCallback(async (): Promise<number> => {
-    if (!userKey || userKey.startsWith('local-') || userKey.startsWith('temp-')) return 0;
+    if (!isValidUserKey(userKey)) return 0;
     const newBalance = await grantGameCompleteBonus(userKey);
     setPointBalance((prev) => ({
       ...prev,
       balance: newBalance,
-      totalEarned: prev.totalEarned + 10,
+      totalEarned: prev.totalEarned + GAME_COMPLETE_STARS,
+    }));
+    return newBalance;
+  }, [userKey]);
+
+  const onRoundComplete = useCallback(async (): Promise<number> => {
+    if (!isValidUserKey(userKey)) return 0;
+    const newBalance = await grantRoundBonus(userKey);
+    setPointBalance((prev) => ({
+      ...prev,
+      balance: newBalance,
+      totalEarned: prev.totalEarned + ROUND_BONUS_STARS,
+    }));
+    return newBalance;
+  }, [userKey]);
+
+  const onRewardedAd = useCallback(async (): Promise<number> => {
+    if (!isValidUserKey(userKey)) return 0;
+    const newBalance = await grantRewardedAdBonus(userKey);
+    setPointBalance((prev) => ({
+      ...prev,
+      balance: newBalance,
+      totalEarned: prev.totalEarned + REWARDED_AD_STARS,
+    }));
+    return newBalance;
+  }, [userKey]);
+
+  const onMissionReward = useCallback(async (amount: number, title: string): Promise<number> => {
+    if (!isValidUserKey(userKey)) return 0;
+    const newBalance = await grantMissionReward(userKey, amount, title);
+    setPointBalance((prev) => ({
+      ...prev,
+      balance: newBalance,
+      totalEarned: prev.totalEarned + amount,
     }));
     return newBalance;
   }, [userKey]);
 
   const checkDailyLogin = useCallback(async (): Promise<number | null> => {
-    if (!userKey || userKey.startsWith('local-') || userKey.startsWith('temp-')) return null;
+    if (!isValidUserKey(userKey)) return null;
     const result = await grantDailyLoginBonus(userKey);
     if (result !== null) {
       setPointBalance((prev) => ({
         ...prev,
         balance: result,
-        totalEarned: prev.totalEarned + 20,
+        totalEarned: prev.totalEarned + DAILY_LOGIN_STARS,
       }));
     }
     return result;
@@ -84,6 +133,9 @@ export function usePoints(): UsePointsReturn {
     history,
     refresh,
     onGameComplete,
+    onRoundComplete,
+    onRewardedAd,
+    onMissionReward,
     checkDailyLogin,
   };
 }
