@@ -9,15 +9,13 @@ import {
   getTimeRemaining,
   type ChallengeType,
 } from '@domain/services/challengeService';
-import { WEEKLY_REWARDS, MONTHLY_REWARDS } from '@constants/points';
-
 export function ChallengeBanner(): JSX.Element {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<ChallengeType>('weekly');
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0 });
 
   const info = getCurrentChallengeInfo(activeTab);
-  const rewards = activeTab === 'weekly' ? WEEKLY_REWARDS : MONTHLY_REWARDS;
+  const rewards = info.rewards as Record<number, number>;
 
   useEffect(() => {
     const update = (): void => setTimeLeft(getTimeRemaining(info.endsAt));

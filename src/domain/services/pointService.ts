@@ -8,14 +8,15 @@
  */
 
 import { getSupabaseClient } from '@infrastructure/supabase';
-import { GAME_COMPLETE_STARS, DAILY_LOGIN_STARS } from '@constants/points';
+import { GAME_COMPLETE_STARS, ROUND_BONUS_STARS, REWARDED_AD_STARS, DAILY_LOGIN_STARS } from '@constants/points';
 
 // --- 타입 ---
 
 export type TransactionType =
   | 'game_complete'
-  | 'weekly_reward'
-  | 'monthly_reward'
+  | 'round_bonus'
+  | 'rewarded_ad'
+  | 'mission'
   | 'daily_login'
   | 'exchange'
   | 'admin';
@@ -214,6 +215,24 @@ export async function getPointHistory(
 
 export async function grantGameCompleteBonus(userKey: string): Promise<number> {
   return earnPoints(userKey, GAME_COMPLETE_STARS, 'game_complete', '게임 완료 보너스');
+}
+
+// --- 라운드 완료 보너스 ---
+
+export async function grantRoundBonus(userKey: string): Promise<number> {
+  return earnPoints(userKey, ROUND_BONUS_STARS, 'round_bonus', '라운드 완료 보너스');
+}
+
+// --- 보상형 광고 보너스 ---
+
+export async function grantRewardedAdBonus(userKey: string): Promise<number> {
+  return earnPoints(userKey, REWARDED_AD_STARS, 'rewarded_ad', '보상형 광고 시청');
+}
+
+// --- 미션 보상 ---
+
+export async function grantMissionReward(userKey: string, amount: number, missionTitle: string): Promise<number> {
+  return earnPoints(userKey, amount, 'mission', `미션 완료: ${missionTitle}`);
 }
 
 // --- 일일 출석 보너스 ---

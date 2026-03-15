@@ -3,7 +3,6 @@
  */
 
 import { getSupabaseClient } from '@infrastructure/supabase';
-import { WEEKLY_REWARDS, MONTHLY_REWARDS } from '@constants/points';
 
 export type ChallengeType = 'weekly' | 'monthly';
 
@@ -61,13 +60,17 @@ export function getMonthEndDate(): Date {
   return new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
 }
 
+// Legacy challenge rewards (kept for backward compatibility)
+const WEEKLY_CHALLENGE_REWARDS = { 1: 100, 2: 50, 3: 30 } as const;
+const MONTHLY_CHALLENGE_REWARDS = { 1: 1000, 2: 500, 3: 300 } as const;
+
 export function getCurrentChallengeInfo(type: ChallengeType): ChallengeInfo {
   if (type === 'weekly') {
     return {
       type: 'weekly',
       periodKey: getCurrentWeekKey(),
       periodLabel: getWeekLabel(),
-      rewards: { ...WEEKLY_REWARDS },
+      rewards: { ...WEEKLY_CHALLENGE_REWARDS },
       endsAt: getWeekEndDate(),
     };
   }
@@ -75,7 +78,7 @@ export function getCurrentChallengeInfo(type: ChallengeType): ChallengeInfo {
     type: 'monthly',
     periodKey: getCurrentMonthKey(),
     periodLabel: getMonthLabel(),
-    rewards: { ...MONTHLY_REWARDS },
+    rewards: { ...MONTHLY_CHALLENGE_REWARDS },
     endsAt: getMonthEndDate(),
   };
 }
