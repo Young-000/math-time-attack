@@ -50,7 +50,7 @@ export function TimeAttackResultPage() {
   const { showInterstitialIfNeeded } = useInterstitialAd();
 
   // 웰컴 프로모션
-  const { showPromotionToast, tryClaimWelcome } = usePromotion();
+  const { showPromotionToast, showPromotionError, promotionErrorMessage, tryClaimWelcome } = usePromotion();
 
   // 별 시스템
   const { onGameComplete } = usePoints();
@@ -135,7 +135,9 @@ export function TimeAttackResultPage() {
       try {
         const userId = await getCurrentUserId();
         if (userId) {
-          tryClaimWelcome(userId).catch(() => {});
+          tryClaimWelcome(userId).catch((err) => {
+            console.warn('프로모션 지급 실패:', err);
+          });
         }
       } catch {
         // 프로모션 실패가 게임 플로우를 막지 않음
@@ -169,7 +171,6 @@ export function TimeAttackResultPage() {
     };
 
     saveAndFetchRank();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state, navigate, online, showInterstitialIfNeeded, tryClaimWelcome, onGameComplete]);
 
   // state에서 값 추출 (null일 수 있으므로 기본값 처리)
@@ -317,6 +318,13 @@ export function TimeAttackResultPage() {
       {showPromotionToast && (
         <div className="promotion-success-toast">
           {WELCOME_PROMO_AMOUNT} 토스포인트가 지급되었어요!
+        </div>
+      )}
+
+      {/* 프로모션 에러 토스트 */}
+      {showPromotionError && (
+        <div className="charge-error-toast">
+          포인트 지급에 실패했어요. {promotionErrorMessage}
         </div>
       )}
 

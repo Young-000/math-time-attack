@@ -47,7 +47,7 @@ export function ResultPage() {
   const { showInterstitialIfNeeded } = useInterstitialAd();
 
   // 웰컴 프로모션
-  const { showPromotionToast, tryClaimWelcome } = usePromotion();
+  const { showPromotionToast, showPromotionError, promotionErrorMessage, tryClaimWelcome } = usePromotion();
 
   // 별 시스템
   const { onGameComplete } = usePoints();
@@ -143,7 +143,9 @@ export function ResultPage() {
         }).catch(() => {});
 
         // 웰컴 프로모션 지급 (첫 게임 완료 시, 중복 방지는 서비스에서 처리)
-        tryClaimWelcome(userId).catch(() => {});
+        tryClaimWelcome(userId).catch((err) => {
+          console.warn('프로모션 지급 실패:', err);
+        });
 
         // 전면 광고 표시 (빈도 조건 충족 시)
         showInterstitialIfNeeded(() => {});
@@ -155,7 +157,6 @@ export function ResultPage() {
     };
 
     processResult();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state, navigate, showInterstitialIfNeeded, tryClaimWelcome, onGameComplete]);
 
   // state에서 값 추출 (null일 수 있으므로 기본값 처리)
@@ -278,6 +279,13 @@ export function ResultPage() {
       {showPromotionToast && (
         <div className="promotion-success-toast">
           {WELCOME_PROMO_AMOUNT} 토스포인트가 지급되었어요!
+        </div>
+      )}
+
+      {/* 프로모션 에러 토스트 */}
+      {showPromotionError && (
+        <div className="charge-error-toast">
+          포인트 지급에 실패했어요. {promotionErrorMessage}
         </div>
       )}
 
