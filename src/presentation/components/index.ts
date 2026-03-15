@@ -15,3 +15,5 @@ export { AchievementModal } from './AchievementModal';
 export { ChallengeBanner } from './ChallengeBanner';
 export { ChallengeCountdown } from './ChallengeCountdown';
 export { ErrorBoundary } from './ErrorBoundary';
+export { MissionModal } from './MissionModal';
+export { MissionCompletedToast } from './MissionCompletedToast';
