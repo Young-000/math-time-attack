@@ -8,9 +8,10 @@ import { usePoints } from '@presentation/hooks/usePoints';
 import { BannerAd } from '@presentation/components';
 
 const TYPE_LABELS: Record<string, string> = {
-  game_complete: '\uAC8C\uC784 \uC644\uB8CC',
-  weekly_reward: '\uC8FC\uAC04 \uCC4C\uB9B0\uC9C0',
-  monthly_reward: '\uC6D4\uAC04 \uCC4C\uB9B0\uC9C0',
+  game_complete: '\uAC8C\uC784 \uD074\uB9AC\uC5B4',
+  round_bonus: '\uB77C\uC6B4\uB4DC \uBCF4\uB108\uC2A4',
+  rewarded_ad: '\uAD11\uACE0 \uC2DC\uCCAD',
+  mission: '\uBBF8\uC158 \uBCF4\uC0C1',
   daily_login: '\uC77C\uC77C \uCD9C\uC11D',
   exchange: '\uD1A0\uC2A4 \uD3EC\uC778\uD2B8 \uAD50\uD658',
   admin: '\uAD00\uB9AC\uC790',

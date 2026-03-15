@@ -19,8 +19,9 @@ import { getCurrentUserId } from '@infrastructure/rankingService';
 import { getTimeAttackBestScore, TIME_ATTACK_DURATION_BY_DIFFICULTY } from '@presentation/hooks/useTimeAttack';
 import { useHeartSystem } from '@presentation/hooks/useHeartSystem';
 import { usePoints } from '@presentation/hooks/usePoints';
-import { DAILY_LOGIN_STARS, GAME_COMPLETE_STARS } from '@constants/points';
-import { StreakBanner, HeartDisplay, NoHeartsModal, BannerAd } from '@presentation/components';
+import { DAILY_LOGIN_STARS, GAME_COMPLETE_STARS, ROUND_BONUS_STARS } from '@constants/points';
+import { StreakBanner, HeartDisplay, NoHeartsModal, BannerAd, MissionModal } from '@presentation/components';
+import { getPendingRewardCount } from '@domain/services/missionService';
 
 const difficulties: DifficultyType[] = ['easy', 'medium', 'hard'];
 
@@ -61,9 +62,11 @@ export function DifficultySelectPage() {
   const [showHeartChargeModal, setShowHeartChargeModal] = useState(false);
   const [showDailyBonus, setShowDailyBonus] = useState(false);
   const [showStarBonus, setShowStarBonus] = useState(false);
+  const [showMissionModal, setShowMissionModal] = useState(false);
+  const [missionBadgeCount, setMissionBadgeCount] = useState(getPendingRewardCount);
 
   // 별 시스템
-  const { balance: starBalance, isLoading: isStarLoading, checkDailyLogin } = usePoints();
+  const { balance: starBalance, isLoading: isStarLoading, checkDailyLogin, onMissionReward, refresh: refreshPoints } = usePoints();
 
   const online = isOnlineMode();
 
@@ -220,6 +223,19 @@ export function DifficultySelectPage() {
     if (heartInfo.isFull) return;
     setShowHeartChargeModal(true);
   }, [heartInfo.isFull]);
+
+  // 미션 보상 수령 콜백
+  const handleMissionRewardClaimed = useCallback((stars: number) => {
+    onMissionReward(stars, '미션 보상').catch(() => {});
+    refreshPoints();
+    setMissionBadgeCount(getPendingRewardCount());
+  }, [onMissionReward, refreshPoints]);
+
+  // 미션 모달 닫기
+  const handleMissionModalClose = useCallback(() => {
+    setShowMissionModal(false);
+    setMissionBadgeCount(getPendingRewardCount());
+  }, []);
 
   // 일일 챌린지 배너 렌더링
   const renderDailyChallenge = () => (
@@ -387,6 +403,19 @@ export function DifficultySelectPage() {
             랭킹
           </button>
 
+          {/* 미션 버튼 */}
+          <button
+            className="header-mission-btn"
+            onClick={() => setShowMissionModal(true)}
+            aria-label="미션 보기"
+          >
+            <span className="mission-btn-icon">🎯</span>
+            <span className="mission-btn-label">미션</span>
+            {missionBadgeCount > 0 && (
+              <span className="mission-badge">{missionBadgeCount}</span>
+            )}
+          </button>
+
           {/* 별 잔액 - 클릭하면 내 포인트 */}
           <button
             className="header-stars"
@@ -419,7 +448,7 @@ export function DifficultySelectPage() {
             ? '5문제를 가장 빠르게 풀어보세요!'
             : '제한 시간 안에 최대한 많이!'}
         </p>
-        <p className="subtitle-bonus">게임 완료 시 +{GAME_COMPLETE_STARS}별</p>
+        <p className="subtitle-bonus">게임 완료 시 +{GAME_COMPLETE_STARS}별 + 라운드 보너스 +{ROUND_BONUS_STARS}별</p>
 
       </header>
 
@@ -455,18 +484,13 @@ export function DifficultySelectPage() {
       {/* 연속 출석 배너 - 하단 */}
       <StreakBanner />
 
-      {/* 프로모션 테스트 (개발용) */}
-      <button
-        className="promo-test-link"
-        onClick={() => navigate('/promo-test')}
-        style={{
-          position: 'fixed', bottom: 4, right: 4,
-          fontSize: 10, color: '#999', background: 'none',
-          border: 'none', padding: '4px 8px', opacity: 0.5,
-        }}
-      >
-        promo test
-      </button>
+      {/* 미션 모달 */}
+      {showMissionModal && (
+        <MissionModal
+          onClose={handleMissionModalClose}
+          onRewardClaimed={handleMissionRewardClaimed}
+        />
+      )}
 
       {/* 하트 부족 모달 */}
       {showNoHeartsModal && (

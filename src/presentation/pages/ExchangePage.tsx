@@ -1,6 +1,7 @@
 /**
  * 토스 포인트 교환 페이지
  * 내부 포인트(별) -> 토스 포인트 교환
+ * 교환비: 10별 = 1P (프로모션 Edge Function 사용)
  */
 
 import { useState, useEffect, useCallback } from 'react';
@@ -9,6 +10,8 @@ import { usePoints } from '@presentation/hooks/usePoints';
 import { EXCHANGE_RATE, MIN_EXCHANGE_STARS } from '@constants/points';
 import { BannerAd } from '@presentation/components';
 import { getCachedUserId } from '@infrastructure/userIdentity';
+import { recordExchange, checkMissions } from '@domain/services/missionService';
+import { getCurrentStreak } from '@domain/services/streakService';
 
 const EDGE_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/exchange`;
 const ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
@@ -51,7 +54,7 @@ export function ExchangePage(): JSX.Element {
         },
         body: JSON.stringify({
           userKey,
-          starsToSpend: EXCHANGE_RATE.stars, // 1단위씩 교환
+          starsToSpend: EXCHANGE_RATE.stars, // 10별 = 1P 단위
         }),
       });
 
@@ -60,6 +63,11 @@ export function ExchangePage(): JSX.Element {
       if (res.ok && data.success) {
         setStatus('success');
         setLastResult({ starsSpent: data.starsSpent, tossPoints: data.tossPoints });
+
+        // 미션 통계 업데이트
+        recordExchange(data.tossPoints);
+        checkMissions(getCurrentStreak());
+
         refresh();
       } else {
         setStatus('error');
@@ -146,8 +154,8 @@ export function ExchangePage(): JSX.Element {
 
       {/* 필수 고지 */}
       <div className="exchange-disclaimer">
-        <p>{'\u2022'} {EXCHANGE_RATE.stars}{'\uBCC4 \uB2E8\uC704\uB85C \uAD50\uD658 \uAC00\uB2A5\uD569\uB2C8\uB2E4'}</p>
-        <p>{'\u2022 \uC77C\uC77C \uCD5C\uB300 3\uD68C \uAD50\uD658 \uAC00\uB2A5\uD569\uB2C8\uB2E4'}</p>
+        <p>{'\u2022'} {EXCHANGE_RATE.stars}{'\uBCC4 = '}{EXCHANGE_RATE.tossPoints}{'\uD1A0\uC2A4 \uD3EC\uC778\uD2B8 \uB2E8\uC704\uB85C \uAD50\uD658 \uAC00\uB2A5\uD569\uB2C8\uB2E4'}</p>
+        <p>{'\u2022 \uC801\uB9BD\uD55C \uB9CC\uD07C \uBB34\uC81C\uD55C \uAD50\uD658 \uAC00\uB2A5\uD569\uB2C8\uB2E4'}</p>
         <p>{'\u2022 \uAD50\uD658\uB41C \uD3EC\uC778\uD2B8\uB294 \uCDE8\uC18C\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4'}</p>
         <p>{'\u2022 \uBCF8 \uD504\uB85C\uBAA8\uC158\uC740 \uC0AC\uC804 \uACE0\uC9C0 \uC5C6\uC774 \uC911\uB2E8\uB420 \uC218 \uC788\uC2B5\uB2C8\uB2E4'}</p>
       </div>

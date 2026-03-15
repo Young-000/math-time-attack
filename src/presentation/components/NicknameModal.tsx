@@ -3,6 +3,7 @@
  */
 
 import { useState, useEffect, useRef } from 'react';
+import { recordNicknameSet } from '@domain/services/missionService';
 
 interface NicknameModalProps {
   isOpen: boolean;
@@ -45,6 +46,7 @@ export function NicknameModal({ isOpen, currentNickname, onClose, onSave }: Nick
     try {
       const success = await onSave(trimmed);
       if (success) {
+        recordNicknameSet();
         onClose();
       } else {
         setError('닉네임 저장에 실패했습니다.');
