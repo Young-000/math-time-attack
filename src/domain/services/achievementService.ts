@@ -29,7 +29,11 @@ function getAchievedKeys(): Set<string> {
 }
 
 function saveAchievedKeys(keys: Set<string>): void {
-  localStorage.setItem(ACHIEVED_KEY, JSON.stringify([...keys]));
+  try {
+    localStorage.setItem(ACHIEVED_KEY, JSON.stringify([...keys]));
+  } catch {
+    console.warn('Failed to save achievement keys to localStorage');
+  }
 }
 
 export function markAchieved(key: string): void {
