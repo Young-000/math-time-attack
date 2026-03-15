@@ -8,18 +8,23 @@ import { DIFFICULTY_CONFIG, Operation, type DifficultyType, type OperationType }
 import { saveRecord, isNewRecord, getBestRecord, getMyRankInfo } from '@data/recordService';
 import { getCurrentUserId } from '@infrastructure/rankingService';
 import { formatTime } from '@lib/utils';
-import { ShareButton, HeartDisplay, NoHeartsModal, AchievementModal, BannerAd } from '@presentation/components';
+import { ShareButton, HeartDisplay, NoHeartsModal, AchievementModal, BannerAd, MissionCompletedToast } from '@presentation/components';
 import { saveDailyChallengeCompletion } from '@domain/services/dailyChallengeService';
 import { checkIn, getStreakMilestoneMessage } from '@domain/services/streakService';
 import { useHeartSystem } from '@presentation/hooks/useHeartSystem';
 import { useInterstitialAd, incrementGameCount } from '@presentation/hooks/useInterstitialAd';
-import { usePromotion } from '@presentation/hooks/usePromotion';
-import { WELCOME_PROMO_AMOUNT } from '@constants/promotion';
 import { checkAllAchievements, markAchieved } from '@domain/services/achievementService';
 import { addHearts } from '@domain/services/heartService';
 import { usePoints } from '@presentation/hooks/usePoints';
-import { GAME_COMPLETE_STARS } from '@constants/points';
+import { GAME_COMPLETE_STARS, ROUND_BONUS_STARS } from '@constants/points';
 import type { AchievementDefinition } from '@domain/services/achievementDefinitions';
+import {
+  checkMissions,
+  recordGameComplete,
+  recordDailyChallengeCleared,
+  recordRankUpdate,
+  type NewlyCompletedMission,
+} from '@domain/services/missionService';
 
 interface LocationState {
   difficulty: DifficultyType;
@@ -41,16 +46,16 @@ export function ResultPage() {
   const [newAchievements, setNewAchievements] = useState<AchievementDefinition[]>([]);
   const [showAchievementModal, setShowAchievementModal] = useState(false);
   const [showStarToast, setShowStarToast] = useState(false);
+  const [starToastText, setStarToastText] = useState('');
+  const [newMissions, setNewMissions] = useState<NewlyCompletedMission[]>([]);
+  const [showMissionToast, setShowMissionToast] = useState(false);
   const hasProcessedRef = useRef(false);
 
   // 전면 광고
   const { showInterstitialIfNeeded } = useInterstitialAd();
 
-  // 웰컴 프로모션
-  const { showPromotionToast, showPromotionError, promotionErrorMessage, tryClaimWelcome } = usePromotion();
-
   // 별 시스템
-  const { onGameComplete } = usePoints();
+  const { onGameComplete, onRoundComplete } = usePoints();
 
   // 하트 시스템 통합 훅
   const {
@@ -134,18 +139,32 @@ export function ResultPage() {
           setShowAchievementModal(true);
         }
 
-        // 게임 완료 별 지급
-        onGameComplete().then((bal) => {
-          if (bal > 0) {
+        // 게임 완료 별 지급 (+5별) + 라운드 보너스 (+3별)
+        Promise.all([onGameComplete(), onRoundComplete()]).then(([gameBal]) => {
+          if (gameBal > 0) {
+            setStarToastText(`+${GAME_COMPLETE_STARS}별 (클리어) +${ROUND_BONUS_STARS}별 (라운드)`);
             setShowStarToast(true);
             setTimeout(() => setShowStarToast(false), 3000);
           }
         }).catch(() => {});
 
-        // 웰컴 프로모션 지급 (첫 게임 완료 시, 중복 방지는 서비스에서 처리)
-        tryClaimWelcome(userId).catch((err) => {
-          console.warn('프로모션 지급 실패:', err);
-        });
+        // 미션 통계 업데이트 및 체크
+        recordGameComplete(difficulty, elapsedTime, false, true);
+        if (isDaily) {
+          recordDailyChallengeCleared();
+        }
+
+        // 랭킹 업데이트 (미션용)
+        if (rankInfo.rank) {
+          recordRankUpdate(rankInfo.rank);
+        }
+
+        // 미션 달성 체크
+        const completedMissions = checkMissions(newStreak, elapsedTime);
+        if (completedMissions.length > 0) {
+          setNewMissions(completedMissions);
+          setShowMissionToast(true);
+        }
 
         // 전면 광고 표시 (빈도 조건 충족 시)
         showInterstitialIfNeeded(() => {});
@@ -157,7 +176,7 @@ export function ResultPage() {
     };
 
     processResult();
-  }, [state, navigate, showInterstitialIfNeeded, tryClaimWelcome, onGameComplete]);
+  }, [state, navigate, showInterstitialIfNeeded, onGameComplete, onRoundComplete]);
 
   // state에서 값 추출 (null일 수 있으므로 기본값 처리)
   const difficulty = state?.difficulty ?? 'easy';
@@ -275,18 +294,12 @@ export function ResultPage() {
         />
       )}
 
-      {/* 프로모션 성공 토스트 */}
-      {showPromotionToast && (
-        <div className="promotion-success-toast">
-          {WELCOME_PROMO_AMOUNT} 토스포인트가 지급되었어요!
-        </div>
-      )}
-
-      {/* 프로모션 에러 토스트 */}
-      {showPromotionError && (
-        <div className="charge-error-toast">
-          포인트 지급에 실패했어요. {promotionErrorMessage}
-        </div>
+      {/* 미션 달성 토스트 */}
+      {showMissionToast && (
+        <MissionCompletedToast
+          missions={newMissions}
+          onClose={() => setShowMissionToast(false)}
+        />
       )}
 
       {/* 충전 성공 토스트 */}
@@ -306,7 +319,7 @@ export function ResultPage() {
       {/* 별 획득 토스트 */}
       {showStarToast && (
         <div className="charge-success-toast">
-          ⭐ +{GAME_COMPLETE_STARS}별 획득!
+          {starToastText}
         </div>
       )}
 

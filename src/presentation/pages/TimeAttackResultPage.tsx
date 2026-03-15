@@ -14,15 +14,19 @@ import {
 } from '@data/recordService';
 import { getCurrentUserId } from '@infrastructure/rankingService';
 import { useHeartSystem } from '@presentation/hooks/useHeartSystem';
-import { HeartDisplay, NoHeartsModal, AchievementModal, BannerAd } from '@presentation/components';
+import { HeartDisplay, NoHeartsModal, AchievementModal, BannerAd, MissionCompletedToast } from '@presentation/components';
 import { useInterstitialAd, incrementGameCount } from '@presentation/hooks/useInterstitialAd';
-import { usePromotion } from '@presentation/hooks/usePromotion';
-import { WELCOME_PROMO_AMOUNT } from '@constants/promotion';
 import { checkAllAchievements, markAchieved } from '@domain/services/achievementService';
 import { addHearts } from '@domain/services/heartService';
 import { usePoints } from '@presentation/hooks/usePoints';
-import { GAME_COMPLETE_STARS } from '@constants/points';
+import { GAME_COMPLETE_STARS, ROUND_BONUS_STARS } from '@constants/points';
 import type { AchievementDefinition } from '@domain/services/achievementDefinitions';
+import {
+  checkMissions,
+  recordGameComplete,
+  recordRankUpdate,
+  type NewlyCompletedMission,
+} from '@domain/services/missionService';
 
 interface LocationState {
   difficulty: DifficultyType;
@@ -44,16 +48,16 @@ export function TimeAttackResultPage() {
   const [newAchievements, setNewAchievements] = useState<AchievementDefinition[]>([]);
   const [showAchievementModal, setShowAchievementModal] = useState(false);
   const [showStarToast, setShowStarToast] = useState(false);
+  const [starToastText, setStarToastText] = useState('');
+  const [newMissions, setNewMissions] = useState<NewlyCompletedMission[]>([]);
+  const [showMissionToast, setShowMissionToast] = useState(false);
   const hasProcessedRef = useRef(false);
 
   // 전면 광고
   const { showInterstitialIfNeeded } = useInterstitialAd();
 
-  // 웰컴 프로모션
-  const { showPromotionToast, showPromotionError, promotionErrorMessage, tryClaimWelcome } = usePromotion();
-
   // 별 시스템
-  const { onGameComplete } = usePoints();
+  const { onGameComplete, onRoundComplete } = usePoints();
 
   // 하트 시스템 통합 훅
   const {
@@ -121,28 +125,27 @@ export function TimeAttackResultPage() {
     // 전면 광고
     showInterstitialIfNeeded(() => {});
 
-    // 게임 완료 별 지급
-    onGameComplete().then((bal) => {
-      if (bal > 0) {
+    // 게임 완료 별 지급 (+5별) + 라운드 보너스 (+3별)
+    Promise.all([onGameComplete(), onRoundComplete()]).then(([gameBal]) => {
+      if (gameBal > 0) {
+        setStarToastText(`+${GAME_COMPLETE_STARS}별 (클리어) +${ROUND_BONUS_STARS}별 (라운드)`);
         setShowStarToast(true);
         setTimeout(() => setShowStarToast(false), 3000);
       }
     }).catch(() => {});
 
+    // 미션 통계 업데이트
+    recordGameComplete(difficulty, 0, true, wrongCount === 0);
+
+    // 미션 달성 체크
+    const completedMissions = checkMissions(newStreak);
+    if (completedMissions.length > 0) {
+      setNewMissions(completedMissions);
+      setShowMissionToast(true);
+    }
+
     // 서버에 기록 저장 및 순위 조회
     const saveAndFetchRank = async () => {
-      // 웰컴 프로모션 (온/오프라인 무관하게 시도)
-      try {
-        const userId = await getCurrentUserId();
-        if (userId) {
-          tryClaimWelcome(userId).catch((err) => {
-            console.warn('프로모션 지급 실패:', err);
-          });
-        }
-      } catch {
-        // 프로모션 실패가 게임 플로우를 막지 않음
-      }
-
       if (!online) return;
 
       setIsLoadingRank(true);
@@ -163,6 +166,11 @@ export function TimeAttackResultPage() {
         const rankInfo = await getTimeAttackRankInfo(userId, difficulty, operation);
         setMyRank(rankInfo.rank);
         setTotalPlayers(rankInfo.totalPlayers);
+
+        // 랭킹 업데이트 (미션용)
+        if (rankInfo.rank) {
+          recordRankUpdate(rankInfo.rank);
+        }
       } catch (err) {
         console.error('Failed to save/fetch rank:', err);
       } finally {
@@ -171,7 +179,7 @@ export function TimeAttackResultPage() {
     };
 
     saveAndFetchRank();
-  }, [state, navigate, online, showInterstitialIfNeeded, tryClaimWelcome, onGameComplete]);
+  }, [state, navigate, online, showInterstitialIfNeeded, onGameComplete, onRoundComplete]);
 
   // state에서 값 추출 (null일 수 있으므로 기본값 처리)
   const difficulty = state?.difficulty ?? 'easy';
@@ -314,18 +322,12 @@ export function TimeAttackResultPage() {
         />
       )}
 
-      {/* 프로모션 성공 토스트 */}
-      {showPromotionToast && (
-        <div className="promotion-success-toast">
-          {WELCOME_PROMO_AMOUNT} 토스포인트가 지급되었어요!
-        </div>
-      )}
-
-      {/* 프로모션 에러 토스트 */}
-      {showPromotionError && (
-        <div className="charge-error-toast">
-          포인트 지급에 실패했어요. {promotionErrorMessage}
-        </div>
+      {/* 미션 달성 토스트 */}
+      {showMissionToast && (
+        <MissionCompletedToast
+          missions={newMissions}
+          onClose={() => setShowMissionToast(false)}
+        />
       )}
 
       {/* 충전 성공 토스트 */}
@@ -345,7 +347,7 @@ export function TimeAttackResultPage() {
       {/* 별 획득 토스트 */}
       {showStarToast && (
         <div className="charge-success-toast">
-          ⭐ +{GAME_COMPLETE_STARS}별 획득!
+          {starToastText}
         </div>
       )}
 
