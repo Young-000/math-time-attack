@@ -38,8 +38,8 @@ export function usePromotion(): UsePromotionReturn {
       dismissTimerRef.current = setTimeout(() => {
         setShowPromotionToast(false);
       }, AUTO_DISMISS_MS);
-    } else if (!result.error.includes('이미 지급된')) {
-      // 이미 지급된 프로모션은 에러 표시하지 않음
+    } else if (!result.error.includes('이미 지급된') && !result.error.includes('[NON_AIT]')) {
+      // 이미 지급된 프로모션 또는 비-AIT 환경에서는 에러 표시하지 않음
       setPromotionErrorMessage(result.error);
       setShowPromotionError(true);
 

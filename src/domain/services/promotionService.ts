@@ -97,9 +97,9 @@ export async function claimPromotion(
   amount: number,
   userKey?: string,
 ): Promise<PromotionResult> {
-  // 비AIT 환경 체크
+  // 비AIT 환경에서는 조용히 skip (웹 브라우저 테스트 시 에러 토스트 방지)
   if (!isAppsInTossEnvironment()) {
-    return { success: false, error: 'AIT 환경이 아닙니다 (웹 브라우저에서는 사용 불가)' };
+    return { success: false, error: '[NON_AIT] 웹 환경에서는 포인트 지급이 지원되지 않습니다' };
   }
 
   // 클라이언트 중복 체크
