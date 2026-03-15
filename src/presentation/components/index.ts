@@ -14,3 +14,4 @@ export { NoHeartsModal } from './NoHeartsModal';
 export { AchievementModal } from './AchievementModal';
 export { ChallengeBanner } from './ChallengeBanner';
 export { ChallengeCountdown } from './ChallengeCountdown';
+export { ErrorBoundary } from './ErrorBoundary';
