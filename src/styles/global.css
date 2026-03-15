@@ -4294,3 +4294,184 @@ body {
   background: #1b64da;
 }
 
+
+/* ── Reward Effects ── */
+
+@keyframes coinFloat {
+  0% { transform: translateY(0) scale(1); opacity: 1; }
+  100% { transform: translateY(-40px) scale(0.5); opacity: 0; }
+}
+
+@keyframes countUp {
+  0% { transform: translateY(100%); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes confettiBurst {
+  0% { transform: translate(0) rotate(0deg) scale(1); opacity: 1; }
+  100% { transform: translate(var(--dx, 30px), var(--dy, -60px)) rotate(720deg) scale(0); opacity: 0; }
+}
+
+@keyframes missionBanner {
+  0% { transform: translateY(-100%); }
+  10% { transform: translateY(0); }
+  90% { transform: translateY(0); }
+  100% { transform: translateY(-100%); }
+}
+
+/* ── Mission Panel ── */
+
+.mission-panel {
+  width: 100%;
+}
+
+.mission-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.mission-panel__title {
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.mission-panel__count {
+  font-size: 0.75rem;
+  color: #6B7280;
+}
+
+.mission-panel__scroll {
+  display: flex;
+  gap: 0.75rem;
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.mission-panel__scroll::-webkit-scrollbar {
+  display: none;
+}
+
+/* ── Mission Card ── */
+
+.mission-card {
+  flex: 0 0 140px;
+  background: #F3F4F6;
+  border-radius: 0.75rem;
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.mission-card__header {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.mission-card__emoji {
+  font-size: 1.125rem;
+}
+
+.mission-card__name {
+  font-size: 0.75rem;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mission-card__level {
+  font-size: 0.625rem;
+  font-weight: 600;
+  color: #3B82F6;
+}
+
+.mission-card__desc {
+  font-size: 0.625rem;
+  color: #6B7280;
+  line-height: 1.3;
+}
+
+.mission-card__bar-wrap {
+  width: 100%;
+  height: 4px;
+  background: #E5E7EB;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.mission-card__bar-fill {
+  height: 100%;
+  background: #3B82F6;
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+.mission-card__progress {
+  font-size: 0.625rem;
+  color: #6B7280;
+  text-align: right;
+}
+
+.mission-card__reward {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #F59E0B;
+}
+
+.mission-card__completed {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  gap: 0.25rem;
+}
+
+.mission-card__badge {
+  font-size: 1.5rem;
+}
+
+.mission-card__badge-text {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #10B981;
+}
+
+/* ── Mission Toast ── */
+
+.mission-toast {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  animation: missionBanner 3s ease forwards;
+}
+
+.mission-toast__content {
+  margin: env(safe-area-inset-top, 0) 1rem 0;
+  background: linear-gradient(135deg, #3B82F6 0%, #F59E0B 100%);
+  color: #fff;
+  border-radius: 0 0 0.75rem 0.75rem;
+  padding: 0.75rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.mission-toast__emoji {
+  font-size: 1.25rem;
+}
+
+.mission-toast__text {
+  flex: 1;
+}

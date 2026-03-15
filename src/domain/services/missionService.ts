@@ -1,478 +1,278 @@
 /**
- * 미션 시스템 서비스
- * localStorage 기반 미션 달성 추적 및 보상 지급
+ * 미션 시스템 — 트랙/스테이지 기반 (리팩토링)
  *
- * 카테고리: 입문(3), 연속(3), 기록(3), 마스터(3), 교환(3) = 총 15개
+ * 4개 트랙, 각 3~5 스테이지. 현재 스테이지만 표시.
+ * 총 보상 ~310별 (일일 활동 3~5일치)
  */
 
-// --- 타입 ---
+// --- Track/Stage types ---
 
-export type MissionCategory = 'beginner' | 'streak' | 'record' | 'master' | 'exchange';
+export type MissionStage = {
+  readonly level: number;
+  readonly target: number;
+  readonly reward: number;
+  readonly description: string;
+};
 
-export type MissionDefinition = {
-  id: string;
-  category: MissionCategory;
-  title: string;
-  description: string;
-  emoji: string;
-  reward: number; // 별 보상
+export type MissionTrack = {
+  readonly id: string;
+  readonly name: string;
+  readonly emoji: string;
+  readonly stages: readonly MissionStage[];
 };
 
 export type MissionProgress = {
-  completed: boolean;
-  completedAt: string | null;
-  claimed: boolean; // 보상 수령 여부
+  readonly trackId: string;
+  readonly currentLevel: number;
+  readonly progress: number;
+  readonly completedAt?: string;
 };
 
-type MissionStore = Record<string, MissionProgress>;
+export type MissionState = Record<string, MissionProgress>;
 
-// --- 미션 정의 (15개) ---
+// --- Track definitions ---
 
-export const MISSIONS: MissionDefinition[] = [
-  // 입문 (3)
+export const MISSION_TRACKS: readonly MissionTrack[] = [
   {
-    id: 'first_clear',
-    category: 'beginner',
-    title: '첫 게임 클리어',
-    description: '게임을 처음으로 클리어하세요',
+    id: 'challenger',
+    name: '도전자',
     emoji: '🎯',
-    reward: 50,
+    stages: [
+      { level: 1, target: 1, reward: 5, description: '게임 1회 클리어' },
+      { level: 2, target: 5, reward: 10, description: '게임 5회 클리어' },
+      { level: 3, target: 20, reward: 20, description: '게임 20회 클리어' },
+      { level: 4, target: 50, reward: 30, description: '게임 50회 클리어' },
+      { level: 5, target: 100, reward: 50, description: '게임 100회 클리어' },
+    ],
   },
   {
-    id: 'first_time_attack',
-    category: 'beginner',
-    title: '첫 타임어택 시도',
-    description: '타임어택 모드를 시도하세요',
-    emoji: '⚡',
-    reward: 30,
-  },
-  {
-    id: 'set_nickname',
-    category: 'beginner',
-    title: '닉네임 설정',
-    description: '닉네임을 설정하세요',
-    emoji: '✏️',
-    reward: 20,
-  },
-
-  // 연속 (3)
-  {
-    id: 'streak_3',
-    category: 'streak',
-    title: '3일 연속 도전',
-    description: '3일 연속으로 게임을 플레이하세요',
+    id: 'streak',
+    name: '연속 도전',
     emoji: '🔥',
-    reward: 100,
+    stages: [
+      { level: 1, target: 3, reward: 10, description: '3일 연속 도전' },
+      { level: 2, target: 7, reward: 20, description: '7일 연속 도전' },
+      { level: 3, target: 14, reward: 30, description: '14일 연속 도전' },
+      { level: 4, target: 30, reward: 50, description: '30일 연속 도전' },
+    ],
   },
   {
-    id: 'streak_7',
-    category: 'streak',
-    title: '7일 연속 도전',
-    description: '7일 연속으로 게임을 플레이하세요',
+    id: 'master',
+    name: '구구단 마스터',
     emoji: '⭐',
-    reward: 200,
+    stages: [
+      { level: 1, target: 1, reward: 5, description: '타임어택 1회 시도' },
+      { level: 2, target: 5, reward: 15, description: '타임어택 5회 시도' },
+      { level: 3, target: 20, reward: 25, description: '타임어택 20회 시도' },
+      { level: 4, target: 50, reward: 40, description: '타임어택 50회 시도' },
+    ],
   },
-  {
-    id: 'streak_30',
-    category: 'streak',
-    title: '30일 연속 도전',
-    description: '30일 연속으로 게임을 플레이하세요',
-    emoji: '👑',
-    reward: 500,
-  },
+] as const;
 
-  // 기록 (3)
-  {
-    id: 'clear_under_10s',
-    category: 'record',
-    title: '10초 이내 클리어',
-    description: '쉬움 난이도를 10초 이내에 클리어하세요',
-    emoji: '⏱️',
-    reward: 50,
-  },
-  {
-    id: 'all_difficulty_clear',
-    category: 'record',
-    title: '전 난이도 클리어',
-    description: '초급/중급/고급 모든 난이도를 클리어하세요',
-    emoji: '🏅',
-    reward: 300,
-  },
-  {
-    id: 'games_100',
-    category: 'record',
-    title: '100판 달성',
-    description: '누적 100판을 플레이하세요',
-    emoji: '💯',
-    reward: 200,
-  },
+// Total: 115 + 110 + 85 = 310
 
-  // 마스터 (3)
-  {
-    id: 'perfect_5_streak',
-    category: 'master',
-    title: '무오답 5판 연속',
-    description: '5판 연속으로 오답 없이 클리어하세요',
-    emoji: '🔥',
-    reward: 150,
-  },
-  {
-    id: 'ranking_top10',
-    category: 'master',
-    title: '랭킹 TOP 10',
-    description: '전체 랭킹 상위 10위에 진입하세요',
-    emoji: '🏆',
-    reward: 200,
-  },
-  {
-    id: 'daily_all_clear',
-    category: 'master',
-    title: '일일 도전 올클리어',
-    description: '일일 챌린지를 클리어하세요',
-    emoji: '📅',
-    reward: 100,
-  },
+// --- Mission context ---
 
-  // 교환 (3)
-  {
-    id: 'first_exchange',
-    category: 'exchange',
-    title: '첫 포인트 교환',
-    description: '별을 토스 포인트로 처음 교환하세요',
-    emoji: '💰',
-    reward: 30,
-  },
-  {
-    id: 'exchange_100p',
-    category: 'exchange',
-    title: '누적 100P 교환',
-    description: '누적 100 토스 포인트를 교환하세요',
-    emoji: '💎',
-    reward: 200,
-  },
-  {
-    id: 'exchange_500p',
-    category: 'exchange',
-    title: '누적 500P 교환',
-    description: '누적 500 토스 포인트를 교환하세요',
-    emoji: '🌟',
-    reward: 500,
-  },
-];
+export type MissionContext = {
+  readonly totalGamesPlayed: number;
+  readonly currentStreak: number;
+  readonly totalTimeAttackPlayed: number;
+};
 
 // --- localStorage ---
 
-const MISSION_STORE_KEY = 'math-attack-missions';
-const MISSION_STATS_KEY = 'math-attack-mission-stats';
+const STORAGE_KEY = 'math-attack-track-missions';
+const COUNTERS_KEY = 'math-attack-track-counters';
 
-type MissionStats = {
+type MissionCounters = {
   totalGamesPlayed: number;
   totalTimeAttackPlayed: number;
-  consecutivePerfectGames: number;
-  clearedDifficulties: string[];
-  totalExchangedPoints: number;
-  exchangeCount: number;
-  bestRank: number | null;
-  dailyChallengeCleared: boolean;
-  hasNickname: boolean;
+  currentStreak: number;
 };
 
-function getDefaultStats(): MissionStats {
+function loadState(): MissionState {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) return JSON.parse(stored) as MissionState;
+  } catch { /* fallback */ }
+  return {};
+}
+
+function saveState(state: MissionState): void {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  } catch { /* ignore */ }
+}
+
+function loadCounters(): MissionCounters {
+  try {
+    const stored = localStorage.getItem(COUNTERS_KEY);
+    if (stored) return { totalGamesPlayed: 0, totalTimeAttackPlayed: 0, currentStreak: 0, ...JSON.parse(stored) };
+  } catch { /* fallback */ }
+  return { totalGamesPlayed: 0, totalTimeAttackPlayed: 0, currentStreak: 0 };
+}
+
+function saveCounters(counters: MissionCounters): void {
+  try {
+    localStorage.setItem(COUNTERS_KEY, JSON.stringify(counters));
+  } catch { /* ignore */ }
+}
+
+// --- Counter helpers ---
+
+export function updateStreak(streak: number): void {
+  const c = loadCounters();
+  c.currentStreak = streak;
+  saveCounters(c);
+}
+
+export function buildContext(): MissionContext {
+  const c = loadCounters();
   return {
-    totalGamesPlayed: 0,
-    totalTimeAttackPlayed: 0,
-    consecutivePerfectGames: 0,
-    clearedDifficulties: [],
-    totalExchangedPoints: 0,
-    exchangeCount: 0,
-    bestRank: null,
-    dailyChallengeCleared: false,
-    hasNickname: false,
+    totalGamesPlayed: c.totalGamesPlayed,
+    currentStreak: c.currentStreak,
+    totalTimeAttackPlayed: c.totalTimeAttackPlayed,
   };
 }
 
-function loadMissionStore(): MissionStore {
-  try {
-    const stored = localStorage.getItem(MISSION_STORE_KEY);
-    return stored ? JSON.parse(stored) : {};
-  } catch {
-    return {};
+// --- Pure functions ---
+
+function getTrackValue(trackId: string, context: MissionContext): number {
+  switch (trackId) {
+    case 'challenger': return context.totalGamesPlayed + context.totalTimeAttackPlayed;
+    case 'streak': return context.currentStreak;
+    case 'master': return context.totalTimeAttackPlayed;
+    default: return 0;
   }
 }
 
-function saveMissionStore(store: MissionStore): void {
-  try {
-    localStorage.setItem(MISSION_STORE_KEY, JSON.stringify(store));
-  } catch {
-    // localStorage full or unavailable
-  }
+export function getCurrentStage(
+  track: MissionTrack,
+  state: MissionState,
+): MissionStage | null {
+  const progress = state[track.id];
+  const currentLevel = progress?.currentLevel ?? 1;
+  if (progress?.completedAt) return null;
+  return track.stages.find((s) => s.level === currentLevel) ?? null;
 }
 
-export function loadMissionStats(): MissionStats {
-  try {
-    const stored = localStorage.getItem(MISSION_STATS_KEY);
-    if (stored) {
-      return { ...getDefaultStats(), ...JSON.parse(stored) };
-    }
-  } catch {
-    // fallback
+export function getTrackProgress(
+  track: MissionTrack,
+  state: MissionState,
+  context: MissionContext,
+): { current: number; target: number; isCompleted: boolean } {
+  const stage = getCurrentStage(track, state);
+  if (!stage) {
+    const lastStage = track.stages[track.stages.length - 1];
+    return { current: lastStage?.target ?? 0, target: lastStage?.target ?? 0, isCompleted: true };
   }
-  return getDefaultStats();
+  const value = getTrackValue(track.id, context);
+  return { current: Math.min(value, stage.target), target: stage.target, isCompleted: false };
 }
 
-export function saveMissionStats(stats: MissionStats): void {
-  try {
-    localStorage.setItem(MISSION_STATS_KEY, JSON.stringify(stats));
-  } catch {
-    // localStorage full or unavailable
-  }
-}
-
-// --- 통계 업데이트 헬퍼 ---
-
-export function recordGameComplete(
-  difficulty: string,
-  _elapsedTime: number,
-  isTimeAttack: boolean,
-  isPerfect: boolean,
-): void {
-  const stats = loadMissionStats();
-
-  if (isTimeAttack) {
-    stats.totalTimeAttackPlayed += 1;
-  } else {
-    stats.totalGamesPlayed += 1;
-  }
-
-  // 연속 무오답 카운트
-  if (isPerfect) {
-    stats.consecutivePerfectGames += 1;
-  } else {
-    stats.consecutivePerfectGames = 0;
-  }
-
-  // 클리어한 난이도 기록
-  if (!stats.clearedDifficulties.includes(difficulty)) {
-    stats.clearedDifficulties = [...stats.clearedDifficulties, difficulty];
-  }
-
-  saveMissionStats(stats);
-}
-
-export function recordExchange(tossPoints: number): void {
-  const stats = loadMissionStats();
-  stats.exchangeCount += 1;
-  stats.totalExchangedPoints += tossPoints;
-  saveMissionStats(stats);
-}
-
-export function recordRankUpdate(rank: number): void {
-  const stats = loadMissionStats();
-  if (stats.bestRank === null || rank < stats.bestRank) {
-    stats.bestRank = rank;
-  }
-  saveMissionStats(stats);
-}
-
-export function recordDailyChallengeCleared(): void {
-  const stats = loadMissionStats();
-  stats.dailyChallengeCleared = true;
-  saveMissionStats(stats);
-}
-
-export function recordNicknameSet(): void {
-  const stats = loadMissionStats();
-  stats.hasNickname = true;
-  saveMissionStats(stats);
-}
-
-// --- 미션 달성 체크 ---
-
-function isMissionConditionMet(
-  mission: MissionDefinition,
-  stats: MissionStats,
-  streakDays: number,
-  elapsedTime?: number,
-): boolean {
-  switch (mission.id) {
-    // 입문
-    case 'first_clear':
-      return stats.totalGamesPlayed >= 1;
-    case 'first_time_attack':
-      return stats.totalTimeAttackPlayed >= 1;
-    case 'set_nickname':
-      return stats.hasNickname;
-
-    // 연속
-    case 'streak_3':
-      return streakDays >= 3;
-    case 'streak_7':
-      return streakDays >= 7;
-    case 'streak_30':
-      return streakDays >= 30;
-
-    // 기록
-    case 'clear_under_10s':
-      return elapsedTime !== undefined && elapsedTime <= 10000;
-    case 'all_difficulty_clear':
-      return stats.clearedDifficulties.length >= 3;
-    case 'games_100':
-      return (stats.totalGamesPlayed + stats.totalTimeAttackPlayed) >= 100;
-
-    // 마스터
-    case 'perfect_5_streak':
-      return stats.consecutivePerfectGames >= 5;
-    case 'ranking_top10':
-      return stats.bestRank !== null && stats.bestRank <= 10;
-    case 'daily_all_clear':
-      return stats.dailyChallengeCleared;
-
-    // 교환
-    case 'first_exchange':
-      return stats.exchangeCount >= 1;
-    case 'exchange_100p':
-      return stats.totalExchangedPoints >= 100;
-    case 'exchange_500p':
-      return stats.totalExchangedPoints >= 500;
-
-    default:
-      return false;
-  }
-}
-
-export type NewlyCompletedMission = MissionDefinition & { justCompleted: true };
-
-/**
- * 모든 미션을 현재 통계와 대조하여 새로 달성된 미션 반환
- */
-export function checkMissions(
-  streakDays: number,
-  currentElapsedTime?: number,
-): NewlyCompletedMission[] {
-  const store = loadMissionStore();
-  const stats = loadMissionStats();
-  const newlyCompleted: NewlyCompletedMission[] = [];
-
-  for (const mission of MISSIONS) {
-    const progress = store[mission.id];
-    if (progress?.completed) continue;
-
-    if (isMissionConditionMet(mission, stats, streakDays, currentElapsedTime)) {
-      store[mission.id] = {
-        completed: true,
-        completedAt: new Date().toISOString(),
-        claimed: false,
-      };
-      newlyCompleted.push({ ...mission, justCompleted: true });
-    }
-  }
-
-  if (newlyCompleted.length > 0) {
-    saveMissionStore(store);
-  }
-
-  return newlyCompleted;
-}
-
-/**
- * 미션 보상 수령
- * @returns 수령한 별 수 (이미 수령한 경우 0)
- */
-export function claimMissionReward(missionId: string): number {
-  const store = loadMissionStore();
-  const progress = store[missionId];
-  if (!progress?.completed || progress.claimed) return 0;
-
-  const mission = MISSIONS.find((m) => m.id === missionId);
-  if (!mission) return 0;
-
-  store[missionId] = { ...progress, claimed: true };
-  saveMissionStore(store);
-
-  return mission.reward;
-}
-
-/**
- * 모든 완료됐지만 미수령 미션의 보상 일괄 수령
- * @returns 수령한 총 별 수
- */
-export function claimAllPendingRewards(): number {
-  const store = loadMissionStore();
-  let total = 0;
-
-  for (const mission of MISSIONS) {
-    const progress = store[mission.id];
-    if (progress?.completed && !progress.claimed) {
-      store[mission.id] = { ...progress, claimed: true };
-      total += mission.reward;
-    }
-  }
-
-  if (total > 0) {
-    saveMissionStore(store);
-  }
-
-  return total;
-}
-
-// --- 조회 ---
-
-export type MissionWithProgress = MissionDefinition & {
-  progress: MissionProgress;
+export type CompletedStage = {
+  readonly trackId: string;
+  readonly trackName: string;
+  readonly trackEmoji: string;
+  readonly level: number;
+  readonly reward: number;
 };
 
-/**
- * 전체 미션 목록 (달성 여부 포함)
- */
-export function getAllMissions(): MissionWithProgress[] {
-  const store = loadMissionStore();
-  return MISSIONS.map((mission) => ({
-    ...mission,
-    progress: store[mission.id] ?? {
-      completed: false,
-      completedAt: null,
-      claimed: false,
-    },
+export function checkAndAdvanceMissions(context: MissionContext): readonly CompletedStage[] {
+  const state = loadState();
+  const completed: CompletedStage[] = [];
+
+  for (const track of MISSION_TRACKS) {
+    const stage = getCurrentStage(track, state);
+    if (!stage) continue;
+    const value = getTrackValue(track.id, context);
+    if (value < stage.target) continue;
+
+    completed.push({
+      trackId: track.id, trackName: track.name, trackEmoji: track.emoji,
+      level: stage.level, reward: stage.reward,
+    });
+
+    const nextStage = track.stages.find((s) => s.level === stage.level + 1);
+    if (nextStage) {
+      state[track.id] = { trackId: track.id, currentLevel: nextStage.level, progress: value };
+    } else {
+      state[track.id] = { trackId: track.id, currentLevel: stage.level, progress: value, completedAt: new Date().toISOString() };
+    }
+  }
+
+  if (completed.length > 0) saveState(state);
+  return completed;
+}
+
+export function getMissionState(): MissionState {
+  return loadState();
+}
+
+export function getCompletedStageCount(): number {
+  const state = loadState();
+  let count = 0;
+  for (const track of MISSION_TRACKS) {
+    const progress = state[track.id];
+    if (!progress) continue;
+    if (progress.completedAt) { count += track.stages.length; }
+    else { count += progress.currentLevel - 1; }
+  }
+  return count;
+}
+
+export function getTotalStageCount(): number {
+  return MISSION_TRACKS.reduce((sum, t) => sum + t.stages.length, 0);
+}
+
+// Legacy compatibility
+export const MISSIONS: readonly { id: string; reward: number }[] = [];
+
+export type NewlyCompletedMission = { id: string; title: string; reward: number; emoji: string; justCompleted: true };
+
+export function checkMissions(
+  _streakDays?: number,
+  _elapsedTime?: number,
+): NewlyCompletedMission[] {
+  const ctx = buildContext();
+  const stages = checkAndAdvanceMissions(ctx);
+  return stages.map((s) => ({
+    id: s.trackId,
+    title: `${s.trackName} Lv.${s.level}`,
+    reward: s.reward,
+    emoji: s.trackEmoji,
+    justCompleted: true as const,
   }));
 }
 
-/**
- * 완료된 미션 수
- */
-export function getCompletedCount(): number {
-  const store = loadMissionStore();
-  return MISSIONS.filter((m) => store[m.id]?.completed).length;
+export function loadMissionStats(): Record<string, unknown> { return {}; }
+export function saveMissionStats(_stats: Record<string, unknown>): void { /* noop */ }
+
+export function recordGameComplete(
+  _difficulty: string,
+  _elapsedTime: number,
+  isTimeAttack: boolean,
+  _isPerfect: boolean,
+): void {
+  const c = loadCounters();
+  if (isTimeAttack) { c.totalTimeAttackPlayed += 1; } else { c.totalGamesPlayed += 1; }
+  saveCounters(c);
 }
 
-/**
- * 미수령 보상이 있는 미션 수
- */
-export function getPendingRewardCount(): number {
-  const store = loadMissionStore();
-  return MISSIONS.filter((m) => {
-    const p = store[m.id];
-    return p?.completed && !p.claimed;
-  }).length;
-}
+export function recordExchange(_tossPoints: number): void { /* noop */ }
+export function recordRankUpdate(_rank: number): void { /* noop */ }
+export function recordDailyChallengeCleared(): void { /* noop */ }
+export function recordNicknameSet(): void { /* noop */ }
 
-/**
- * 카테고리별 미션 그룹
- */
-export function getMissionsByCategory(): Record<MissionCategory, MissionWithProgress[]> {
-  const all = getAllMissions();
-  return {
-    beginner: all.filter((m) => m.category === 'beginner'),
-    streak: all.filter((m) => m.category === 'streak'),
-    record: all.filter((m) => m.category === 'record'),
-    master: all.filter((m) => m.category === 'master'),
-    exchange: all.filter((m) => m.category === 'exchange'),
-  };
-}
+export function claimMissionReward(_missionId: string): number { return 0; }
+export function claimAllPendingRewards(): number { return 0; }
 
-export const CATEGORY_LABELS: Record<MissionCategory, string> = {
-  beginner: '입문',
-  streak: '연속',
-  record: '기록',
-  master: '마스터',
-  exchange: '교환',
-};
+export type MissionWithProgress = { id: string; category: string; title: string; description: string; emoji: string; reward: number; progress: { completed: boolean; completedAt: string | null; claimed: boolean } };
+export function getAllMissions(): MissionWithProgress[] { return []; }
+export function getCompletedCount(): number { return getCompletedStageCount(); }
+export function getPendingRewardCount(): number { return 0; }
+
+export type MissionCategory = string;
+export type MissionDefinition = { id: string; category: string; title: string; description: string; emoji: string; reward: number };
+export const CATEGORY_LABELS: Record<string, string> = {};
+export function getMissionsByCategory(): Record<string, MissionWithProgress[]> { return {}; }
