@@ -13,8 +13,9 @@ import { getCachedUserId } from '@infrastructure/userIdentity';
 import { recordExchange, checkMissions } from '@domain/services/missionService';
 import { getCurrentStreak } from '@domain/services/streakService';
 
-const EDGE_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/exchange`;
+const EDGE_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/promotion`;
 const ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
+const PROMOTION_CODE = 'TEST_MATH_ATTACK_EXCHANGE'; // 콘솔 등록 후 실제 코드로 교체
 
 type ExchangeStatus = 'idle' | 'loading' | 'success' | 'error';
 
@@ -46,6 +47,7 @@ export function ExchangePage(): JSX.Element {
         return;
       }
 
+      const tossPoints = EXCHANGE_RATE.tossPoints;
       const res = await fetch(EDGE_URL, {
         method: 'POST',
         headers: {
@@ -53,8 +55,9 @@ export function ExchangePage(): JSX.Element {
           'Authorization': `Bearer ${ANON_KEY}`,
         },
         body: JSON.stringify({
+          promotionCode: PROMOTION_CODE,
+          amount: tossPoints,
           userKey,
-          starsToSpend: EXCHANGE_RATE.stars, // 10별 = 1P 단위
         }),
       });
 
@@ -62,7 +65,7 @@ export function ExchangePage(): JSX.Element {
 
       if (res.ok && data.success) {
         setStatus('success');
-        setLastResult({ starsSpent: data.starsSpent, tossPoints: data.tossPoints });
+        setLastResult({ starsSpent: EXCHANGE_RATE.stars, tossPoints });
 
         // 미션 통계 업데이트
         recordExchange(data.tossPoints);
