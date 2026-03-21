@@ -9,7 +9,7 @@
  * appLogin + 서버 토큰 교환 방식을 사용한다.
  */
 
-import { appLogin } from '@apps-in-toss/web-framework';
+import { appLogin, closeView } from '@apps-in-toss/web-framework';
 
 // --- 상수 ---
 
@@ -186,7 +186,10 @@ export async function initializeUserIdentity(): Promise<string> {
         : String(err);
       console.warn('[userIdentity] appLogin 플로우 실패:', errorMsg);
       lastAuthError = errorMsg;
-      return fallbackToLocalId();
+
+      // AIT 가이드라인: 약관 닫기/로그인 취소 시 미니앱 종료
+      try { closeView(); } catch { /* ignore */ }
+      throw err;
     }
   }
 
@@ -228,6 +231,33 @@ export function resetUserIdentityCache(): void {
   try {
     localStorage.removeItem(USER_KEY_CACHE);
     localStorage.removeItem(USER_KEY_EXPIRY);
+  } catch {
+    // localStorage 접근 실패
+  }
+}
+
+/**
+ * UNLINK referrer 체크
+ * 토스앱 설정에서 연결 해제 시 URL에 referrer=UNLINK 파라미터가 전달됨
+ */
+export function checkUnlinkReferrer(): boolean {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('referrer') === 'UNLINK';
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * 모든 사용자 데이터 삭제 (UNLINK 시 호출)
+ */
+export function clearAllUserData(): void {
+  cachedUserKey = null;
+  lastAuthError = null;
+  try {
+    const keys = Object.keys(localStorage);
+    keys.forEach((key) => localStorage.removeItem(key));
   } catch {
     // localStorage 접근 실패
   }
