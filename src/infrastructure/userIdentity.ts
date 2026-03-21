@@ -267,6 +267,8 @@ const ALL_APP_STORAGE_KEYS = [
   'math-attack-track-missions',
   'math-attack-track-counters',
   'math-attack-daily-login',
+  'math-attack-star-balance',
+  'math-attack-star-history',
   'ad-interstitial-freq',
   'ad-rewarded-freq',
 ] as const;

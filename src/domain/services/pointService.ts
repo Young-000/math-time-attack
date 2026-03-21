@@ -1,10 +1,7 @@
 /**
  * 내부 포인트("별") 서비스
- * Supabase DB 기반 포인트 잔액/내역 관리
- *
- * NOTE: user_points, point_transactions 테이블은 database.types.ts에
- * 아직 추가되지 않았으므로, 타입 단언(as unknown as ...)을 사용한다.
- * 마이그레이션 적용 후 `supabase gen types`로 타입 재생성하면 제거 가능.
+ * localStorage 기반 — 항상 동작 (유효한 userKey 불필요)
+ * Supabase DB에도 선택적 동기화 (유효한 userKey가 있을 때만)
  */
 
 import { getSupabaseClient } from '@infrastructure/supabase';
@@ -35,6 +32,60 @@ export type PointBalance = {
   totalSpent: number;
 };
 
+// --- localStorage 키 ---
+
+const BALANCE_KEY = 'math-attack-star-balance';
+const HISTORY_KEY = 'math-attack-star-history';
+const MAX_HISTORY = 100;
+
+// --- localStorage 기반 (PRIMARY — 항상 동작) ---
+
+function getLocalBalance(): PointBalance {
+  try {
+    const stored = localStorage.getItem(BALANCE_KEY);
+    if (stored) {
+      const data = JSON.parse(stored) as PointBalance;
+      return {
+        balance: data.balance ?? 0,
+        totalEarned: data.totalEarned ?? 0,
+        totalSpent: data.totalSpent ?? 0,
+      };
+    }
+  } catch { /* fallback */ }
+  return { balance: 0, totalEarned: 0, totalSpent: 0 };
+}
+
+function setLocalBalance(data: PointBalance): void {
+  try {
+    localStorage.setItem(BALANCE_KEY, JSON.stringify(data));
+  } catch { /* storage full */ }
+}
+
+function addLocalHistory(entry: Omit<PointTransaction, 'id'>): void {
+  try {
+    const stored = localStorage.getItem(HISTORY_KEY);
+    const history: PointTransaction[] = stored ? JSON.parse(stored) : [];
+    history.unshift({
+      ...entry,
+      id: `local-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    });
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(history.slice(0, MAX_HISTORY)));
+  } catch { /* ignore */ }
+}
+
+function getLocalHistory(limit: number = 20): PointTransaction[] {
+  try {
+    const stored = localStorage.getItem(HISTORY_KEY);
+    if (stored) {
+      const history = JSON.parse(stored) as PointTransaction[];
+      return history.slice(0, limit);
+    }
+  } catch { /* fallback */ }
+  return [];
+}
+
+// --- DB 동기화 (선택적 — 유효한 userKey가 있을 때만) ---
+
 // DB 행 타입 (database.types.ts 미반영 전 임시)
 type UserPointsRow = {
   id: string;
@@ -46,25 +97,12 @@ type UserPointsRow = {
   updated_at: string;
 };
 
-type PointTransactionRow = {
-  id: string;
-  user_key: string;
-  amount: number;
-  type: string;
-  description: string | null;
-  reference_id: string | null;
-  created_at: string;
-};
-
-// --- 헬퍼: 타입 미등록 테이블 쿼리 ---
-
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type UntypedQueryBuilder = any;
 
 function queryUserPoints(): UntypedQueryBuilder | null {
   const supabase = getSupabaseClient();
   if (!supabase) return null;
-  // 타입 미등록 테이블 접근을 위해 unknown 경유 캐스팅
   return (supabase as unknown as { from: (table: string) => UntypedQueryBuilder })
     .from('user_points');
 }
@@ -76,139 +114,146 @@ function queryPointTransactions(): UntypedQueryBuilder | null {
     .from('point_transactions');
 }
 
-// --- 잔액 조회 ---
+function isValidUserKey(key: string | null): key is string {
+  return !!key && !key.startsWith('local-') && !key.startsWith('temp-');
+}
+
+async function syncToDb(
+  userKey: string,
+  balance: PointBalance,
+  amount: number,
+  type: TransactionType,
+  description?: string,
+  referenceId?: string,
+): Promise<void> {
+  if (!isValidUserKey(userKey)) return;
+
+  try {
+    const upsertQuery = queryUserPoints();
+    if (upsertQuery) {
+      await upsertQuery.upsert({
+        user_key: userKey,
+        balance: balance.balance,
+        total_earned: balance.totalEarned,
+        total_spent: balance.totalSpent,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'user_key' });
+    }
+
+    const txQuery = queryPointTransactions();
+    if (txQuery) {
+      await txQuery.insert({
+        user_key: userKey,
+        amount,
+        type,
+        description: description ?? null,
+        reference_id: referenceId ?? null,
+      });
+    }
+  } catch {
+    // DB 동기화 실패 무시 — localStorage가 primary
+  }
+}
+
+// --- Public API ---
 
 export async function getPointBalance(userKey: string): Promise<PointBalance> {
-  const query = queryUserPoints();
-  if (!query) return { balance: 0, totalEarned: 0, totalSpent: 0 };
+  // 항상 localStorage에서 반환
+  const local = getLocalBalance();
 
-  const { data, error } = await query
-    .select('balance, total_earned, total_spent')
-    .eq('user_key', userKey)
-    .maybeSingle() as { data: UserPointsRow | null; error: { message: string } | null };
+  // 유효한 userKey면 DB에서도 읽어서 더 큰 값 사용 (초기 동기화)
+  if (isValidUserKey(userKey)) {
+    try {
+      const query = queryUserPoints();
+      if (query) {
+        const { data } = await query
+          .select('balance, total_earned, total_spent')
+          .eq('user_key', userKey)
+          .maybeSingle() as { data: UserPointsRow | null; error: unknown };
 
-  if (error) throw new Error(`포인트 조회 실패: ${error.message}`);
-
-  return {
-    balance: data?.balance ?? 0,
-    totalEarned: data?.total_earned ?? 0,
-    totalSpent: data?.total_spent ?? 0,
-  };
-}
-
-// --- 포인트 적립 ---
-
-export async function earnPoints(
-  userKey: string,
-  amount: number,
-  type: TransactionType,
-  description?: string,
-  referenceId?: string,
-): Promise<number> {
-  const supabase = getSupabaseClient();
-  if (!supabase) return 0;
-
-  // 현재 잔액 조회
-  const currentBalance = await getPointBalance(userKey);
-  const newBalance = currentBalance.balance + amount;
-  const newTotalEarned = currentBalance.totalEarned + amount;
-
-  // user_points upsert
-  const upsertQuery = queryUserPoints();
-  if (!upsertQuery) return 0;
-
-  const { error: upsertError } = await upsertQuery
-    .upsert({
-      user_key: userKey,
-      balance: newBalance,
-      total_earned: newTotalEarned,
-      updated_at: new Date().toISOString(),
-    }, { onConflict: 'user_key' }) as { error: { message: string } | null };
-
-  if (upsertError) throw new Error(`포인트 적립 실패: ${upsertError.message}`);
-
-  // 거래 내역 기록
-  const txQuery = queryPointTransactions();
-  if (txQuery) {
-    await txQuery.insert({
-      user_key: userKey,
-      amount,
-      type,
-      description: description ?? null,
-      reference_id: referenceId ?? null,
-    });
+        if (data && data.balance > local.balance) {
+          const dbBalance: PointBalance = {
+            balance: data.balance,
+            totalEarned: data.total_earned,
+            totalSpent: data.total_spent,
+          };
+          setLocalBalance(dbBalance);
+          return dbBalance;
+        }
+      }
+    } catch {
+      // DB 읽기 실패 — localStorage fallback
+    }
   }
 
-  return newBalance;
+  return local;
 }
 
-// --- 포인트 차감 ---
-
-export async function spendPoints(
-  userKey: string,
+export async function earnPoints(
+  _userKey: string,
   amount: number,
   type: TransactionType,
   description?: string,
   referenceId?: string,
 ): Promise<number> {
-  const supabase = getSupabaseClient();
-  if (!supabase) throw new Error('DB 연결 실패');
+  // localStorage에 항상 적립 (PRIMARY)
+  const current = getLocalBalance();
+  const updated: PointBalance = {
+    balance: current.balance + amount,
+    totalEarned: current.totalEarned + amount,
+    totalSpent: current.totalSpent,
+  };
+  setLocalBalance(updated);
+  addLocalHistory({
+    amount,
+    type,
+    description: description ?? null,
+    created_at: new Date().toISOString(),
+  });
 
-  // 현재 잔액 조회
-  const currentBalance = await getPointBalance(userKey);
-  if (currentBalance.balance < amount) {
+  // DB 동기화 (비동기, 실패해도 무시)
+  syncToDb(_userKey, updated, amount, type, description, referenceId);
+
+  return updated.balance;
+}
+
+export async function spendPoints(
+  _userKey: string,
+  amount: number,
+  type: TransactionType,
+  description?: string,
+  referenceId?: string,
+): Promise<number> {
+  const current = getLocalBalance();
+  if (current.balance < amount) {
     throw new Error('별이 부족합니다');
   }
 
-  const newBalance = currentBalance.balance - amount;
-  const newTotalSpent = currentBalance.totalSpent + amount;
+  const updated: PointBalance = {
+    balance: current.balance - amount,
+    totalEarned: current.totalEarned,
+    totalSpent: current.totalSpent + amount,
+  };
+  setLocalBalance(updated);
+  addLocalHistory({
+    amount: -amount,
+    type,
+    description: description ?? null,
+    created_at: new Date().toISOString(),
+  });
 
-  // user_points upsert
-  const upsertQuery = queryUserPoints();
-  if (!upsertQuery) throw new Error('DB 연결 실패');
+  // DB 동기화
+  syncToDb(_userKey, updated, -amount, type, description, referenceId);
 
-  const { error } = await upsertQuery
-    .upsert({
-      user_key: userKey,
-      balance: newBalance,
-      total_spent: newTotalSpent,
-      updated_at: new Date().toISOString(),
-    }, { onConflict: 'user_key' }) as { error: { message: string } | null };
-
-  if (error) throw new Error(`포인트 차감 실패: ${error.message}`);
-
-  // 거래 내역 기록
-  const txQuery = queryPointTransactions();
-  if (txQuery) {
-    await txQuery.insert({
-      user_key: userKey,
-      amount: -amount,
-      type,
-      description: description ?? null,
-      reference_id: referenceId ?? null,
-    });
-  }
-
-  return newBalance;
+  return updated.balance;
 }
 
-// --- 거래 내역 조회 ---
-
 export async function getPointHistory(
-  userKey: string,
+  _userKey: string,
   limit: number = 20,
 ): Promise<PointTransaction[]> {
-  const query = queryPointTransactions();
-  if (!query) return [];
-
-  const { data, error } = await query
-    .select('id, amount, type, description, created_at')
-    .eq('user_key', userKey)
-    .order('created_at', { ascending: false })
-    .limit(limit) as { data: PointTransactionRow[] | null; error: { message: string } | null };
-
-  if (error) throw new Error(`내역 조회 실패: ${error.message}`);
-  return (data ?? []) as PointTransaction[];
+  // localStorage에서 반환
+  return getLocalHistory(limit);
 }
 
 // --- 게임 완료 보너스 ---
