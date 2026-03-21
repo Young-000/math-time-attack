@@ -10,11 +10,11 @@ import { usePoints } from '@presentation/hooks/usePoints';
 import { EXCHANGE_RATE, MIN_EXCHANGE_STARS } from '@constants/points';
 import { BannerAd } from '@presentation/components';
 import { getCachedUserId } from '@infrastructure/userIdentity';
+import { claimPromotion } from '@domain/services/promotionService';
+import { spendPoints } from '@domain/services/pointService';
 import { recordExchange, checkMissions } from '@domain/services/missionService';
 import { getCurrentStreak } from '@domain/services/streakService';
 
-const EDGE_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/promotion`;
-const ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
 const PROMOTION_CODE = 'TEST_MATH_ATTACK_EXCHANGE'; // 콘솔 등록 후 실제 코드로 교체
 
 type ExchangeStatus = 'idle' | 'loading' | 'success' | 'error';
@@ -48,33 +48,25 @@ export function ExchangePage(): JSX.Element {
       }
 
       const tossPoints = EXCHANGE_RATE.tossPoints;
-      const res = await fetch(EDGE_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${ANON_KEY}`,
-        },
-        body: JSON.stringify({
-          promotionCode: PROMOTION_CODE,
-          amount: tossPoints,
-          userKey,
-        }),
-      });
 
-      const data = await res.json();
+      // 1. 프로모션 API 먼저 호출
+      const result = await claimPromotion(PROMOTION_CODE, tossPoints, userKey);
 
-      if (res.ok && data.success) {
+      if (result.success) {
+        // 2. API 성공 후에만 별 차감
+        await spendPoints(userKey, EXCHANGE_RATE.stars, 'exchange', `${EXCHANGE_RATE.stars}별 -> ${tossPoints}P 교환`);
+
         setStatus('success');
         setLastResult({ starsSpent: EXCHANGE_RATE.stars, tossPoints });
 
         // 미션 통계 업데이트
-        recordExchange(data.tossPoints);
+        recordExchange(tossPoints);
         checkMissions(getCurrentStreak());
 
         refresh();
       } else {
         setStatus('error');
-        setErrorMsg(data.message ?? '\uAD50\uD658\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4');
+        setErrorMsg(result.error);
       }
     } catch {
       setStatus('error');

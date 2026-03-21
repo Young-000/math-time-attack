@@ -250,14 +250,16 @@ export function checkUnlinkReferrer(): boolean {
 }
 
 /**
- * 모든 사용자 데이터 삭제 (UNLINK 시 호출)
+ * 사용자 식별 데이터 삭제 (UNLINK 시 호출)
+ * 앱 전체 localStorage를 날리지 않고 인증 관련 키만 제거
  */
 export function clearAllUserData(): void {
   cachedUserKey = null;
   lastAuthError = null;
   try {
-    const keys = Object.keys(localStorage);
-    keys.forEach((key) => localStorage.removeItem(key));
+    localStorage.removeItem(USER_KEY_CACHE);
+    localStorage.removeItem(USER_KEY_EXPIRY);
+    localStorage.removeItem(LOCAL_USER_ID_KEY);
   } catch {
     // localStorage 접근 실패
   }

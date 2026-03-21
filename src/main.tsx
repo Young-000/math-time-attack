@@ -11,13 +11,21 @@ if (checkUnlinkReferrer()) {
   window.history.replaceState({}, '', window.location.pathname);
 }
 
-// 앱 시작 시 유저 식별자(hash) 조회 및 캐싱
-initializeUserIdentity();
+// 앱 시작 시 유저 식별자(hash) 조회 및 캐싱 — 완료 후 렌더링
+async function bootstrap(): Promise<void> {
+  try {
+    await initializeUserIdentity();
+  } catch {
+    // appLogin 실패 시 closeView()가 호출됨 (userIdentity 내부 처리)
+  }
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
-    <BrowserRouter>
-      <App />
-    </BrowserRouter>
-  </React.StrictMode>
-);
+  ReactDOM.createRoot(document.getElementById('root')!).render(
+    <React.StrictMode>
+      <BrowserRouter>
+        <App />
+      </BrowserRouter>
+    </React.StrictMode>
+  );
+}
+
+bootstrap();
