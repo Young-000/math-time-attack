@@ -324,7 +324,7 @@ export function RankingPage() {
             className="ranking-nav-btn"
             onClick={() => navigate('/exchange')}
           >
-            💰 토스포인트 교환
+            💰 토스포인트 교환 (준비 중)
           </button>
         </div>
         <button

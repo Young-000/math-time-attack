@@ -23,8 +23,9 @@ export function ExchangePage(): JSX.Element {
   const navigate = useNavigate();
   const { balance, refresh, isLoading: isPointsLoading } = usePoints();
   const [status, setStatus] = useState<ExchangeStatus>('idle');
-  const [errorMsg, setErrorMsg] = useState('');
-  const [lastResult, setLastResult] = useState<{
+  // Exchange disabled (준비 중) - keeping code for future use
+  const [_errorMsg, setErrorMsg] = useState('');
+  const [_lastResult, setLastResult] = useState<{
     starsSpent: number;
     tossPoints: number;
   } | null>(null);
@@ -34,7 +35,9 @@ export function ExchangePage(): JSX.Element {
   const maxStars = exchangeUnits * EXCHANGE_RATE.stars;
   const maxTossPoints = exchangeUnits * EXCHANGE_RATE.tossPoints;
 
-  const handleExchange = useCallback(async (): Promise<void> => {
+  // @ts-expect-error Exchange disabled (준비 중) - keeping for future use
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const _handleExchange = useCallback(async (): Promise<void> => {
     if (!canExchange) return;
     setStatus('loading');
     setErrorMsg('');
@@ -121,31 +124,17 @@ export function ExchangePage(): JSX.Element {
         )}
       </div>
 
-      {/* 교환 버튼 */}
+      {/* 교환 버튼 (준비 중) */}
       <button
-        className={`exchange-btn ${canExchange ? 'active' : 'disabled'}`}
-        onClick={handleExchange}
-        disabled={!canExchange || status === 'loading'}
+        className="exchange-btn disabled"
+        disabled={true}
         type="button"
       >
-        {status === 'loading'
-          ? '\uAD50\uD658 \uC911...'
-          : canExchange
-            ? `${EXCHANGE_RATE.stars}\uBCC4 \u2192 ${EXCHANGE_RATE.tossPoints} \uD1A0\uC2A4 \uD3EC\uC778\uD2B8 \uAD50\uD658`
-            : `${MIN_EXCHANGE_STARS}\uBCC4 \uC774\uC0C1 \uD544\uC694`}
+        토스 포인트 교환 준비 중
       </button>
-
-      {/* 성공/에러 메시지 */}
-      {status === 'success' && lastResult && (
-        <div className="exchange-toast success">
-          {'\u2705'} {lastResult.starsSpent}{'\uBCC4'} {'\u2192'} {lastResult.tossPoints} {'\uD1A0\uC2A4 \uD3EC\uC778\uD2B8 \uAD50\uD658 \uC644\uB8CC!'}
-        </div>
-      )}
-      {status === 'error' && (
-        <div className="exchange-toast error">
-          {'\u274C'} {errorMsg}
-        </div>
-      )}
+      <p className="exchange-coming-soon" style={{ textAlign: 'center', color: '#888', fontSize: '13px', margin: '12px 0' }}>
+        토스 포인트 교환 기능은 곧 오픈됩니다
+      </p>
 
       {/* 필수 고지 */}
       <div className="exchange-disclaimer">
