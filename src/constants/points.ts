@@ -7,10 +7,10 @@ export const GAME_COMPLETE_STARS = 5;
 export const ROUND_BONUS_STARS = 3;
 
 // 보상형 광고 시청 보상
-export const REWARDED_AD_STARS = 20;
+export const REWARDED_AD_STARS = 100;
 
 // 일일 출석 보너스
-export const DAILY_LOGIN_STARS = 10;
+export const DAILY_LOGIN_STARS = 50;
 
 // 토스 포인트 교환 (100별 = 1P)
 export const EXCHANGE_RATE = {

@@ -38,11 +38,11 @@ export const MISSION_TRACKS: readonly MissionTrack[] = [
     name: '도전자',
     emoji: '🎯',
     stages: [
-      { level: 1, target: 1, reward: 5, description: '게임 1회 클리어' },
-      { level: 2, target: 5, reward: 10, description: '게임 5회 클리어' },
-      { level: 3, target: 20, reward: 20, description: '게임 20회 클리어' },
-      { level: 4, target: 50, reward: 30, description: '게임 50회 클리어' },
-      { level: 5, target: 100, reward: 50, description: '게임 100회 클리어' },
+      { level: 1, target: 1, reward: 50, description: '게임 1회 클리어' },
+      { level: 2, target: 5, reward: 60, description: '게임 5회 클리어' },
+      { level: 3, target: 20, reward: 80, description: '게임 20회 클리어' },
+      { level: 4, target: 50, reward: 100, description: '게임 50회 클리어' },
+      { level: 5, target: 100, reward: 150, description: '게임 100회 클리어' },
     ],
   },
   {
@@ -50,10 +50,10 @@ export const MISSION_TRACKS: readonly MissionTrack[] = [
     name: '연속 도전',
     emoji: '🔥',
     stages: [
-      { level: 1, target: 3, reward: 10, description: '3일 연속 도전' },
-      { level: 2, target: 7, reward: 20, description: '7일 연속 도전' },
-      { level: 3, target: 14, reward: 30, description: '14일 연속 도전' },
-      { level: 4, target: 30, reward: 50, description: '30일 연속 도전' },
+      { level: 1, target: 3, reward: 50, description: '3일 연속 도전' },
+      { level: 2, target: 7, reward: 60, description: '7일 연속 도전' },
+      { level: 3, target: 14, reward: 80, description: '14일 연속 도전' },
+      { level: 4, target: 30, reward: 100, description: '30일 연속 도전' },
     ],
   },
   {
@@ -61,10 +61,10 @@ export const MISSION_TRACKS: readonly MissionTrack[] = [
     name: '구구단 마스터',
     emoji: '⭐',
     stages: [
-      { level: 1, target: 1, reward: 5, description: '타임어택 1회 시도' },
-      { level: 2, target: 5, reward: 15, description: '타임어택 5회 시도' },
-      { level: 3, target: 20, reward: 25, description: '타임어택 20회 시도' },
-      { level: 4, target: 50, reward: 40, description: '타임어택 50회 시도' },
+      { level: 1, target: 1, reward: 50, description: '타임어택 1회 시도' },
+      { level: 2, target: 5, reward: 60, description: '타임어택 5회 시도' },
+      { level: 3, target: 20, reward: 80, description: '타임어택 20회 시도' },
+      { level: 4, target: 50, reward: 100, description: '타임어택 50회 시도' },
     ],
   },
 ] as const;
