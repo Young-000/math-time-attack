@@ -250,16 +250,49 @@ export function checkUnlinkReferrer(): boolean {
 }
 
 /**
- * 사용자 식별 데이터 삭제 (UNLINK 시 호출)
- * 앱 전체 localStorage를 날리지 않고 인증 관련 키만 제거
+ * 앱에서 사용하는 모든 localStorage 키 목록.
+ * UNLINK 시 전부 삭제하여 유저 데이터가 남지 않도록 한다.
+ */
+const ALL_APP_STORAGE_KEYS = [
+  'math-attack-user-key',
+  'math-attack-user-key-expiry',
+  'math-time-attack-local-user-id',
+  'math-time-attack-records-v2',
+  'math-time-attack-nickname',
+  'math-attack-promo-claimed',
+  'math-time-attack-hearts',
+  'math-attack-daily-bonus',
+  'math-attack-achievements',
+  'math-time-attack-streak',
+  'math-attack-track-missions',
+  'math-attack-track-counters',
+  'math-attack-daily-login',
+  'ad-interstitial-freq',
+  'ad-rewarded-freq',
+] as const;
+
+/**
+ * 앱의 모든 유저 데이터를 삭제한다.
+ * 토스 로그인 연결 해제(UNLINK) 시 호출.
  */
 export function clearAllUserData(): void {
   cachedUserKey = null;
   lastAuthError = null;
   try {
-    localStorage.removeItem(USER_KEY_CACHE);
-    localStorage.removeItem(USER_KEY_EXPIRY);
-    localStorage.removeItem(LOCAL_USER_ID_KEY);
+    for (const key of ALL_APP_STORAGE_KEYS) {
+      localStorage.removeItem(key);
+    }
+    // 타임어택 최고기록 키 (동적 패턴: math-time-attack-timeattack-*)
+    const keysToRemove: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && (key.startsWith('math-time-attack-timeattack-') || key.startsWith('daily-challenge'))) {
+        keysToRemove.push(key);
+      }
+    }
+    for (const key of keysToRemove) {
+      localStorage.removeItem(key);
+    }
   } catch {
     // localStorage 접근 실패
   }
