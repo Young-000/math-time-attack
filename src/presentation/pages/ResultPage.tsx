@@ -23,6 +23,9 @@ import {
   recordGameComplete,
   recordDailyChallengeCleared,
   recordRankUpdate,
+  incrementDailyGameCount,
+  markDailyChallengeComplete,
+  checkDailyMissions,
   type NewlyCompletedMission,
 } from '@domain/services/missionService';
 
@@ -55,7 +58,7 @@ export function ResultPage() {
   const { showInterstitialIfNeeded } = useInterstitialAd();
 
   // 별 시스템
-  const { onGameComplete, onRoundComplete, onMissionReward } = usePoints();
+  const { onGameComplete, onRoundComplete, onMissionReward, onStreakBonus } = usePoints();
 
   // 하트 시스템 통합 훅
   const {
@@ -150,8 +153,10 @@ export function ResultPage() {
 
         // 미션 통계 업데이트 및 체크
         recordGameComplete(difficulty, elapsedTime, false, true);
+        incrementDailyGameCount();
         if (isDaily) {
           recordDailyChallengeCleared();
+          markDailyChallengeComplete();
         }
 
         // 랭킹 업데이트 (미션용)
@@ -159,8 +164,21 @@ export function ResultPage() {
           recordRankUpdate(rankInfo.rank);
         }
 
-        // 미션 달성 체크 + 별 적립
+        // 트랙 미션 달성 체크 + 별 적립
         const completedMissions = checkMissions(newStreak, elapsedTime);
+
+        // 일일 미션 달성 체크 + 별 적립
+        const completedDailyMissions = checkDailyMissions();
+        for (const dm of completedDailyMissions) {
+          completedMissions.push({
+            id: dm.missionId,
+            title: dm.name,
+            reward: dm.reward,
+            emoji: dm.emoji,
+            justCompleted: true as const,
+          });
+        }
+
         if (completedMissions.length > 0) {
           setNewMissions(completedMissions);
           setShowMissionToast(true);
@@ -168,6 +186,9 @@ export function ResultPage() {
             onMissionReward(m.reward, m.title).catch(() => {});
           }
         }
+
+        // 연속 출석 보너스 (일일 1회)
+        onStreakBonus(newStreak).catch(() => {});
 
         // 전면 광고 표시 (빈도 조건 충족 시)
         showInterstitialIfNeeded(() => {});
@@ -179,7 +200,7 @@ export function ResultPage() {
     };
 
     processResult();
-  }, [state, navigate, showInterstitialIfNeeded, onGameComplete, onRoundComplete]);
+  }, [state, navigate, showInterstitialIfNeeded, onGameComplete, onRoundComplete, onStreakBonus]);
 
   // state에서 값 추출 (null일 수 있으므로 기본값 처리)
   const difficulty = state?.difficulty ?? 'easy';

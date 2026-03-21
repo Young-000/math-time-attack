@@ -1,15 +1,15 @@
 /**
  * 하트(기회) 시스템 서비스
- * - 최대 3개
- * - 30분마다 1개 자동 충전
- * - 광고 시청 시 +1
- * - 공유 시 +2
+ * - 최대 5개
+ * - 20분마다 1개 자동 충전
+ * - 광고 시청 시 +3
+ * - 공유 시 +3
  * - 일일 로그인 보너스 +1
  */
 
 const STORAGE_KEY = 'math-time-attack-hearts';
-const MAX_HEARTS = 3;
-const RECHARGE_INTERVAL_MS = 30 * 60 * 1000; // 30분
+const MAX_HEARTS = 5;
+const RECHARGE_INTERVAL_MS = 20 * 60 * 1000; // 20분
 const DAILY_BONUS_KEY = 'math-attack-daily-bonus';
 
 interface HeartData {

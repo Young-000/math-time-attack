@@ -1,8 +1,10 @@
 /**
- * 미션 시스템 — 트랙/스테이지 기반 (리팩토링)
+ * 미션 시스템 — 트랙/스테이지 기반 + 일일 미션
  *
- * 4개 트랙, 각 3~5 스테이지. 현재 스테이지만 표시.
- * 총 보상 ~310별 (일일 활동 3~5일치)
+ * [트랙 미션] 4개 트랙, 각 3~5 스테이지. 현재 스테이지만 표시.
+ * 스테이지 보상: 50, 60, 80, 100 (프로그레시브)
+ *
+ * [일일 미션] 매일 리셋, 4개 중 ~3개 달성 가능 = ~200별/일
  */
 
 // --- Track/Stage types ---
@@ -42,7 +44,6 @@ export const MISSION_TRACKS: readonly MissionTrack[] = [
       { level: 2, target: 5, reward: 60, description: '게임 5회 클리어' },
       { level: 3, target: 20, reward: 80, description: '게임 20회 클리어' },
       { level: 4, target: 50, reward: 100, description: '게임 50회 클리어' },
-      { level: 5, target: 100, reward: 150, description: '게임 100회 클리어' },
     ],
   },
   {
@@ -69,7 +70,127 @@ export const MISSION_TRACKS: readonly MissionTrack[] = [
   },
 ] as const;
 
-// Total: 115 + 110 + 85 = 310
+// Track totals: 290 + 290 + 290 = 870 (one-time, spread across weeks)
+
+// --- Daily missions (reset every day) ---
+
+export type DailyMission = {
+  readonly id: string;
+  readonly name: string;
+  readonly emoji: string;
+  readonly target: number;
+  readonly reward: number;
+  readonly description: string;
+};
+
+export const DAILY_MISSIONS: readonly DailyMission[] = [
+  { id: 'daily_play_3', name: '오늘의 연습', emoji: '📝', target: 3, reward: 50, description: '오늘 게임 3회 클리어' },
+  { id: 'daily_play_7', name: '열공 모드', emoji: '📚', target: 7, reward: 60, description: '오늘 게임 7회 클리어' },
+  { id: 'daily_play_12', name: '연습의 왕', emoji: '👑', target: 12, reward: 80, description: '오늘 게임 12회 클리어' },
+  { id: 'daily_challenge', name: '일일 챌린지', emoji: '🏅', target: 1, reward: 100, description: '일일 챌린지 완료' },
+] as const;
+
+// Daily mission totals: 50+60+80+100 = 290 (all), typical ~200/day (3 of 4)
+
+type DailyMissionState = {
+  date: string;
+  completed: Record<string, boolean>;
+  dailyGamesPlayed: number;
+  dailyChallengeCleared: boolean;
+};
+
+const DAILY_MISSION_KEY = 'math-attack-daily-missions';
+
+function getTodayStr(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function loadDailyMissionState(): DailyMissionState {
+  try {
+    const stored = localStorage.getItem(DAILY_MISSION_KEY);
+    if (stored) {
+      const data = JSON.parse(stored) as DailyMissionState;
+      if (data.date === getTodayStr()) return data;
+    }
+  } catch { /* fallback */ }
+  return { date: getTodayStr(), completed: {}, dailyGamesPlayed: 0, dailyChallengeCleared: false };
+}
+
+function saveDailyMissionState(state: DailyMissionState): void {
+  try {
+    localStorage.setItem(DAILY_MISSION_KEY, JSON.stringify(state));
+  } catch { /* ignore */ }
+}
+
+export function incrementDailyGameCount(): void {
+  const state = loadDailyMissionState();
+  state.dailyGamesPlayed += 1;
+  saveDailyMissionState(state);
+}
+
+export function markDailyChallengeComplete(): void {
+  const state = loadDailyMissionState();
+  state.dailyChallengeCleared = true;
+  saveDailyMissionState(state);
+}
+
+function getDailyMissionValue(missionId: string, state: DailyMissionState): number {
+  switch (missionId) {
+    case 'daily_play_3':
+    case 'daily_play_7':
+    case 'daily_play_12':
+      return state.dailyGamesPlayed;
+    case 'daily_challenge':
+      return state.dailyChallengeCleared ? 1 : 0;
+    default:
+      return 0;
+  }
+}
+
+export type CompletedDailyMission = {
+  readonly missionId: string;
+  readonly name: string;
+  readonly emoji: string;
+  readonly reward: number;
+};
+
+export function checkDailyMissions(): readonly CompletedDailyMission[] {
+  const state = loadDailyMissionState();
+  const completed: CompletedDailyMission[] = [];
+
+  for (const mission of DAILY_MISSIONS) {
+    if (state.completed[mission.id]) continue;
+    const value = getDailyMissionValue(mission.id, state);
+    if (value >= mission.target) {
+      completed.push({
+        missionId: mission.id,
+        name: mission.name,
+        emoji: mission.emoji,
+        reward: mission.reward,
+      });
+      state.completed[mission.id] = true;
+    }
+  }
+
+  if (completed.length > 0) saveDailyMissionState(state);
+  return completed;
+}
+
+export function getDailyMissionProgress(): readonly {
+  mission: DailyMission;
+  current: number;
+  isCompleted: boolean;
+}[] {
+  const state = loadDailyMissionState();
+  return DAILY_MISSIONS.map((mission) => {
+    const value = getDailyMissionValue(mission.id, state);
+    return {
+      mission,
+      current: Math.min(value, mission.target),
+      isCompleted: !!state.completed[mission.id],
+    };
+  });
+}
 
 // --- Mission context ---
 

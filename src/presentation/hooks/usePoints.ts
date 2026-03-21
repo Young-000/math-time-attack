@@ -12,6 +12,8 @@ import {
   grantRewardedAdBonus,
   grantMissionReward,
   grantDailyLoginBonus,
+  grantStreakBonus,
+  getStreakBonusAmount,
   type PointBalance,
   type PointTransaction,
 } from '@domain/services/pointService';
@@ -34,6 +36,7 @@ type UsePointsReturn = {
   onRewardedAd: () => Promise<number>;
   onMissionReward: (amount: number, title: string) => Promise<number>;
   checkDailyLogin: () => Promise<number | null>;
+  onStreakBonus: (streakDays: number) => Promise<number | null>;
 };
 
 export function usePoints(): UsePointsReturn {
@@ -114,6 +117,19 @@ export function usePoints(): UsePointsReturn {
     return result;
   }, [userKey]);
 
+  const onStreakBonus = useCallback(async (streakDays: number): Promise<number | null> => {
+    const result = await grantStreakBonus(userKey, streakDays);
+    if (result !== null) {
+      const amount = getStreakBonusAmount(streakDays);
+      setPointBalance((prev) => ({
+        ...prev,
+        balance: result,
+        totalEarned: prev.totalEarned + amount,
+      }));
+    }
+    return result;
+  }, [userKey]);
+
   return {
     balance: pointBalance.balance,
     totalEarned: pointBalance.totalEarned,
@@ -125,5 +141,6 @@ export function usePoints(): UsePointsReturn {
     onRewardedAd,
     onMissionReward,
     checkDailyLogin,
+    onStreakBonus,
   };
 }

@@ -80,7 +80,7 @@ export function useHeartSystem(): UseHeartSystemReturn {
         setShowNoHeartsModal(false);
         showChargeSuccessToast();
 
-        // 보상형 광고 별 지급 (+20별)
+        // 보상형 광고 별 지급 (+100별)
         const userKey = getCachedUserId();
         if (userKey && !userKey.startsWith('local-') && !userKey.startsWith('temp-')) {
           grantRewardedAdBonus(userKey).catch(() => {});

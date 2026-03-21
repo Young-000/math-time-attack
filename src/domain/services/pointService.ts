@@ -5,7 +5,7 @@
  */
 
 import { getSupabaseClient } from '@infrastructure/supabase';
-import { GAME_COMPLETE_STARS, ROUND_BONUS_STARS, REWARDED_AD_STARS, DAILY_LOGIN_STARS } from '@constants/points';
+import { GAME_COMPLETE_STARS, ROUND_BONUS_STARS, REWARDED_AD_STARS, DAILY_LOGIN_STARS, STREAK_BONUS_STARS } from '@constants/points';
 
 // --- 타입 ---
 
@@ -299,6 +299,34 @@ export async function grantDailyLoginBonus(userKey: string): Promise<number | nu
   const balance = await earnPoints(userKey, DAILY_LOGIN_STARS, 'daily_login', '일일 출석 보너스');
   try {
     localStorage.setItem(DAILY_LOGIN_KEY, new Date().toISOString().slice(0, 10));
+  } catch { /* 무시 */ }
+  return balance;
+}
+
+// --- 연속 출석 보너스 ---
+
+const STREAK_BONUS_KEY = 'math-attack-streak-bonus';
+
+export function hasStreakBonusToday(): boolean {
+  try {
+    const last = localStorage.getItem(STREAK_BONUS_KEY);
+    if (!last) return false;
+    return last === new Date().toISOString().slice(0, 10);
+  } catch { return false; }
+}
+
+export function getStreakBonusAmount(streakDays: number): number {
+  const cyclicDay = ((streakDays - 1) % 7) + 1;
+  return STREAK_BONUS_STARS[cyclicDay] ?? 30;
+}
+
+export async function grantStreakBonus(userKey: string, streakDays: number): Promise<number | null> {
+  if (hasStreakBonusToday() || streakDays <= 0) return null;
+
+  const amount = getStreakBonusAmount(streakDays);
+  const balance = await earnPoints(userKey, amount, 'daily_login', `연속 출석 ${streakDays}일 보너스`);
+  try {
+    localStorage.setItem(STREAK_BONUS_KEY, new Date().toISOString().slice(0, 10));
   } catch { /* 무시 */ }
   return balance;
 }
