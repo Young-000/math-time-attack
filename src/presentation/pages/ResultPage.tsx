@@ -55,7 +55,7 @@ export function ResultPage() {
   const { showInterstitialIfNeeded } = useInterstitialAd();
 
   // 별 시스템
-  const { onGameComplete, onRoundComplete } = usePoints();
+  const { onGameComplete, onRoundComplete, onMissionReward } = usePoints();
 
   // 하트 시스템 통합 훅
   const {
@@ -159,11 +159,14 @@ export function ResultPage() {
           recordRankUpdate(rankInfo.rank);
         }
 
-        // 미션 달성 체크
+        // 미션 달성 체크 + 별 적립
         const completedMissions = checkMissions(newStreak, elapsedTime);
         if (completedMissions.length > 0) {
           setNewMissions(completedMissions);
           setShowMissionToast(true);
+          for (const m of completedMissions) {
+            onMissionReward(m.reward, m.title).catch(() => {});
+          }
         }
 
         // 전면 광고 표시 (빈도 조건 충족 시)
