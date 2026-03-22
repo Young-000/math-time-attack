@@ -4,9 +4,10 @@
  * appLogin() -> Supabase Edge Function(mTLS) -> 토스 파트너 API
  * -> userKey 추출 -> 클라이언트 캐싱
  *
- * 기존 getUserKeyForGame() 기반에서 appLogin() 기반으로 전환.
- * 비게임 카테고리에서는 getUserKeyForGame이 INVALID_CATEGORY를 반환하므로
- * appLogin + 서버 토큰 교환 방식을 사용한다.
+ * Token refresh flow:
+ * 1. 캐시 유효 → 즉시 반환
+ * 2. 캐시 만료 + refreshToken 존재 → refreshUserToken() 시도
+ * 3. refresh 실패 → 전체 appLogin() fallback
  */
 
 import { appLogin, closeView } from '@apps-in-toss/web-framework';
@@ -15,6 +16,7 @@ import { appLogin, closeView } from '@apps-in-toss/web-framework';
 
 const USER_KEY_CACHE = 'math-attack-user-key';
 const USER_KEY_EXPIRY = 'math-attack-user-key-expiry';
+const REFRESH_TOKEN_CACHE = 'math-attack-refresh-token';
 const LOCAL_USER_ID_KEY = 'math-time-attack-local-user-id';
 const EDGE_FUNCTION_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/auth`;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
@@ -73,6 +75,33 @@ function setCachedUserKey(userKey: string, ttlMs: number = CACHE_TTL_MS): void {
   }
 }
 
+function getCachedRefreshToken(): string | null {
+  try {
+    return localStorage.getItem(REFRESH_TOKEN_CACHE);
+  } catch {
+    return null;
+  }
+}
+
+function setCachedRefreshToken(refreshToken: string): void {
+  try {
+    localStorage.setItem(REFRESH_TOKEN_CACHE, refreshToken);
+  } catch {
+    // localStorage 저장 실패 — 무시
+  }
+}
+
+function clearAllCaches(): void {
+  cachedUserKey = null;
+  try {
+    localStorage.removeItem(USER_KEY_CACHE);
+    localStorage.removeItem(USER_KEY_EXPIRY);
+    localStorage.removeItem(REFRESH_TOKEN_CACHE);
+  } catch {
+    // localStorage 접근 실패
+  }
+}
+
 // --- 로컬 ID fallback ---
 
 function getOrCreateLocalUserId(): string {
@@ -96,21 +125,22 @@ function fallbackToLocalId(): string {
 
 // --- Edge Function 통신 ---
 
-interface AuthResponse {
-  userKey: string;
-  expiresAt: string;
-}
+type AuthResponse = {
+  readonly userKey: string;
+  readonly expiresAt: string;
+  readonly refreshToken?: string;
+};
 
-interface AuthErrorResponse {
-  error: string;
-  message: string;
-}
+type AuthErrorResponse = {
+  readonly error: string;
+  readonly message: string;
+};
 
 /**
- * authorizationCode를 Edge Function에 전송하여 userKey를 받아온다.
+ * Edge Function에 fetch 요청을 보내는 공통 헬퍼.
  * AbortController로 5초 타임아웃을 적용한다.
  */
-async function exchangeAuthCode(authorizationCode: string): Promise<string> {
+async function callEdgeFunction(body: Record<string, string>): Promise<AuthResponse> {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), EDGE_FUNCTION_TIMEOUT_MS);
 
@@ -121,7 +151,7 @@ async function exchangeAuthCode(authorizationCode: string): Promise<string> {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
       },
-      body: JSON.stringify({ authorizationCode }),
+      body: JSON.stringify(body),
       signal: controller.signal,
     });
 
@@ -130,8 +160,7 @@ async function exchangeAuthCode(authorizationCode: string): Promise<string> {
       throw new Error(error.error ?? `HTTP ${response.status}`);
     }
 
-    const data = await response.json() as AuthResponse;
-    return data.userKey;
+    return await response.json() as AuthResponse;
   } catch (err) {
     if (err instanceof Error && err.name === 'AbortError') {
       throw new Error(`Edge Function 타임아웃 (${EDGE_FUNCTION_TIMEOUT_MS}ms)`);
@@ -142,14 +171,57 @@ async function exchangeAuthCode(authorizationCode: string): Promise<string> {
   }
 }
 
+/**
+ * authorizationCode를 Edge Function에 전송하여 userKey를 받아온다.
+ */
+async function exchangeAuthCode(authorizationCode: string): Promise<string> {
+  const data = await callEdgeFunction({ authorizationCode });
+
+  // refreshToken이 반환되면 캐싱
+  if (data.refreshToken) {
+    setCachedRefreshToken(data.refreshToken);
+  }
+
+  return data.userKey;
+}
+
+/**
+ * refreshToken으로 새 accessToken(userKey)을 갱신한다.
+ * 실패 시 null을 반환하여 호출부에서 full login fallback을 진행한다.
+ */
+async function refreshUserToken(): Promise<string | null> {
+  const refreshToken = getCachedRefreshToken();
+  if (!refreshToken) return null;
+
+  try {
+    const data = await callEdgeFunction({
+      grant_type: 'refresh_token',
+      refresh_token: refreshToken,
+    });
+
+    // 새 refreshToken이 반환되면 갱신
+    if (data.refreshToken) {
+      setCachedRefreshToken(data.refreshToken);
+    }
+
+    return data.userKey;
+  } catch (err) {
+    console.warn('[userIdentity] refreshToken 갱신 실패:', err);
+    // refresh 실패 시 모든 캐시 제거
+    clearAllCaches();
+    return null;
+  }
+}
+
 // --- 메인 초기화 ---
 
 /**
  * 앱 시작 시 호출 -- userKey 조회 후 캐싱
  *
  * 1. 메모리/localStorage 캐시 확인 (TTL 기반)
- * 2. AIT 환경: appLogin() -> Edge Function -> userKey
- * 3. 비AIT 환경: localStorage fallback
+ * 2. 캐시 만료 시 refreshToken으로 갱신 시도
+ * 3. AIT 환경: appLogin() -> Edge Function -> userKey
+ * 4. 비AIT 환경: localStorage fallback
  */
 export async function initializeUserIdentity(): Promise<string> {
   // 개발 모드 mock 지원
@@ -163,7 +235,14 @@ export async function initializeUserIdentity(): Promise<string> {
   const cached = getCachedUserKey();
   if (cached) return cached;
 
-  // 2. AIT 환경이면 appLogin 플로우
+  // 2. refreshToken으로 갱신 시도
+  const refreshedKey = await refreshUserToken();
+  if (refreshedKey) {
+    setCachedUserKey(refreshedKey);
+    return refreshedKey;
+  }
+
+  // 3. AIT 환경이면 appLogin 플로우
   if (isAppsInTossEnvironment()) {
     try {
       const loginResult = await appLogin();
@@ -193,7 +272,7 @@ export async function initializeUserIdentity(): Promise<string> {
     }
   }
 
-  // 3. 비AIT 환경
+  // 4. 비AIT 환경
   return fallbackToLocalId();
 }
 
@@ -228,22 +307,21 @@ export function getLastAuthError(): string | null {
 export function resetUserIdentityCache(): void {
   cachedUserKey = null;
   lastAuthError = null;
-  try {
-    localStorage.removeItem(USER_KEY_CACHE);
-    localStorage.removeItem(USER_KEY_EXPIRY);
-  } catch {
-    // localStorage 접근 실패
-  }
+  clearAllCaches();
 }
 
 /**
- * UNLINK referrer 체크
- * 토스앱 설정에서 연결 해제 시 URL에 referrer=UNLINK 파라미터가 전달됨
+ * UNLINK / WITHDRAWAL referrer 체크
+ * 토스앱 설정에서 연결 해제 시 URL에 referrer 파라미터가 전달됨
+ * - UNLINK: 로그인 연결 해제
+ * - WITHDRAWAL_TERMS: 약관 철회
+ * - WITHDRAWAL_TOSS: 토스 탈퇴
  */
 export function checkUnlinkReferrer(): boolean {
   try {
     const params = new URLSearchParams(window.location.search);
-    return params.get('referrer') === 'UNLINK';
+    const referrer = params.get('referrer');
+    return referrer === 'UNLINK' || referrer === 'WITHDRAWAL_TERMS' || referrer === 'WITHDRAWAL_TOSS';
   } catch {
     return false;
   }
@@ -256,6 +334,7 @@ export function checkUnlinkReferrer(): boolean {
 const ALL_APP_STORAGE_KEYS = [
   'math-attack-user-key',
   'math-attack-user-key-expiry',
+  'math-attack-refresh-token',
   'math-time-attack-local-user-id',
   'math-time-attack-records-v2',
   'math-time-attack-nickname',

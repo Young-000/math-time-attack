@@ -11,6 +11,12 @@ export interface AuthRequest {
 export interface AuthSuccessResponse {
   userKey: string;
   expiresAt: string;
+  refreshToken?: string;
+}
+
+export interface RefreshTokenRequest {
+  grant_type: 'refresh_token';
+  refresh_token: string;
 }
 
 export interface AuthErrorResponse {

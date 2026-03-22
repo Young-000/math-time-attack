@@ -11,7 +11,7 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { corsHeaders, handleCorsPreflightRequest, getCorsHeaders } from './_shared/cors.ts';
-import { generateToken } from './_shared/toss-api-client.ts';
+import { generateToken, refreshTokenByRefreshToken } from './_shared/toss-api-client.ts';
 import { ErrorCode } from './_shared/types.ts';
 import type { AuthRequest, AuthSuccessResponse, AuthErrorResponse } from './_shared/types.ts';
 
@@ -137,12 +137,23 @@ Deno.serve(async (req: Request): Promise<Response> => {
   }
 
   try {
-    // 1. 요청 파싱 및 검증
+    // 1. 요청 파싱
     const body = await req.json();
-    const { authorizationCode } = validateRequest(body);
 
-    // 2. 토스 파트너 API로 토큰 교환 (mTLS)
-    const result = await generateToken(authorizationCode);
+    // grant_type: 'refresh_token' 분기 처리
+    const isRefresh = body && typeof body === 'object'
+      && body.grant_type === 'refresh_token'
+      && typeof body.refresh_token === 'string';
+
+    let result;
+    if (isRefresh) {
+      // Refresh token flow
+      result = await refreshTokenByRefreshToken(body.refresh_token as string);
+    } else {
+      // Authorization code flow
+      const { authorizationCode } = validateRequest(body);
+      result = await generateToken(authorizationCode);
+    }
 
     // 3. 토큰을 서버 측에 저장
     await storeUserSession(
@@ -152,11 +163,12 @@ Deno.serve(async (req: Request): Promise<Response> => {
       result.expiresIn,
     );
 
-    // 4. 클라이언트에 userKey만 반환
+    // 4. 클라이언트에 userKey + refreshToken 반환
     const expiresAt = new Date(Date.now() + result.expiresIn * 1000).toISOString();
     const successResponse: AuthSuccessResponse = {
       userKey: result.userKey,
       expiresAt,
+      refreshToken: result.refreshToken,
     };
 
     return new Response(JSON.stringify(successResponse), {
