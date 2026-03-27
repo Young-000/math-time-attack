@@ -11,7 +11,7 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { corsHeaders, handleCorsPreflightRequest, getCorsHeaders } from './_shared/cors.ts';
-import { generateToken, refreshTokenByRefreshToken } from './_shared/toss-api-client.ts';
+import { generateToken, refreshTokenByRefreshToken, disconnect } from './_shared/toss-api-client.ts';
 import { ErrorCode } from './_shared/types.ts';
 import type { AuthRequest, AuthSuccessResponse, AuthErrorResponse } from './_shared/types.ts';
 
@@ -140,6 +140,22 @@ Deno.serve(async (req: Request): Promise<Response> => {
     // 1. 요청 파싱
     const body = await req.json();
 
+    // disconnect 플로우
+    if (body.action === 'disconnect') {
+      const accessToken = body.accessToken as string;
+      if (!accessToken) {
+        return new Response(JSON.stringify({ success: false, error: 'accessToken is required' }), {
+          status: 400,
+          headers: { ...headers, 'Content-Type': 'application/json' },
+        });
+      }
+      const resp = await disconnect(accessToken);
+      return new Response(JSON.stringify(resp), {
+        status: 200,
+        headers: { ...headers, 'Content-Type': 'application/json' },
+      });
+    }
+
     // grant_type: 'refresh_token' 분기 처리
     const isRefresh = body && typeof body === 'object'
       && body.grant_type === 'refresh_token'
@@ -152,7 +168,8 @@ Deno.serve(async (req: Request): Promise<Response> => {
     } else {
       // Authorization code flow
       const { authorizationCode } = validateRequest(body);
-      result = await generateToken(authorizationCode);
+      const referrer = typeof body.referrer === 'string' ? body.referrer : undefined;
+      result = await generateToken(authorizationCode, referrer);
     }
 
     // 3. 토큰을 서버 측에 저장
@@ -163,12 +180,13 @@ Deno.serve(async (req: Request): Promise<Response> => {
       result.expiresIn,
     );
 
-    // 4. 클라이언트에 userKey + refreshToken 반환
+    // 4. 클라이언트에 userKey + refreshToken + accessToken 반환
     const expiresAt = new Date(Date.now() + result.expiresIn * 1000).toISOString();
     const successResponse: AuthSuccessResponse = {
       userKey: result.userKey,
       expiresAt,
       refreshToken: result.refreshToken,
+      accessToken: result.accessToken,
     };
 
     return new Response(JSON.stringify(successResponse), {

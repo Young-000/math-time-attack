@@ -12,6 +12,7 @@ export interface AuthSuccessResponse {
   userKey: string;
   expiresAt: string;
   refreshToken?: string;
+  accessToken?: string;
 }
 
 export interface RefreshTokenRequest {

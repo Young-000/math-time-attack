@@ -198,11 +198,17 @@ export default defineConfig({
 - [ ] **사업자 등록**
 - [ ] **대표관리자 신청**
 
+### 앱 내 기능
+
+앱 내 기능:
+- 구구단 도전하기: intoss://gugudan-challenge/game
+- 타임어택 도전하기: intoss://gugudan-challenge/game?mode=timeattack
+
 ### 출시 전 확인
 
 - [ ] **다크패턴 방지 정책** 준수
 - [ ] **미니앱 브랜딩 가이드** 준수
-- [ ] **앱 내 기능 등록** (출시 검토 시)
+- [x] **앱 내 기능 등록** (출시 검토 시)
 
 ---
 

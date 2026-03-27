@@ -4,5 +4,6 @@
  */
 
 /** 웰컴 프로모션 — 첫 게임 완료 시 자동 지급 */
-export const WELCOME_PROMO_CODE = 'TEST_01KG55E0R4W34FJVN1REW7Z5QH';
+const WELCOME_PROD_CODE = '01KMATK7D77QHW1PKD9B8DCZK2';
+export const WELCOME_PROMO_CODE = import.meta.env.DEV ? `TEST_${WELCOME_PROD_CODE}` : WELCOME_PROD_CODE;
 export const WELCOME_PROMO_AMOUNT = 500;

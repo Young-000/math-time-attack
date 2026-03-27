@@ -1,3 +1,7 @@
+:root {
+  color-scheme: light only;
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -460,6 +464,19 @@ body {
   font-size: 14px;
   font-weight: 400;
   color: #6b7684;
+}
+
+/* Star Reward */
+.star-reward {
+  padding-top: 16px;
+  border-top: 1px solid #e5e8eb;
+  margin-top: 16px;
+}
+
+.star-reward-text {
+  font-size: 16px;
+  font-weight: 600;
+  color: #f59e0b;
 }
 
 .rank-value.loading {

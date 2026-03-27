@@ -25,7 +25,6 @@ import {
   recordRankUpdate,
   incrementDailyGameCount,
   markDailyChallengeComplete,
-  checkDailyMissions,
   type NewlyCompletedMission,
 } from '@domain/services/missionService';
 
@@ -167,18 +166,6 @@ export function ResultPage() {
         // 트랙 미션 달성 체크 + 별 적립
         const completedMissions = checkMissions(newStreak, elapsedTime);
 
-        // 일일 미션 달성 체크 + 별 적립
-        const completedDailyMissions = checkDailyMissions();
-        for (const dm of completedDailyMissions) {
-          completedMissions.push({
-            id: dm.missionId,
-            title: dm.name,
-            reward: dm.reward,
-            emoji: dm.emoji,
-            justCompleted: true as const,
-          });
-        }
-
         if (completedMissions.length > 0) {
           setNewMissions(completedMissions);
           setShowMissionToast(true);
@@ -189,9 +176,6 @@ export function ResultPage() {
 
         // 연속 출석 보너스 (일일 1회)
         onStreakBonus(newStreak).catch(() => {});
-
-        // 전면 광고 표시 (빈도 조건 충족 시)
-        showInterstitialIfNeeded(() => {});
       } catch (err) {
         console.error('Failed to process result:', err);
       } finally {
@@ -200,19 +184,21 @@ export function ResultPage() {
     };
 
     processResult();
-  }, [state, navigate, showInterstitialIfNeeded, onGameComplete, onRoundComplete, onStreakBonus]);
+  }, [state, navigate, onGameComplete, onRoundComplete, onStreakBonus]);
 
   // state에서 값 추출 (null일 수 있으므로 기본값 처리)
   const difficulty = state?.difficulty ?? 'easy';
   const elapsedTime = state?.elapsedTime ?? 0;
   const operation = state?.operation ?? Operation.MULTIPLICATION;
 
-  // 다시하기 - 하트 체크 후 게임 시작
+  // 다시하기 - 전면 광고 표시 후 하트 체크 → 게임 시작
   const handleRetry = useCallback(() => {
-    const consumed = tryConsumeHeart();
-    if (!consumed) return;
-    navigate(`/game/${difficulty}`);
-  }, [navigate, difficulty, tryConsumeHeart]);
+    showInterstitialIfNeeded(() => {
+      const consumed = tryConsumeHeart();
+      if (!consumed) return;
+      navigate(`/game/${difficulty}`);
+    });
+  }, [navigate, difficulty, tryConsumeHeart, showInterstitialIfNeeded]);
 
   const handleHome = useCallback(() => {
     navigate('/');
@@ -275,6 +261,16 @@ export function ResultPage() {
             ) : (
               <span className="rank-value none">첫 도전!</span>
             )}
+          </div>
+
+          {/* 별 보상 표시 */}
+          <div className="star-reward">
+            <span className="rank-label">클리어 보상</span>
+            <div className="rank-value">
+              <span className="star-reward-text">
+                ⭐ +{GAME_COMPLETE_STARS}별 (클리어) +{ROUND_BONUS_STARS}별 (라운드)
+              </span>
+            </div>
           </div>
         </div>
 

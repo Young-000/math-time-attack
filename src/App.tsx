@@ -1,5 +1,6 @@
 import { Routes, Route } from 'react-router-dom';
 import {
+  IntroPage,
   DifficultySelectPage,
   GamePage,
   ResultPage,
@@ -18,7 +19,8 @@ function App() {
     <TossAdsProvider>
       <ErrorBoundary>
         <Routes>
-          <Route path="/" element={<DifficultySelectPage />} />
+          <Route path="/" element={<IntroPage />} />
+          <Route path="/game" element={<DifficultySelectPage />} />
           <Route path="/game/:difficulty" element={<GamePage />} />
           <Route path="/result" element={<ResultPage />} />
           <Route path="/ranking" element={<RankingPage />} />

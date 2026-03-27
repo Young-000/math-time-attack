@@ -10,7 +10,7 @@
  * 3. refresh 실패 → 전체 appLogin() fallback
  */
 
-import { appLogin, closeView } from '@apps-in-toss/web-framework';
+import { appLogin } from '@apps-in-toss/web-framework';
 
 // --- 상수 ---
 
@@ -97,6 +97,7 @@ function clearAllCaches(): void {
     localStorage.removeItem(USER_KEY_CACHE);
     localStorage.removeItem(USER_KEY_EXPIRY);
     localStorage.removeItem(REFRESH_TOKEN_CACHE);
+    localStorage.removeItem(ACCESS_TOKEN_CACHE);
   } catch {
     // localStorage 접근 실패
   }
@@ -125,10 +126,13 @@ function fallbackToLocalId(): string {
 
 // --- Edge Function 통신 ---
 
+const ACCESS_TOKEN_CACHE = 'math-attack-access-token';
+
 type AuthResponse = {
   readonly userKey: string;
   readonly expiresAt: string;
   readonly refreshToken?: string;
+  readonly accessToken?: string;
 };
 
 type AuthErrorResponse = {
@@ -171,15 +175,28 @@ async function callEdgeFunction(body: Record<string, string>): Promise<AuthRespo
   }
 }
 
+function setCachedAccessToken(accessToken: string): void {
+  try {
+    localStorage.setItem(ACCESS_TOKEN_CACHE, accessToken);
+  } catch {
+    // localStorage 저장 실패 — 무시
+  }
+}
+
 /**
  * authorizationCode를 Edge Function에 전송하여 userKey를 받아온다.
  */
-async function exchangeAuthCode(authorizationCode: string): Promise<string> {
-  const data = await callEdgeFunction({ authorizationCode });
+async function exchangeAuthCode(authorizationCode: string, referrer?: string): Promise<string> {
+  const body: Record<string, string> = { authorizationCode };
+  if (referrer) body.referrer = referrer;
+  const data = await callEdgeFunction(body);
 
   // refreshToken이 반환되면 캐싱
   if (data.refreshToken) {
     setCachedRefreshToken(data.refreshToken);
+  }
+  if (data.accessToken) {
+    setCachedAccessToken(data.accessToken);
   }
 
   return data.userKey;
@@ -202,6 +219,9 @@ async function refreshUserToken(): Promise<string | null> {
     // 새 refreshToken이 반환되면 갱신
     if (data.refreshToken) {
       setCachedRefreshToken(data.refreshToken);
+    }
+    if (data.accessToken) {
+      setCachedAccessToken(data.accessToken);
     }
 
     return data.userKey;
@@ -242,38 +262,24 @@ export async function initializeUserIdentity(): Promise<string> {
     return refreshedKey;
   }
 
-  // 3. AIT 환경이면 appLogin 플로우
-  if (isAppsInTossEnvironment()) {
-    try {
-      const loginResult = await appLogin();
+  // 3. 항상 appLogin 시도 (환경 체크 없이)
+  try {
+    const loginResult = await appLogin();
 
-      // SDK 미지원 (앱 버전 낮음)
-      if (!loginResult) {
-        console.warn('[userIdentity] appLogin 미지원 앱 버전');
-        return fallbackToLocalId();
-      }
-
-      const { authorizationCode } = loginResult;
-
-      // Edge Function으로 토큰 교환
-      const userKey = await exchangeAuthCode(authorizationCode);
-      setCachedUserKey(userKey);
-      return userKey;
-    } catch (err) {
-      const errorMsg = err instanceof Error
-        ? `${err.name}: ${err.message}`
-        : String(err);
-      console.warn('[userIdentity] appLogin 플로우 실패:', errorMsg);
-      lastAuthError = errorMsg;
-
-      // AIT 가이드라인: 약관 닫기/로그인 취소 시 미니앱 종료
-      try { closeView(); } catch { /* ignore */ }
-      throw err;
+    if (!loginResult) {
+      console.warn('[userIdentity] appLogin 미지원 앱 버전');
+      return fallbackToLocalId();
     }
-  }
 
-  // 4. 비AIT 환경
-  return fallbackToLocalId();
+    const { authorizationCode, referrer } = loginResult;
+
+    const userKey = await exchangeAuthCode(authorizationCode, referrer);
+    setCachedUserKey(userKey);
+    return userKey;
+  } catch (err) {
+    console.warn('[userIdentity] appLogin 플로우 실패:', err);
+    return fallbackToLocalId();
+  }
 }
 
 // --- Public API (하위 호환) ---
@@ -335,6 +341,7 @@ const ALL_APP_STORAGE_KEYS = [
   'math-attack-user-key',
   'math-attack-user-key-expiry',
   'math-attack-refresh-token',
+  'math-attack-access-token',
   'math-time-attack-local-user-id',
   'math-time-attack-records-v2',
   'math-time-attack-nickname',
@@ -350,13 +357,30 @@ const ALL_APP_STORAGE_KEYS = [
   'math-attack-star-history',
   'ad-interstitial-freq',
   'ad-rewarded-freq',
+  'math-attack-daily-missions',
+  'math-attack-streak-bonus',
 ] as const;
 
 /**
  * 앱의 모든 유저 데이터를 삭제한다.
  * 토스 로그인 연결 해제(UNLINK) 시 호출.
  */
-export function clearAllUserData(): void {
+export async function clearAllUserData(): Promise<void> {
+  // disconnect API 호출 (토큰이 남아있는 동안)
+  try {
+    const accessToken = localStorage.getItem(ACCESS_TOKEN_CACHE);
+    if (accessToken) {
+      await fetch(EDGE_FUNCTION_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({ action: 'disconnect', accessToken }),
+      });
+    }
+  } catch { /* best effort */ }
+
   cachedUserKey = null;
   lastAuthError = null;
   try {

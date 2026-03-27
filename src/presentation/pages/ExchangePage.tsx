@@ -1,7 +1,7 @@
 /**
  * 토스 포인트 교환 페이지
  * 내부 포인트(별) -> 토스 포인트 교환
- * 교환비: 10별 = 1P (프로모션 Edge Function 사용)
+ * 교환비: 100별 = 1P (프로모션 Edge Function 사용)
  */
 
 import { useState, useEffect, useCallback } from 'react';
@@ -15,7 +15,8 @@ import { spendPoints } from '@domain/services/pointService';
 import { recordExchange, checkMissions } from '@domain/services/missionService';
 import { getCurrentStreak } from '@domain/services/streakService';
 
-const PROMOTION_CODE = 'TEST_MATH_ATTACK_EXCHANGE'; // 콘솔 등록 후 실제 코드로 교체
+const PROD_CODE = '01KMATK7D77QHW1PKD9B8DCZK2';
+const PROMOTION_CODE = import.meta.env.DEV ? `TEST_${PROD_CODE}` : PROD_CODE;
 
 type ExchangeStatus = 'idle' | 'loading' | 'success' | 'error';
 
@@ -23,9 +24,9 @@ export function ExchangePage(): JSX.Element {
   const navigate = useNavigate();
   const { balance, refresh, isLoading: isPointsLoading } = usePoints();
   const [status, setStatus] = useState<ExchangeStatus>('idle');
-  // Exchange disabled (준비 중) - keeping code for future use
-  const [_errorMsg, setErrorMsg] = useState('');
-  const [_lastResult, setLastResult] = useState<{
+  // Exchange active
+  const [errorMsg, setErrorMsg] = useState('');
+  const [lastResult, setLastResult] = useState<{
     starsSpent: number;
     tossPoints: number;
   } | null>(null);
@@ -35,18 +36,16 @@ export function ExchangePage(): JSX.Element {
   const maxStars = exchangeUnits * EXCHANGE_RATE.stars;
   const maxTossPoints = exchangeUnits * EXCHANGE_RATE.tossPoints;
 
-  // @ts-expect-error Exchange disabled (준비 중) - keeping for future use
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const _handleExchange = useCallback(async (): Promise<void> => {
+  const handleExchange = useCallback(async (): Promise<void> => {
     if (!canExchange) return;
     setStatus('loading');
     setErrorMsg('');
 
     try {
       const userKey = getCachedUserId();
-      if (!userKey || userKey.startsWith('local-') || userKey.startsWith('temp-')) {
+      if (!userKey) {
         setStatus('error');
-        setErrorMsg('\uD1A0\uC2A4 \uB85C\uADF8\uC778\uC774 \uD544\uC694\uD569\uB2C8\uB2E4');
+        setErrorMsg('로그인이 필요합니다');
         return;
       }
 
@@ -124,17 +123,25 @@ export function ExchangePage(): JSX.Element {
         )}
       </div>
 
-      {/* 교환 버튼 (준비 중) */}
-      <button
-        className="exchange-btn disabled"
-        disabled={true}
-        type="button"
-      >
-        토스 포인트 교환 준비 중
-      </button>
-      <p className="exchange-coming-soon" style={{ textAlign: 'center', color: '#888', fontSize: '13px', margin: '12px 0' }}>
-        토스 포인트 교환 기능은 곧 오픈됩니다
-      </p>
+      {/* 교환 버튼 */}
+      {status === 'success' && lastResult ? (
+        <div style={{ textAlign: 'center', padding: '16px', background: '#e8f5e9', borderRadius: '12px', margin: '8px 0' }}>
+          <p style={{ color: '#2e7d32', fontWeight: 700 }}>교환 완료! ⭐{lastResult.starsSpent}별 → {lastResult.tossPoints}P</p>
+        </div>
+      ) : status === 'error' ? (
+        <div style={{ textAlign: 'center', padding: '16px', background: '#ffebee', borderRadius: '12px', margin: '8px 0' }}>
+          <p style={{ color: '#c62828', fontWeight: 700 }}>{errorMsg || '교환 실패'}</p>
+        </div>
+      ) : (
+        <button
+          className={`exchange-btn ${!canExchange ? 'disabled' : ''}`}
+          disabled={!canExchange || status === 'loading'}
+          onClick={handleExchange}
+          type="button"
+        >
+          {status === 'loading' ? '교환 중...' : canExchange ? `${EXCHANGE_RATE.stars}별 → ${EXCHANGE_RATE.tossPoints}P 교환하기` : '별이 부족합니다'}
+        </button>
+      )}
 
       {/* 필수 고지 */}
       <div className="exchange-disclaimer">
