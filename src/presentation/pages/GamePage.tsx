@@ -8,6 +8,7 @@ import { useMathGame } from '@presentation/hooks';
 import { DIFFICULTY_CONFIG, OPERATION_SYMBOLS, type DifficultyType } from '@domain/entities';
 import { formatTime } from '@lib/utils';
 import { generateDailySeed } from '@domain/services/dailyChallengeService';
+import { BannerAd } from '@presentation/components';
 
 export function GamePage() {
   const { difficulty } = useParams<{ difficulty: DifficultyType }>();
@@ -171,6 +172,8 @@ export function GamePage() {
           </div>
         </form>
       </main>
+
+      <BannerAd className="banner-ad-game" />
     </div>
   );
 }

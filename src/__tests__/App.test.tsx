@@ -9,23 +9,27 @@ import App from '../App';
 
 // Mock pages to avoid complex dependencies
 vi.mock('@presentation/pages', () => ({
+  IntroPage: () => <div data-testid="intro-page">IntroPage</div>,
   DifficultySelectPage: () => <div data-testid="difficulty-page">DifficultySelectPage</div>,
   GamePage: () => <div data-testid="game-page">GamePage</div>,
   ResultPage: () => <div data-testid="result-page">ResultPage</div>,
   RankingPage: () => <div data-testid="ranking-page">RankingPage</div>,
   TimeAttackPage: () => <div data-testid="timeattack-page">TimeAttackPage</div>,
   TimeAttackResultPage: () => <div data-testid="timeattack-result-page">TimeAttackResultPage</div>,
+  HallOfFamePage: () => <div data-testid="hall-of-fame-page">HallOfFamePage</div>,
+  ExchangePage: () => <div data-testid="exchange-page">ExchangePage</div>,
+  MyPointsPage: () => <div data-testid="my-points-page">MyPointsPage</div>,
 }));
 
 describe('App', () => {
   describe('라우팅', () => {
-    it('루트 경로에서 DifficultySelectPage를 렌더링해야 한다', () => {
+    it('루트 경로에서 IntroPage를 렌더링해야 한다', () => {
       render(
         <MemoryRouter initialEntries={['/']}>
           <App />
         </MemoryRouter>
       );
-      expect(screen.getByTestId('difficulty-page')).toBeInTheDocument();
+      expect(screen.getByTestId('intro-page')).toBeInTheDocument();
     });
 
     it('/game/:difficulty 경로에서 GamePage를 렌더링해야 한다', () => {

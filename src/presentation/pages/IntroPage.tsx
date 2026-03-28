@@ -1,10 +1,17 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { initializeUserIdentity } from '@infrastructure/userIdentity';
+import { initializeUserIdentity, getCachedUserId } from '@infrastructure/userIdentity';
 
 export function IntroPage(): JSX.Element {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
+
+  // 로그인 상태면 바로 /game으로 리다이렉트 (홈 버튼 재진입 대응)
+  useEffect(() => {
+    if (getCachedUserId()) {
+      navigate('/game', { replace: true });
+    }
+  }, [navigate]);
 
   const handleStart = useCallback(async () => {
     setIsLoading(true);

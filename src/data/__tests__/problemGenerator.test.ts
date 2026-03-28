@@ -37,14 +37,14 @@ describe('Problem Generator', () => {
       });
     });
 
-    describe('MEDIUM difficulty (1-19)', () => {
-      it('should generate numbers within 1-19 range', () => {
+    describe('MEDIUM difficulty (10-19)', () => {
+      it('should generate numbers within 10-19 range', () => {
         for (let i = 0; i < 100; i++) {
           const problem = generateProblem('medium');
 
-          expect(problem.firstNum).toBeGreaterThanOrEqual(1);
+          expect(problem.firstNum).toBeGreaterThanOrEqual(10);
           expect(problem.firstNum).toBeLessThanOrEqual(19);
-          expect(problem.secondNum).toBeGreaterThanOrEqual(1);
+          expect(problem.secondNum).toBeGreaterThanOrEqual(10);
           expect(problem.secondNum).toBeLessThanOrEqual(19);
         }
       });
@@ -64,14 +64,14 @@ describe('Problem Generator', () => {
       });
     });
 
-    describe('HARD difficulty (1-99)', () => {
-      it('should generate numbers within 1-99 range', () => {
+    describe('HARD difficulty (20-99)', () => {
+      it('should generate numbers within 20-99 range', () => {
         for (let i = 0; i < 100; i++) {
           const problem = generateProblem('hard');
 
-          expect(problem.firstNum).toBeGreaterThanOrEqual(1);
+          expect(problem.firstNum).toBeGreaterThanOrEqual(20);
           expect(problem.firstNum).toBeLessThanOrEqual(99);
-          expect(problem.secondNum).toBeGreaterThanOrEqual(1);
+          expect(problem.secondNum).toBeGreaterThanOrEqual(20);
           expect(problem.secondNum).toBeLessThanOrEqual(99);
         }
       });

@@ -55,14 +55,14 @@ describe('Domain Entities', () => {
       expect(DIFFICULTY_CONFIG.easy.label).toBe('초급');
     });
 
-    it('should define range for MEDIUM (1-19)', () => {
-      expect(DIFFICULTY_CONFIG.medium.min).toBe(1);
+    it('should define range for MEDIUM (10-19)', () => {
+      expect(DIFFICULTY_CONFIG.medium.min).toBe(10);
       expect(DIFFICULTY_CONFIG.medium.max).toBe(19);
       expect(DIFFICULTY_CONFIG.medium.label).toBe('중급');
     });
 
-    it('should define range for HARD (1-99)', () => {
-      expect(DIFFICULTY_CONFIG.hard.min).toBe(1);
+    it('should define range for HARD (20-99)', () => {
+      expect(DIFFICULTY_CONFIG.hard.min).toBe(20);
       expect(DIFFICULTY_CONFIG.hard.max).toBe(99);
       expect(DIFFICULTY_CONFIG.hard.label).toBe('고급');
     });

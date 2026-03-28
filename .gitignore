@@ -51,3 +51,4 @@ builds/
 # Root-level .ait 파일 차단 (npx granite build 직접 실행 방지)
 # 반드시 npm run build:ait 사용 → builds/{name}-v{version}-{timestamp}.ait
 *.ait
+screenshots/

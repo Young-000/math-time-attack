@@ -50,11 +50,11 @@ export function HallOfFamePage(): JSX.Element {
         <button
           className="hof-back-btn"
           onClick={() => navigate('/ranking')}
-          aria-label="\uB4A4\uB85C\uAC00\uAE30"
+          aria-label="뒤로가기"
         >
-          \u2190
+          {'←'}
         </button>
-        <h1 className="hof-title">{'\u{1F3C6}'} \uBA85\uC608\uC758 \uC804\uB2F9</h1>
+        <h1 className="hof-title">{'\u{1F3C6}'} 명예의 전당</h1>
       </header>
 
       <div className="hof-tabs">
@@ -62,24 +62,24 @@ export function HallOfFamePage(): JSX.Element {
           className={`hof-tab ${activeTab === 'weekly' ? 'active' : ''}`}
           onClick={() => setActiveTab('weekly')}
         >
-          \uC8FC\uAC04 \uCC4C\uB9B0\uC9C0
+          주간 챌린지
         </button>
         <button
           className={`hof-tab ${activeTab === 'monthly' ? 'active' : ''}`}
           onClick={() => setActiveTab('monthly')}
         >
-          \uC6D4\uAC04 \uCC4C\uB9B0\uC9C0
+          월간 챌린지
         </button>
       </div>
 
       <main className="hof-content">
         {isLoading ? (
-          <div className="hof-loading">\uB85C\uB529 \uC911...</div>
+          <div className="hof-loading">로딩 중...</div>
         ) : grouped.size === 0 ? (
           <div className="hof-empty">
             <div className="hof-empty-icon">{'\u{1F3C6}'}</div>
-            <p className="hof-empty-text">\uC544\uC9C1 \uCC4C\uB9B0\uC9C0 \uAE30\uB85D\uC774 \uC5C6\uC5B4\uC694</p>
-            <p className="hof-empty-sub">\uC774\uBC88 \uC8FC \uB7AD\uD0B9\uC5D0 \uB3C4\uC804\uD574\uBCF4\uC138\uC694!</p>
+            <p className="hof-empty-text">아직 챌린지 기록이 없어요</p>
+            <p className="hof-empty-sub">이번 주 랭킹에 도전해보세요!</p>
           </div>
         ) : (
           Array.from(grouped.entries()).map(([periodKey, periodEntries]) => {
@@ -94,18 +94,18 @@ export function HallOfFamePage(): JSX.Element {
                       className={`hof-winner rank-${entry.rank}`}
                     >
                       <span className="hof-trophy">
-                        {TROPHY_ICONS[entry.rank - 1] ?? `${entry.rank}\uC704`}
+                        {TROPHY_ICONS[entry.rank - 1] ?? `${entry.rank}위`}
                       </span>
                       <div className="hof-winner-info">
                         <span className="hof-winner-name">
-                          {entry.nickname ?? '\uC775\uBA85'}
+                          {entry.nickname ?? '익명'}
                         </span>
                         <span className="hof-winner-score">
-                          {entry.score}\uC810 \u00B7 {entry.difficulty}
+                          {entry.score}점 · {entry.difficulty}
                         </span>
                       </div>
                       <span className="hof-winner-stars">
-                        +{entry.points_awarded}\uBCC4
+                        +{entry.points_awarded}별
                       </span>
                     </div>
                   ))}

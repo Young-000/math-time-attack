@@ -49,17 +49,18 @@ export function ExchangePage(): JSX.Element {
         return;
       }
 
-      const tossPoints = EXCHANGE_RATE.tossPoints;
+      const tossPoints = maxTossPoints;
+      const starsToSpend = maxStars;
 
-      // 1. 프로모션 API 먼저 호출
+      // 1. 프로모션 API 먼저 호출 (전체 잔액 한 번에 교환)
       const result = await claimPromotion(PROMOTION_CODE, tossPoints, userKey);
 
       if (result.success) {
         // 2. API 성공 후에만 별 차감
-        await spendPoints(userKey, EXCHANGE_RATE.stars, 'exchange', `${EXCHANGE_RATE.stars}별 -> ${tossPoints}P 교환`);
+        await spendPoints(userKey, starsToSpend, 'exchange', `${starsToSpend}별 -> ${tossPoints}P 교환`);
 
         setStatus('success');
-        setLastResult({ starsSpent: EXCHANGE_RATE.stars, tossPoints });
+        setLastResult({ starsSpent: starsToSpend, tossPoints });
 
         // 미션 통계 업데이트
         recordExchange(tossPoints);
@@ -139,7 +140,7 @@ export function ExchangePage(): JSX.Element {
           onClick={handleExchange}
           type="button"
         >
-          {status === 'loading' ? '교환 중...' : canExchange ? `${EXCHANGE_RATE.stars}별 → ${EXCHANGE_RATE.tossPoints}P 교환하기` : '별이 부족합니다'}
+          {status === 'loading' ? '교환 중...' : canExchange ? `${maxStars.toLocaleString()}별 → ${maxTossPoints.toLocaleString()}P 전체 교환하기` : '별이 부족합니다'}
         </button>
       )}
 

@@ -65,19 +65,19 @@ export const DIFFICULTY_CONFIG: Record<DifficultyType, DifficultyConfigItem> = {
     min: 1,
     max: 9,
     label: '초급',
-    description: '1-9 범위',
+    description: '1~9단',
   },
   medium: {
-    min: 1,
+    min: 10,
     max: 19,
     label: '중급',
-    description: '1-19 범위',
+    description: '10~19단',
   },
   hard: {
-    min: 1,
+    min: 20,
     max: 99,
     label: '고급',
-    description: '1-99 범위',
+    description: '20단 이상',
   },
 };
 

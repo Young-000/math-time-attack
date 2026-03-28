@@ -8,6 +8,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useTimeAttack, TIME_ATTACK_DURATION_BY_DIFFICULTY, AD_BONUS_TIME } from '@presentation/hooks/useTimeAttack';
 import { useFullScreenAd } from '@presentation/hooks/useFullScreenAd';
 import { DIFFICULTY_CONFIG, OPERATION_SYMBOLS, type DifficultyType } from '@domain/entities';
+import { BannerAd } from '@presentation/components';
 
 export function TimeAttackPage() {
   const { difficulty } = useParams<{ difficulty: DifficultyType }>();
@@ -223,6 +224,8 @@ export function TimeAttackPage() {
           </div>
         </form>
       </main>
+
+      <BannerAd className="banner-ad-game" />
 
       {/* 보너스 라운드 시작 대기 */}
       {waitingForBonusStart && (
