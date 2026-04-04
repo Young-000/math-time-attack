@@ -26,7 +26,7 @@ export function NoHeartsModal({
   onShare,
   onClose,
   title = '하트가 부족해요!',
-  icon = '\uD83D\uDC94',
+  icon = '💔',
 }: NoHeartsModalProps) {
   return (
     <div className="no-hearts-modal-overlay">
@@ -40,7 +40,7 @@ export function NoHeartsModal({
         <div className="no-hearts-status">
           <HeartDisplay heartInfo={heartInfo} size="large" />
           <span className="hearts-timer">
-            {'\u23F1\uFE0F'} {heartInfo.timeUntilNextFormatted} 후 +1
+            {'⏱️'} {heartInfo.timeUntilNextFormatted} 후 +1
           </span>
         </div>
 
@@ -55,7 +55,7 @@ export function NoHeartsModal({
                 '광고 준비 중...'
               ) : (
                 <>
-                  <span className="btn-icon">{'\uD83D\uDCFA'}</span>
+                  <span className="btn-icon">{'📺'}</span>
                   광고 보고 +3 충전
                 </>
               )}
@@ -66,7 +66,7 @@ export function NoHeartsModal({
             className="no-hearts-btn secondary"
             onClick={onShare}
           >
-            <span className="btn-icon">{'\uD83D\uDCE4'}</span>
+            <span className="btn-icon">{'📤'}</span>
             공유하고 +3 충전
           </button>
 

@@ -511,7 +511,7 @@ export function DifficultySelectPage() {
           isAdSupported={isAdSupported}
           isAdLoading={isAdLoading}
           title="하트 충전"
-          icon={'\u2764\uFE0F'}
+          icon={'❤️'}
           onWatchAd={() => handleWatchAdForHearts(() => setShowHeartChargeModal(false))}
           onShare={() => handleShareForHearts('구구단 실력을 테스트해보세요! 나와 대결해요!', () => setShowHeartChargeModal(false))}
           onClose={() => setShowHeartChargeModal(false)}

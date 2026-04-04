@@ -285,7 +285,7 @@ export function RankingPage() {
                 onClick={() => handleWatchAdForHearts()}
                 disabled={isAdLoading}
               >
-                <span className="share-icon">{'\uD83D\uDCFA'}</span>
+                <span className="share-icon">{'📺'}</span>
                 {isAdLoading ? '준비 중...' : '광고 보기'}
               </button>
             )}
@@ -294,7 +294,7 @@ export function RankingPage() {
                 className="share-btn ranking-share"
                 onClick={() => handleShare('ranking')}
               >
-                <span className="share-icon">{'\uD83C\uDFC6'}</span>
+                <span className="share-icon">{'🏆'}</span>
                 순위 공유
               </button>
             )}
@@ -302,7 +302,7 @@ export function RankingPage() {
               className="share-btn game-share"
               onClick={() => handleShare('game')}
             >
-              <span className="share-icon">{'\uD83D\uDCE4'}</span>
+              <span className="share-icon">{'📤'}</span>
               게임 공유
             </button>
           </div>

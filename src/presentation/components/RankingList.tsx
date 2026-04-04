@@ -53,7 +53,7 @@ export function RankingList({ rankings, myOdlId, isLoading, mode = 'classic' }: 
             <div className="ranking-rank">
               {item.rank <= 3 ? (
                 <span className={`ranking-medal rank-${item.rank}`}>
-                  {item.rank === 1 ? '\uD83E\uDD47' : item.rank === 2 ? '\uD83E\uDD48' : '\uD83E\uDD49'}
+                  {item.rank === 1 ? '🥇' : item.rank === 2 ? '🥈' : '🥉'}
                 </span>
               ) : (
                 <span className="ranking-number">{item.rank}</span>

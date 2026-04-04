@@ -73,7 +73,7 @@ export function ExchangePage(): JSX.Element {
       }
     } catch {
       setStatus('error');
-      setErrorMsg('\uB124\uD2B8\uC6CC\uD06C \uC624\uB958\uAC00 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4');
+      setErrorMsg('네트워크 오류가 발생했습니다');
     }
   }, [canExchange, refresh]);
 
@@ -88,14 +88,14 @@ export function ExchangePage(): JSX.Element {
   return (
     <div className="page exchange-page">
       <header className="exchange-header">
-        <h1 className="exchange-title">{'\uD1A0\uC2A4 \uD3EC\uC778\uD2B8 \uAD50\uD658'}</h1>
+        <h1 className="exchange-title">{'토스 포인트 교환'}</h1>
       </header>
 
       {/* 별 잔액 */}
       <div className="exchange-balance-card">
-        <span className="exchange-balance-label">{'\uB0B4 \uBCC4'}</span>
+        <span className="exchange-balance-label">{'내 별'}</span>
         <div className="exchange-balance-value">
-          <span className="exchange-star-icon">{'\u2B50'}</span>
+          <span className="exchange-star-icon">{'⭐'}</span>
           <span className="exchange-star-count">
             {isPointsLoading ? '...' : balance.toLocaleString()}
           </span>
@@ -105,13 +105,13 @@ export function ExchangePage(): JSX.Element {
       {/* 교환 비율 */}
       <div className="exchange-rate-info">
         <div className="exchange-rate-row">
-          <span>{'\u2B50'} {EXCHANGE_RATE.stars}{'\uBCC4'}</span>
-          <span className="exchange-rate-arrow">{'\u2192'}</span>
-          <span>{'\uD83D\uDCB0'} {EXCHANGE_RATE.tossPoints} {'\uD1A0\uC2A4 \uD3EC\uC778\uD2B8'}</span>
+          <span>{'⭐'} {EXCHANGE_RATE.stars}{'별'}</span>
+          <span className="exchange-rate-arrow">{'→'}</span>
+          <span>{'💰'} {EXCHANGE_RATE.tossPoints} {'토스 포인트'}</span>
         </div>
         {canExchange && (
           <p className="exchange-max-info">
-            {'\uCD5C\uB300'} {maxStars.toLocaleString()}{'\uBCC4'} {'\u2192'} {maxTossPoints.toLocaleString()} {'\uD1A0\uC2A4 \uD3EC\uC778\uD2B8 \uAD50\uD658 \uAC00\uB2A5'}
+            {'최대'} {maxStars.toLocaleString()}{'별'} {'→'} {maxTossPoints.toLocaleString()} {'토스 포인트 교환 가능'}
           </p>
         )}
       </div>
@@ -138,10 +138,10 @@ export function ExchangePage(): JSX.Element {
 
       {/* 필수 고지 */}
       <div className="exchange-disclaimer">
-        <p>{'\u2022'} {EXCHANGE_RATE.stars}{'\uBCC4 = '}{EXCHANGE_RATE.tossPoints}{'\uD1A0\uC2A4 \uD3EC\uC778\uD2B8 \uB2E8\uC704\uB85C \uAD50\uD658 \uAC00\uB2A5\uD569\uB2C8\uB2E4'}</p>
-        <p>{'\u2022 \uC801\uB9BD\uD55C \uB9CC\uD07C \uBB34\uC81C\uD55C \uAD50\uD658 \uAC00\uB2A5\uD569\uB2C8\uB2E4'}</p>
-        <p>{'\u2022 \uAD50\uD658\uB41C \uD3EC\uC778\uD2B8\uB294 \uCDE8\uC18C\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4'}</p>
-        <p>{'\u2022 \uBCF8 \uD504\uB85C\uBAA8\uC158\uC740 \uC0AC\uC804 \uACE0\uC9C0 \uC5C6\uC774 \uC911\uB2E8\uB420 \uC218 \uC788\uC2B5\uB2C8\uB2E4'}</p>
+        <p>{'•'} {EXCHANGE_RATE.stars}{'별 = '}{EXCHANGE_RATE.tossPoints}{'토스 포인트 단위로 교환 가능합니다'}</p>
+        <p>{'• 적립한 만큼 무제한 교환 가능합니다'}</p>
+        <p>{'• 교환된 포인트는 취소할 수 없습니다'}</p>
+        <p>{'• 본 프로모션은 사전 고지 없이 중단될 수 있습니다'}</p>
       </div>
 
       {/* 내 포인트 페이지 링크 */}
@@ -150,7 +150,7 @@ export function ExchangePage(): JSX.Element {
         onClick={() => navigate('/my-points')}
         type="button"
       >
-        {'\uD83D\uDCCB \uC801\uB9BD/\uC0AC\uC6A9 \uB0B4\uC5ED \uBCF4\uAE30'}
+        {'📋 적립/사용 내역 보기'}
       </button>
 
       <BannerAd className="banner-ad-exchange" />

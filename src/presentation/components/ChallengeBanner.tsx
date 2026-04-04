@@ -51,9 +51,9 @@ export function ChallengeBanner(): JSX.Element {
         <div className="challenge-period">{info.periodLabel}</div>
         <div className="challenge-timer">마감까지 {timeText}</div>
         <div className="challenge-rewards">
-          <span className="reward-item">{'\uD83E\uDD47'} {rewards[1]}별</span>
-          <span className="reward-item">{'\uD83E\uDD48'} {rewards[2]}별</span>
-          <span className="reward-item">{'\uD83E\uDD49'} {rewards[3]}별</span>
+          <span className="reward-item">{'🥇'} {rewards[1]}별</span>
+          <span className="reward-item">{'🥈'} {rewards[2]}별</span>
+          <span className="reward-item">{'🥉'} {rewards[3]}별</span>
         </div>
       </div>
 
@@ -62,7 +62,7 @@ export function ChallengeBanner(): JSX.Element {
         onClick={() => navigate('/hall-of-fame')}
         type="button"
       >
-        {'\uD83C\uDFC6'} 명예의 전당
+        {'🏆'} 명예의 전당
       </button>
     </div>
   );

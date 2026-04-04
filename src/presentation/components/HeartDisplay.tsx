@@ -28,7 +28,7 @@ export function HeartDisplay({
             key={i}
             className={`${sizeClass} ${i < heartInfo.count ? 'filled' : 'empty'}`}
           >
-            {i < heartInfo.count ? '\u2764\uFE0F' : '\uD83E\uDD0D'}
+            {i < heartInfo.count ? '❤️' : '🤍'}
           </span>
         ))}
       </div>

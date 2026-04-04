@@ -8,13 +8,13 @@ import { usePoints } from '@presentation/hooks/usePoints';
 import { BannerAd } from '@presentation/components';
 
 const TYPE_LABELS: Record<string, string> = {
-  game_complete: '\uAC8C\uC784 \uD074\uB9AC\uC5B4',
-  round_bonus: '\uB77C\uC6B4\uB4DC \uBCF4\uB108\uC2A4',
-  rewarded_ad: '\uAD11\uACE0 \uC2DC\uCCAD',
-  mission: '\uBBF8\uC158 \uBCF4\uC0C1',
-  daily_login: '\uC77C\uC77C \uCD9C\uC11D',
-  exchange: '\uD1A0\uC2A4 \uD3EC\uC778\uD2B8 \uAD50\uD658',
-  admin: '\uAD00\uB9AC\uC790',
+  game_complete: '게임 클리어',
+  round_bonus: '라운드 보너스',
+  rewarded_ad: '광고 시청',
+  mission: '미션 보상',
+  daily_login: '일일 출석',
+  exchange: '토스 포인트 교환',
+  admin: '관리자',
 };
 
 export function MyPointsPage(): JSX.Element {
@@ -24,19 +24,19 @@ export function MyPointsPage(): JSX.Element {
   return (
     <div className="page my-points-page">
       <header className="mp-header">
-        <h1 className="mp-title">{'\uB0B4 \uBCC4'}</h1>
+        <h1 className="mp-title">{'내 별'}</h1>
       </header>
 
       {/* 잔액 카드 */}
       <div className="mp-balance-card">
         <div className="mp-balance-main">
-          <span className="mp-star-icon">{'\u2B50'}</span>
+          <span className="mp-star-icon">{'⭐'}</span>
           <span className="mp-balance-number">
             {isLoading ? '...' : balance.toLocaleString()}
           </span>
         </div>
         <div className="mp-balance-sub">
-          {'\uCD1D \uC801\uB9BD:'} {totalEarned.toLocaleString()}{'\uBCC4'}
+          {'총 적립:'} {totalEarned.toLocaleString()}{'별'}
         </div>
       </div>
 
@@ -46,19 +46,19 @@ export function MyPointsPage(): JSX.Element {
         onClick={() => navigate('/exchange')}
         type="button"
       >
-        {'\uD83D\uDCB0 \uD1A0\uC2A4 \uD3EC\uC778\uD2B8\uB85C \uAD50\uD658\uD558\uAE30'}
+        {'💰 토스 포인트로 교환하기'}
       </button>
 
       {/* 내역 */}
-      <h2 className="mp-history-title">{'\uC801\uB9BD/\uC0AC\uC6A9 \uB0B4\uC5ED'}</h2>
+      <h2 className="mp-history-title">{'적립/사용 내역'}</h2>
       <div className="mp-history-list">
         {isLoading ? (
-          <div className="mp-history-loading">{'\uB85C\uB529 \uC911...'}</div>
+          <div className="mp-history-loading">{'로딩 중...'}</div>
         ) : history.length === 0 ? (
           <div className="mp-history-empty">
-            <p>{'\uC544\uC9C1 \uB0B4\uC5ED\uC774 \uC5C6\uC5B4\uC694'}</p>
+            <p>{'아직 내역이 없어요'}</p>
             <p className="mp-history-empty-sub">
-              {'\uAC8C\uC784\uC744 \uD50C\uB808\uC774\uD558\uBA74 \uBCC4\uC744 \uBC1B\uC744 \uC218 \uC788\uC5B4\uC694!'}
+              {'게임을 플레이하면 별을 받을 수 있어요!'}
             </p>
           </div>
         ) : (
@@ -81,7 +81,7 @@ export function MyPointsPage(): JSX.Element {
               <span
                 className={`mp-history-amount ${tx.amount > 0 ? 'positive' : 'negative'}`}
               >
-                {tx.amount > 0 ? '+' : ''}{tx.amount}{'\uBCC4'}
+                {tx.amount > 0 ? '+' : ''}{tx.amount}{'별'}
               </span>
             </div>
           ))
