@@ -88,14 +88,6 @@ export function ExchangePage(): JSX.Element {
   return (
     <div className="page exchange-page">
       <header className="exchange-header">
-        <button
-          className="exchange-back-btn"
-          onClick={() => navigate(-1)}
-          aria-label="\uB4A4\uB85C\uAC00\uAE30"
-          type="button"
-        >
-          &larr;
-        </button>
         <h1 className="exchange-title">{'\uD1A0\uC2A4 \uD3EC\uC778\uD2B8 \uAD50\uD658'}</h1>
       </header>
 

@@ -40,6 +40,11 @@ vi.mock('@apps-in-toss/web-framework', () => ({
       isSupported: vi.fn(() => false),
     }),
   },
+  // 이벤트
+  graniteEvent: {
+    addEventListener: vi.fn(() => vi.fn()),
+  },
+  closeView: vi.fn(),
   // 기타
   share: vi.fn(() => Promise.resolve()),
   contactsViral: vi.fn(() => vi.fn()),

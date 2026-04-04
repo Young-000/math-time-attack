@@ -89,6 +89,18 @@ export const closeView = _addIsSupported(function closeView() {
   console.log('[AIT Mock] closeView called');
 });
 
+// --- Event System ----------------------------------------------------------------
+
+export const graniteEvent = {
+  addEventListener: function addEventListener(eventName, handler) {
+    console.log('[AIT Mock] graniteEvent.addEventListener:', eventName);
+    // Return unsubscribe function
+    return function unsubscribe() {
+      console.log('[AIT Mock] graniteEvent unsubscribe:', eventName);
+    };
+  },
+};
+
 // --- Full Screen Ad (v2) -----------------------------------------------------
 
 export const loadFullScreenAd = _addIsSupported(function loadFullScreenAd({ options, onEvent, onError }) {
@@ -238,6 +250,7 @@ export const contactsViral = _addIsSupported(function contactsViral(params) {
 export default {
   appLogin,
   closeView,
+  graniteEvent,
   loadFullScreenAd,
   showFullScreenAd,
   loadAppsInTossAdMob,

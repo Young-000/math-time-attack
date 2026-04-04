@@ -24,14 +24,6 @@ export function MyPointsPage(): JSX.Element {
   return (
     <div className="page my-points-page">
       <header className="mp-header">
-        <button
-          className="mp-back-btn"
-          onClick={() => navigate(-1)}
-          aria-label="\uB4A4\uB85C\uAC00\uAE30"
-          type="button"
-        >
-          &larr;
-        </button>
         <h1 className="mp-title">{'\uB0B4 \uBCC4'}</h1>
       </header>
 

@@ -4,7 +4,6 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { fetchHallOfFame, type HallOfFameEntry } from '@domain/services/hallOfFameService';
 import { BannerAd } from '@presentation/components';
 
@@ -23,7 +22,6 @@ function groupByPeriod(entries: HallOfFameEntry[]): Map<string, HallOfFameEntry[
 }
 
 export function HallOfFamePage(): JSX.Element {
-  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<TabType>('weekly');
   const [entries, setEntries] = useState<HallOfFameEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -47,13 +45,6 @@ export function HallOfFamePage(): JSX.Element {
   return (
     <div className="page hall-of-fame-page">
       <header className="hof-header">
-        <button
-          className="hof-back-btn"
-          onClick={() => navigate('/ranking')}
-          aria-label="뒤로가기"
-        >
-          {'←'}
-        </button>
         <h1 className="hof-title">{'\u{1F3C6}'} 명예의 전당</h1>
       </header>
 
