@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { closeView } from '@apps-in-toss/web-framework';
 import { initializeUserIdentity, getCachedUserId } from '@infrastructure/userIdentity';
 
 export function IntroPage(): JSX.Element {
@@ -17,11 +18,13 @@ export function IntroPage(): JSX.Element {
     setIsLoading(true);
     try {
       await initializeUserIdentity();
+      navigate('/game');
     } catch {
-      console.warn('Login failed, proceeding');
+      console.warn('Login failed, closing app');
+      closeView();
+    } finally {
+      setIsLoading(false);
     }
-    navigate('/game');
-    setIsLoading(false);
   }, [navigate]);
 
   return (
