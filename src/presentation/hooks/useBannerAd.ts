@@ -1,6 +1,6 @@
 /**
  * 배너광고 부착/정리 훅
- * TossAds.attach로 DOM 요소에 배너를 부착하고 언마운트 시 destroy
+ * TossAds.attachBanner로 DOM 요소에 배너를 부착하고 언마운트 시 destroy
  */
 
 import { useEffect, useRef, useState } from 'react';
@@ -22,6 +22,7 @@ export function useBannerAd(options?: UseBannerAdOptions): UseBannerAdReturn {
   const { isInitialized, isSupported } = useTossAds();
   const bannerRef = useRef<HTMLDivElement>(null);
   const [isAdVisible, setIsAdVisible] = useState(false);
+  const destroyRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     if (!isSupported || !isInitialized || !bannerRef.current) {
@@ -29,7 +30,7 @@ export function useBannerAd(options?: UseBannerAdOptions): UseBannerAdReturn {
     }
 
     try {
-      const attachSupported = TossAds.attach.isSupported?.() === true;
+      const attachSupported = TossAds.attachBanner.isSupported?.() === true;
       if (!attachSupported) return;
     } catch {
       return;
@@ -38,14 +39,14 @@ export function useBannerAd(options?: UseBannerAdOptions): UseBannerAdReturn {
     const target = bannerRef.current;
 
     try {
-      TossAds.attach(adGroupId, target, {
+      const result = TossAds.attachBanner(adGroupId, target, {
         theme: 'light',
         callbacks: {
           onAdRendered: () => {
             setIsAdVisible(true);
           },
           onAdFailedToRender: (payload) => {
-            console.error('배너 광고 렌더링 실패:', payload.error.message);
+            console.error('배너 광고 렌더링 실패:', payload);
             setIsAdVisible(false);
           },
           onNoFill: () => {
@@ -53,6 +54,7 @@ export function useBannerAd(options?: UseBannerAdOptions): UseBannerAdReturn {
           },
         },
       });
+      destroyRef.current = result.destroy;
     } catch (error) {
       console.error('배너 광고 부착 실패:', error);
       return;
@@ -60,7 +62,8 @@ export function useBannerAd(options?: UseBannerAdOptions): UseBannerAdReturn {
 
     return () => {
       try {
-        TossAds.destroyAll();
+        destroyRef.current?.();
+        destroyRef.current = null;
       } catch {
         // cleanup 실패 무시
       }

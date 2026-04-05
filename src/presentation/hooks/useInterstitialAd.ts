@@ -44,8 +44,11 @@ export function useInterstitialAd(): UseInterstitialAdReturn {
               showFullScreenAd({
                 options: { adGroupId: INTERSTITIAL_AD_GROUP_ID },
                 onEvent: (showEvent) => {
-                  if (showEvent.type === 'dismissed' || showEvent.type === 'failedToShow') {
+                  if (showEvent.type === 'dismissed') {
                     recordInterstitialShown();
+                    onComplete();
+                  }
+                  if (showEvent.type === 'failedToShow') {
                     onComplete();
                   }
                 },

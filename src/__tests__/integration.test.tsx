@@ -170,10 +170,10 @@ describe('도메인 규칙 테스트', () => {
     expect(DIFFICULTY_CONFIG.easy.min).toBe(1);
     expect(DIFFICULTY_CONFIG.easy.max).toBe(9);
 
-    expect(DIFFICULTY_CONFIG.medium.min).toBe(1);
+    expect(DIFFICULTY_CONFIG.medium.min).toBe(10);
     expect(DIFFICULTY_CONFIG.medium.max).toBe(19);
 
-    expect(DIFFICULTY_CONFIG.hard.min).toBe(1);
+    expect(DIFFICULTY_CONFIG.hard.min).toBe(20);
     expect(DIFFICULTY_CONFIG.hard.max).toBe(99);
   });
 
