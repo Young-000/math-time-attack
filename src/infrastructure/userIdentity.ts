@@ -17,7 +17,6 @@ import { appLogin } from '@apps-in-toss/web-framework';
 const USER_KEY_CACHE = 'math-attack-user-key';
 const USER_KEY_EXPIRY = 'math-attack-user-key-expiry';
 const REFRESH_TOKEN_CACHE = 'math-attack-refresh-token';
-const LOCAL_USER_ID_KEY = 'math-time-attack-local-user-id';
 const EDGE_FUNCTION_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/auth`;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
 
@@ -101,27 +100,6 @@ function clearAllCaches(): void {
   } catch {
     // localStorage 접근 실패
   }
-}
-
-// --- 로컬 ID fallback ---
-
-function getOrCreateLocalUserId(): string {
-  try {
-    let localId = localStorage.getItem(LOCAL_USER_ID_KEY);
-    if (!localId) {
-      localId = `local-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
-      localStorage.setItem(LOCAL_USER_ID_KEY, localId);
-    }
-    return localId;
-  } catch {
-    return `temp-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
-  }
-}
-
-function fallbackToLocalId(): string {
-  const localId = getOrCreateLocalUserId();
-  cachedUserKey = localId;
-  return localId;
 }
 
 // --- Edge Function 통신 ---
@@ -262,13 +240,12 @@ export async function initializeUserIdentity(): Promise<string> {
     return refreshedKey;
   }
 
-  // 3. 항상 appLogin 시도 (환경 체크 없이)
+  // 3. appLogin 플로우 (환경 체크 없이 직접 호출)
   try {
     const loginResult = await appLogin();
 
     if (!loginResult) {
-      console.warn('[userIdentity] appLogin 미지원 앱 버전');
-      return fallbackToLocalId();
+      throw new Error('appLogin 미지원 앱 버전');
     }
 
     const { authorizationCode, referrer } = loginResult;
@@ -278,7 +255,7 @@ export async function initializeUserIdentity(): Promise<string> {
     return userKey;
   } catch (err) {
     console.warn('[userIdentity] appLogin 플로우 실패:', err);
-    return fallbackToLocalId();
+    throw err;
   }
 }
 

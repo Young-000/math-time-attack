@@ -21,7 +21,9 @@ import { useHeartSystem } from '@presentation/hooks/useHeartSystem';
 import { usePoints } from '@presentation/hooks/usePoints';
 import { DAILY_LOGIN_STARS, GAME_COMPLETE_STARS, ROUND_BONUS_STARS } from '@constants/points';
 import { StreakBanner, HeartDisplay, NoHeartsModal, BannerAd, MissionModal } from '@presentation/components';
+import { NotificationToggle } from '@presentation/components/notification-toggle';
 import { getPendingRewardCount } from '@domain/services/missionService';
+import { getCachedUserId } from '@infrastructure/userIdentity';
 
 const difficulties: DifficultyType[] = ['easy', 'medium', 'hard'];
 
@@ -387,6 +389,11 @@ export function DifficultySelectPage() {
 
   return (
     <div className="page">
+      {/* Notification toggle */}
+      <div style={{ position: 'fixed', top: '12px', right: '12px', zIndex: 100 }}>
+        <NotificationToggle appId="math-time-attack" userKey={getCachedUserId()} />
+      </div>
+
       <header className="header">
         <div className="header-top">
           <button
