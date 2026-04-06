@@ -274,7 +274,8 @@ export async function getUserId(): Promise<string> {
  * 현재 캐싱된 userKey (sync, 없으면 null)
  */
 export function getCachedUserId(): string | null {
-  return cachedUserKey;
+  if (cachedUserKey) return cachedUserKey;
+  return getCachedUserKey();
 }
 
 /**
