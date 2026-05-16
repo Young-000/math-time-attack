@@ -6,6 +6,7 @@
 import { useNavigate } from 'react-router-dom';
 import { usePoints } from '@presentation/hooks/usePoints';
 import { BannerAd } from '@presentation/components';
+import { LEGAL_URLS } from '@infrastructure/consent';
 
 const TYPE_LABELS: Record<string, string> = {
   game_complete: '게임 클리어',
@@ -86,6 +87,30 @@ export function MyPointsPage(): JSX.Element {
             </div>
           ))
         )}
+      </div>
+
+      {/* 약관/개인정보 영구 링크 */}
+      <div style={{
+        display: 'flex', justifyContent: 'center', gap: '16px',
+        margin: '24px 0 16px', fontSize: '13px',
+      }}>
+        <a
+          href={LEGAL_URLS.terms}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ color: '#64748b', textDecoration: 'underline' }}
+        >
+          {'이용약관'}
+        </a>
+        <span style={{ color: '#cbd5e1' }}>{'|'}</span>
+        <a
+          href={LEGAL_URLS.privacy}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ color: '#64748b', textDecoration: 'underline' }}
+        >
+          {'개인정보처리방침'}
+        </a>
       </div>
 
       <BannerAd className="banner-ad-my-points" />
