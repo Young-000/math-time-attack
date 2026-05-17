@@ -40,3 +40,10 @@ export const EXCHANGE_RATE = {
 
 export const MIN_EXCHANGE_STARS = 100;
 export const MAX_EXCHANGE_PER_DAY = 0; // 무제한
+
+/** 1회당 최대 교환 토스 포인트 (SDK grantPromotionReward 제한) */
+export const MAX_EXCHANGE_TOSS_POINTS = 100;
+
+/** 1회당 최대 교환 별 (= MAX_EXCHANGE_TOSS_POINTS × 교환비) */
+export const MAX_EXCHANGE_STARS =
+  MAX_EXCHANGE_TOSS_POINTS * EXCHANGE_RATE.stars;

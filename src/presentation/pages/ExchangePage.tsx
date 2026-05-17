@@ -7,7 +7,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePoints } from '@presentation/hooks/usePoints';
-import { EXCHANGE_RATE, MIN_EXCHANGE_STARS } from '@constants/points';
+import { EXCHANGE_RATE, MIN_EXCHANGE_STARS, MAX_EXCHANGE_STARS, MAX_EXCHANGE_TOSS_POINTS } from '@constants/points';
 import { BannerAd } from '@presentation/components';
 import { getCachedUserId } from '@infrastructure/userIdentity';
 import { claimPromotion } from '@domain/services/promotionService';
@@ -32,12 +32,18 @@ export function ExchangePage(): JSX.Element {
   } | null>(null);
 
   const canExchange = balance >= MIN_EXCHANGE_STARS;
-  const exchangeUnits = Math.floor(balance / EXCHANGE_RATE.stars);
+  // 1회 교환 단위는 EXCHANGE_RATE.stars(=100별)이며, SDK 제한으로 1회 최대 MAX_EXCHANGE_TOSS_POINTS(=100P) 까지만 교환 가능
+  const exchangeUnits = Math.min(
+    Math.floor(balance / EXCHANGE_RATE.stars),
+    Math.floor(MAX_EXCHANGE_STARS / EXCHANGE_RATE.stars),
+  );
   const maxStars = exchangeUnits * EXCHANGE_RATE.stars;
   const maxTossPoints = exchangeUnits * EXCHANGE_RATE.tossPoints;
+  const isCapped = balance >= MAX_EXCHANGE_STARS;
 
   const handleExchange = useCallback(async (): Promise<void> => {
     if (!canExchange) return;
+    if (maxTossPoints > MAX_EXCHANGE_TOSS_POINTS) return;
     setStatus('loading');
     setErrorMsg('');
 
@@ -75,7 +81,7 @@ export function ExchangePage(): JSX.Element {
       setStatus('error');
       setErrorMsg('네트워크 오류가 발생했습니다');
     }
-  }, [canExchange, refresh]);
+  }, [canExchange, refresh, maxStars, maxTossPoints]);
 
   // Reset status after 3s
   useEffect(() => {
@@ -112,6 +118,12 @@ export function ExchangePage(): JSX.Element {
         {canExchange && (
           <p className="exchange-max-info">
             {'최대'} {maxStars.toLocaleString()}{'별'} {'→'} {maxTossPoints.toLocaleString()} {'토스 포인트 교환 가능'}
+            {isCapped && (
+              <>
+                {' '}
+                <small>{'(1회 최대 '}{MAX_EXCHANGE_TOSS_POINTS}{'P)'}</small>
+              </>
+            )}
           </p>
         )}
       </div>
@@ -139,7 +151,7 @@ export function ExchangePage(): JSX.Element {
       {/* 필수 고지 */}
       <div className="exchange-disclaimer">
         <p>{'•'} {EXCHANGE_RATE.stars}{'별 = '}{EXCHANGE_RATE.tossPoints}{'토스 포인트 단위로 교환 가능합니다'}</p>
-        <p>{'• 적립한 만큼 무제한 교환 가능합니다'}</p>
+        <p>{'• 1회 최대 '}{MAX_EXCHANGE_TOSS_POINTS}{'P까지 교환할 수 있습니다'}</p>
         <p>{'• 교환된 포인트는 취소할 수 없습니다'}</p>
         <p>{'• 본 프로모션은 사전 고지 없이 중단될 수 있습니다'}</p>
       </div>
