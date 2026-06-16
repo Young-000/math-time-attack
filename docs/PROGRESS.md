@@ -2,6 +2,33 @@
 
 ## 현재 상태
 
+- 2026-05-18 `5ee2c77` feat(math-time-attack): apply 100P exchange cap (track-1 standard)
+- 2026-05-18 `7d9993a` chore(math-time-attack): pin sdk @2.5.1
+- 2026-05-17 `a149221` feat(privacy): wire terms/privacy consent flow (P0 console gap)
+- 2026-04-06 `830f875` fix: getCachedUserId가 localStorage도 읽도록 수정
+- 2026-04-06 `1fdd50b` fix: remove isAppsInTossEnvironment gate from appLogin
+- 2026-04-06 `0b9030a` fix: 비게임 출시가이드 체크리스트 수정
+- 2026-04-05 `fbe6349` fix: full review issues — ads, currency, auth, UX fixes
+- 2026-04-05 `ce37e5b` fix: replace unicode escapes with actual Korean/emoji characters
+- 2026-04-05 `5aeae52` fix: add backEvent + closeView, remove custom back buttons for console review compliance
+- 2026-03-29 `6255b99` fix: ISSUES.md 전체 수정 — 난이도 범위 분리, 홈 리다이렉트, 배너 광고, 교환 통일, HoF 유니코드 수정
+- 2026-03-29 `82c0dfd` fix(math-time-attack): UI/UX 이슈 수정 (더블체크)
+- 2026-03-28 `4f2e753` fix(math-time-attack): 환경체크 제거 + 이슈 수정
+- 2026-03-22 `7a24272` fix(auth): Toss login compliance - UNLINK 3 referrers, refresh token, Edge Function refresh
+- 2026-03-22 `223c1f8` chore: mark toss point exchange as TBD across all apps
+- 2026-03-22 `1fce68c` feat(economy): rebalance daily economics to target ~1000 stars/day and ~30 won revenue
+- 2026-03-22 `4f91ea2` feat(economy): redesign reward economics - 100 per rewarded ad, 50 daily login, mission rewards 50/60/80/100/150
+- 2026-03-22 `8027c90` fix(math-time-attack): localStorage fallback + exchange rate 100:1
+- 2026-03-22 `d649f7e` fix: remove ad pre-notice toast, fix UNLINK data cleanup scope, fix meta tags
+- 2026-03-21 `9783a09` fix(math-time-attack): mission coin credit + viewport-fit
+- 2026-03-21 `23d4307` fix(math-time-attack): critical bugs — exchange flow, granite host, init await, clearData
+- 2026-03-21 `b40687f` fix(math-time-attack): address AIT review rejection issues — exitApp, UNLINK, interstitial alert
+- 2026-03-17 `aa6e8e1` fix(exchange): use promotion Edge Function instead of nonexistent exchange endpoint
+- 2026-03-16 `5c49ff9` feat: progressive stage missions + reward effects
+- 2026-03-16 `34d5586` feat(pages): add mission button to home, track exchange for missions, update labels
+- 2026-03-16 `695dfe3` feat(result): integrate missions and remove direct Toss point promotion
+
+
 - 완성도: 95%
 - 상태: 활발히 개발 중 (fix/code-review-improvements 브랜치)
 
