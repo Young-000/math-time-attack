@@ -40,10 +40,10 @@ export const MISSION_TRACKS: readonly MissionTrack[] = [
     name: '도전자',
     emoji: '🎯',
     stages: [
-      { level: 1, target: 1, reward: 50, description: '게임 1회 클리어' },
-      { level: 2, target: 5, reward: 60, description: '게임 5회 클리어' },
-      { level: 3, target: 20, reward: 80, description: '게임 20회 클리어' },
-      { level: 4, target: 50, reward: 100, description: '게임 50회 클리어' },
+      { level: 1, target: 1, reward: 5, description: '게임 1회 클리어' },
+      { level: 2, target: 5, reward: 6, description: '게임 5회 클리어' },
+      { level: 3, target: 20, reward: 8, description: '게임 20회 클리어' },
+      { level: 4, target: 50, reward: 10, description: '게임 50회 클리어' },
     ],
   },
   {
@@ -51,10 +51,10 @@ export const MISSION_TRACKS: readonly MissionTrack[] = [
     name: '연속 도전',
     emoji: '🔥',
     stages: [
-      { level: 1, target: 3, reward: 50, description: '3일 연속 도전' },
-      { level: 2, target: 7, reward: 60, description: '7일 연속 도전' },
-      { level: 3, target: 14, reward: 80, description: '14일 연속 도전' },
-      { level: 4, target: 30, reward: 100, description: '30일 연속 도전' },
+      { level: 1, target: 3, reward: 5, description: '3일 연속 도전' },
+      { level: 2, target: 7, reward: 6, description: '7일 연속 도전' },
+      { level: 3, target: 14, reward: 8, description: '14일 연속 도전' },
+      { level: 4, target: 30, reward: 10, description: '30일 연속 도전' },
     ],
   },
   {
@@ -62,10 +62,10 @@ export const MISSION_TRACKS: readonly MissionTrack[] = [
     name: '구구단 마스터',
     emoji: '⭐',
     stages: [
-      { level: 1, target: 1, reward: 50, description: '타임어택 1회 시도' },
-      { level: 2, target: 5, reward: 60, description: '타임어택 5회 시도' },
-      { level: 3, target: 20, reward: 80, description: '타임어택 20회 시도' },
-      { level: 4, target: 50, reward: 100, description: '타임어택 50회 시도' },
+      { level: 1, target: 1, reward: 5, description: '타임어택 1회 시도' },
+      { level: 2, target: 5, reward: 6, description: '타임어택 5회 시도' },
+      { level: 3, target: 20, reward: 8, description: '타임어택 20회 시도' },
+      { level: 4, target: 50, reward: 10, description: '타임어택 50회 시도' },
     ],
   },
 ] as const;
@@ -84,10 +84,10 @@ export type DailyMission = {
 };
 
 export const DAILY_MISSIONS: readonly DailyMission[] = [
-  { id: 'daily_play_3', name: '오늘의 연습', emoji: '📝', target: 3, reward: 50, description: '오늘 게임 3회 클리어' },
-  { id: 'daily_play_7', name: '열공 모드', emoji: '📚', target: 7, reward: 60, description: '오늘 게임 7회 클리어' },
-  { id: 'daily_play_12', name: '연습의 왕', emoji: '👑', target: 12, reward: 80, description: '오늘 게임 12회 클리어' },
-  { id: 'daily_challenge', name: '일일 챌린지', emoji: '🏅', target: 1, reward: 100, description: '일일 챌린지 완료' },
+  { id: 'daily_play_3', name: '오늘의 연습', emoji: '📝', target: 3, reward: 5, description: '오늘 게임 3회 클리어' },
+  { id: 'daily_play_7', name: '열공 모드', emoji: '📚', target: 7, reward: 6, description: '오늘 게임 7회 클리어' },
+  { id: 'daily_play_12', name: '연습의 왕', emoji: '👑', target: 12, reward: 8, description: '오늘 게임 12회 클리어' },
+  { id: 'daily_challenge', name: '일일 챌린지', emoji: '🏅', target: 1, reward: 10, description: '일일 챌린지 완료' },
 ] as const;
 
 // Daily mission totals: 50+60+80+100 = 290 (all), typical ~200/day (3 of 4)
