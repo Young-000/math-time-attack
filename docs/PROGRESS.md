@@ -2,6 +2,9 @@
 
 ## 현재 상태
 
+- 2026-08-04 `f556c9f` fix(economy): v3 리워드 하향 — 보상형 광고 실단가 0.2원 대응
+
+
 - 2026-05-18 `5ee2c77` feat(math-time-attack): apply 100P exchange cap (track-1 standard)
 - 2026-05-18 `7d9993a` chore(math-time-attack): pin sdk @2.5.1
 - 2026-05-17 `a149221` feat(privacy): wire terms/privacy consent flow (P0 console gap)
