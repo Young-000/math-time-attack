@@ -1,10 +1,13 @@
-# Backlog — mTLS 기반 비게임 전환 리뉴얼
+# Backlog — Math Time Attack 야간 자율 사이클
 
-## Next
-<!-- 모든 백로그 항목 완료 -->
+> 형식: `- [ ] <태스크> (근거: <한 줄>)`
+> 금지: 돈 지출·외부 노출·DB 스키마 변경·배포 설정 변경·게임 이코노미 수치 변경
 
-## Later
-<!-- 추가 백로그 항목 -->
+## Active
+
+- [ ] vitest.config.ts에 `.worktrees/**` 제외 추가 후 src 테스트 수복 — promotionService `resetPromotionClaims` export 누락 및 userIdentity/fallback 통합 테스트 mock 정비 (근거: verify.sh test 단계 RED — 고아 worktree 스캔으로 테스트 중복 실행·hang, 메인 src 33개 테스트 실패)
+- [ ] deprecated `useRewardedAd.ts` 훅을 HeartStation·TimeAttackPage에서 v2 API(`loadFullScreenAd`/`showFullScreenAd`)로 교체 (근거: CLAUDE.md Known Issues — SDK 업그레이드 시 브레이킹 위험, v1 래퍼 2개 파일 잔존)
+- [ ] `.worktrees/toss-login-mandatory` 고아 worktree 디렉토리 정리 및 `.gitignore`에 `.worktrees/` 추가 (근거: git status fatal error 발생 — protect-main·auto-push 훅 전체 영향)
 
 ## Done
 - [x] **[Cycle 5] 정리 및 배포** (PR #12)
