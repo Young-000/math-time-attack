@@ -287,16 +287,18 @@ describe('통합: 인증 → 게임 → 랭킹 플로우', () => {
       expect(rankingUserId).toBe(MOCK_USER_KEY);
     });
 
-    it('비AIT 환경에서는 모든 레이어가 동일한 local- fallback ID를 사용한다', async () => {
+    it('appLogin.isSupported가 false여도 환경 체크 없이 같은 토스 userKey를 사용한다', async () => {
       mockAppLoginIsSupported.mockReturnValue(false);
       resetUserIdentityCache();
       localStorage.clear();
 
       const identityKey = await initializeUserIdentity();
       const getUserIdResult = await getUserId();
+      const rankingUserId = await getCurrentUserId();
 
-      expect(identityKey).toMatch(/^local-/);
+      expect(identityKey).toBe(MOCK_USER_KEY);
       expect(getUserIdResult).toBe(identityKey);
+      expect(rankingUserId).toBe(identityKey);
     });
   });
 });

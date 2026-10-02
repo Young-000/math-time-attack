@@ -72,16 +72,16 @@ describe('통합 테스트', () => {
       const difficultyCards = document.querySelectorAll('.difficulty-card');
       expect(difficultyCards.length).toBe(3);
       expect(screen.getByText('1-9단')).toBeInTheDocument();
-      expect(screen.getByText('1-19단')).toBeInTheDocument();
-      expect(screen.getByText('1-99단')).toBeInTheDocument();
+      expect(screen.getByText('10-19단')).toBeInTheDocument();
+      expect(screen.getByText('20-99단')).toBeInTheDocument();
     });
 
     it('난이도 설명이 정확해야 한다', () => {
       renderApp('/');
 
-      expect(screen.getByText('1-9 범위')).toBeInTheDocument();
-      expect(screen.getByText('1-19 범위')).toBeInTheDocument();
-      expect(screen.getByText('1-99 범위')).toBeInTheDocument();
+      expect(screen.getByText('1~9단')).toBeInTheDocument();
+      expect(screen.getByText('10~19단')).toBeInTheDocument();
+      expect(screen.getByText('20단 이상')).toBeInTheDocument();
     });
 
     it('기록이 없는 경우 "기록 없음"을 표시해야 한다', () => {

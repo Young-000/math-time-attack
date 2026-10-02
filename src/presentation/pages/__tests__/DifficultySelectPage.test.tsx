@@ -60,15 +60,15 @@ describe('DifficultySelectPage', () => {
       const difficultyCards = document.querySelectorAll('.difficulty-card');
       expect(difficultyCards.length).toBe(3);
       expect(screen.getByText('1-9단')).toBeInTheDocument();
-      expect(screen.getByText('1-19단')).toBeInTheDocument();
-      expect(screen.getByText('1-99단')).toBeInTheDocument();
+      expect(screen.getByText('10-19단')).toBeInTheDocument();
+      expect(screen.getByText('20-99단')).toBeInTheDocument();
     });
 
     it('각 난이도의 범위가 표시되어야 한다', () => {
       renderPage();
       expect(screen.getByText('1-9단')).toBeInTheDocument();
-      expect(screen.getByText('1-19단')).toBeInTheDocument();
-      expect(screen.getByText('1-99단')).toBeInTheDocument();
+      expect(screen.getByText('10-19단')).toBeInTheDocument();
+      expect(screen.getByText('20-99단')).toBeInTheDocument();
     });
   });
 

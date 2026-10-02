@@ -1,26 +1,22 @@
 /**
- * 통합 테스트: Edge Function 장애 시 fallback 처리
+ * 통합 테스트: 인증 장애 시 게임 지속성
  *
- * Edge Function 500 에러 또는 네트워크 타임아웃 발생 시에도
- * 게임은 localStorage fallback ID로 정상 플레이 가능해야 한다.
+ * Edge Function 500 에러, 네트워크 에러, appLogin 실패가 나도
+ * 게임 기록은 로컬에 저장되어 정상 플레이가 가능해야 한다.
+ * 인증 실패는 local- 대체 ID로 숨기지 않고 에러로 드러낸다 (local-/temp- userKey 금지 정책).
  *
  * 테스트 범위:
- * - Edge Function 500 → localStorage fallback → 게임 정상 진행
- * - 네트워크 에러 → localStorage fallback → 로컬 기록 저장 정상
+ * - Edge Function 500 → 인증 에러 + userKey 미캐시 → 로컬 기록 저장 정상
+ * - 네트워크 에러 → 인증 에러 → 다음 호출에서 인증 재시도
  * - Supabase 미설정 환경 → 로컬 전용 모드로 동작
- * - 타임아웃 처리 시 캐시 무효화 없음
+ * - appLogin 실패 → 인증 에러 → 로컬 기록 저장 정상
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
-const { mockAppLogin, mockAppLoginIsSupported } = vi.hoisted(() => {
-  const mockAppLoginIsSupported = vi.fn(() => false);
-  const mockAppLogin = Object.assign(
-    vi.fn(() => Promise.resolve(undefined as unknown)),
-    { isSupported: mockAppLoginIsSupported },
-  );
-  return { mockAppLogin, mockAppLoginIsSupported };
-});
+const { mockAppLogin } = vi.hoisted(() => ({
+  mockAppLogin: vi.fn(),
+}));
 
 vi.mock('@apps-in-toss/web-framework', () => ({
   appLogin: mockAppLogin,
@@ -29,8 +25,8 @@ vi.mock('@apps-in-toss/web-framework', () => ({
 import {
   initializeUserIdentity,
   getUserId,
+  getCachedUserId,
   resetUserIdentityCache,
-  isAppsInTossEnvironment,
 } from '@infrastructure/userIdentity';
 import {
   saveRecord,
@@ -41,244 +37,157 @@ import {
 const originalFetch = globalThis.fetch;
 const mockFetch = vi.fn();
 
-describe('통합: Edge Function 장애 시 fallback 처리', () => {
+function mockAuthSuccess(userKey: string): void {
+  mockFetch.mockResolvedValue({
+    ok: true,
+    json: () => Promise.resolve({ userKey, expiresAt: '2026-02-24T14:00:00.000Z' }),
+  });
+}
+
+function mockServerError(error: string): void {
+  mockFetch.mockResolvedValue({
+    ok: false,
+    status: 500,
+    json: () => Promise.resolve({ error, message: 'Database connection failed' }),
+  });
+}
+
+describe('통합: 인증 장애 시 게임 지속성', () => {
   beforeEach(() => {
     resetUserIdentityCache();
     localStorage.clear();
-    vi.clearAllMocks();
+    mockFetch.mockReset();
+    mockAppLogin.mockReset();
+    mockAppLogin.mockResolvedValue({ authorizationCode: 'some-auth-code', referrer: 'home' });
     globalThis.fetch = mockFetch;
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
   });
 
   afterEach(() => {
     globalThis.fetch = originalFetch;
+    vi.restoreAllMocks();
   });
 
-  describe('AIT 환경 + Edge Function 500 에러', () => {
-    beforeEach(() => {
-      mockAppLoginIsSupported.mockReturnValue(true);
-      mockAppLogin.mockResolvedValue({
-        authorizationCode: 'some-auth-code',
-        referrer: 'home',
-      });
+  describe('Edge Function 500 에러', () => {
+    it('인증 에러를 던지고 userKey를 캐시하지 않는다', async () => {
+      mockServerError('INTERNAL_SERVER_ERROR');
+
+      await expect(initializeUserIdentity()).rejects.toThrow('INTERNAL_SERVER_ERROR');
+
+      expect(getCachedUserId()).toBeNull();
     });
 
-    it('Edge Function 500 에러 시 localStorage fallback ID를 반환한다', async () => {
-      mockFetch.mockResolvedValue({
-        ok: false,
-        status: 500,
-        json: () => Promise.resolve({
-          error: 'INTERNAL_SERVER_ERROR',
-          message: 'Database connection failed',
-        }),
-      });
+    it('인증 실패와 무관하게 게임 기록을 로컬에 저장할 수 있다', async () => {
+      mockServerError('SERVER_ERROR');
+      await expect(initializeUserIdentity()).rejects.toThrow();
 
-      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-      const userId = await initializeUserIdentity();
-
-      expect(userId).toMatch(/^local-/);
-      expect(warnSpy).toHaveBeenCalled();
-      warnSpy.mockRestore();
-    });
-
-    it('fallback ID로 게임 기록을 로컬에 저장할 수 있다', async () => {
-      mockFetch.mockResolvedValue({
-        ok: false,
-        status: 500,
-        json: () => Promise.resolve({ error: 'SERVER_ERROR', message: '' }),
-      });
-
-      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-      const fallbackId = await initializeUserIdentity();
-      warnSpy.mockRestore();
-
-      expect(fallbackId).toMatch(/^local-/);
-
-      // 게임 기록 로컬 저장 — Supabase 미설정이면 서버 저장 스킵
-      const result = await saveRecord('easy', 5000, 'multiplication', fallbackId);
+      const result = await saveRecord('easy', 5000, 'multiplication');
 
       expect(result.isNewLocalRecord).toBe(true);
-
-      const localRecord = getBestRecord('easy', 'multiplication');
-      expect(localRecord).not.toBeNull();
-      expect(localRecord?.time).toBe(5000);
+      expect(getBestRecord('easy', 'multiplication')?.time).toBe(5000);
     });
 
-    it('fallback ID는 localStorage에 저장되어 재시작 후에도 동일하다', async () => {
-      mockFetch.mockResolvedValue({
-        ok: false,
-        status: 500,
-        json: () => Promise.resolve({ error: 'SERVER_ERROR', message: '' }),
-      });
+    it('재시작 후에는 대체 ID를 재사용하지 않고 인증을 다시 시도한다', async () => {
+      mockServerError('SERVER_ERROR');
+      await expect(initializeUserIdentity()).rejects.toThrow();
 
-      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-      const firstId = await initializeUserIdentity();
-      warnSpy.mockRestore();
-
-      // 메모리 캐시 초기화 (앱 재시작 시뮬레이션)
+      // 메모리 캐시 초기화 (앱 재시작 시뮬레이션) 후 서버 복구
       resetUserIdentityCache();
+      mockAuthSuccess('recovered-user-key');
 
-      // localStorage에 저장된 fallback ID를 재사용
-      // 비AIT 환경으로 전환하여 fallback 경로 재사용
-      mockAppLoginIsSupported.mockReturnValue(false);
-      const secondId = await initializeUserIdentity();
+      const userId = await initializeUserIdentity();
 
-      expect(firstId).toBe(secondId);
+      expect(userId).toBe('recovered-user-key');
+      expect(mockAppLogin).toHaveBeenCalledTimes(2);
     });
   });
 
-  describe('AIT 환경 + 네트워크 에러 (fetch throw)', () => {
-    beforeEach(() => {
-      mockAppLoginIsSupported.mockReturnValue(true);
-      mockAppLogin.mockResolvedValue({
-        authorizationCode: 'auth-code-net-error',
-        referrer: 'home',
-      });
-    });
-
-    it('네트워크 에러 시 fallback ID를 반환하고 게임을 정상 진행한다', async () => {
+  describe('네트워크 에러 (fetch throw)', () => {
+    it('인증 에러를 던져도 게임 기록은 로컬에 저장된다', async () => {
       mockFetch.mockRejectedValue(new TypeError('Failed to fetch'));
 
-      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-      const userId = await initializeUserIdentity();
-      warnSpy.mockRestore();
+      await expect(initializeUserIdentity()).rejects.toThrow('Failed to fetch');
 
-      expect(userId).toMatch(/^local-/);
-
-      // 게임 기록 로컬 저장 정상 동작
-      const result = await saveRecord('medium', 7500, 'addition', userId);
+      const result = await saveRecord('medium', 7500, 'addition');
       expect(result.isNewLocalRecord).toBe(true);
-
-      const localRecord = getBestRecord('medium', 'addition');
-      expect(localRecord?.time).toBe(7500);
+      expect(getBestRecord('medium', 'addition')?.time).toBe(7500);
     });
 
-    it('네트워크 에러 후 getUserId는 fallback ID를 반환한다', async () => {
-      mockFetch.mockRejectedValue(new TypeError('Network offline'));
+    it('네트워크 에러 후 getUserId는 캐시 없이 인증을 다시 시도한다', async () => {
+      mockFetch.mockRejectedValueOnce(new TypeError('Network offline'));
+      await expect(initializeUserIdentity()).rejects.toThrow('Network offline');
 
-      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-      await initializeUserIdentity();
-      warnSpy.mockRestore();
-
+      mockAuthSuccess('user-key-after-retry');
       const userId = await getUserId();
 
-      expect(userId).toMatch(/^local-/);
-      // appLogin은 1번만 호출됨 (캐시된 fallback ID 재사용)
-      expect(mockAppLogin).toHaveBeenCalledTimes(1);
+      expect(userId).toBe('user-key-after-retry');
+      expect(mockAppLogin).toHaveBeenCalledTimes(2);
     });
   });
 
-  describe('비AIT 환경 (웹 브라우저): graceful degradation', () => {
-    beforeEach(() => {
-      mockAppLoginIsSupported.mockReturnValue(false);
-    });
-
-    it('비AIT 환경에서 isAppsInTossEnvironment는 false를 반환한다', () => {
-      expect(isAppsInTossEnvironment()).toBe(false);
-    });
-
-    it('비AIT 환경에서 appLogin 없이 local- fallback ID를 획득한다', async () => {
-      const userId = await initializeUserIdentity();
-
-      expect(userId).toMatch(/^local-/);
-      expect(mockAppLogin).not.toHaveBeenCalled();
-      expect(mockFetch).not.toHaveBeenCalled();
-    });
-
-    it('비AIT 환경에서 게임 기록을 로컬에 정상 저장한다', async () => {
-      const userId = await initializeUserIdentity();
-
-      const result = await saveRecord('hard', 12000, 'mixed', userId);
+  describe('로컬 기록 (인증 없이)', () => {
+    it('게임 기록을 로컬에 정상 저장한다', async () => {
+      const result = await saveRecord('hard', 12000, 'mixed');
 
       expect(result.isNewLocalRecord).toBe(true);
-      const record = getBestRecord('hard', 'mixed');
-      expect(record?.time).toBe(12000);
+      expect(getBestRecord('hard', 'mixed')?.time).toBe(12000);
     });
 
-    it('비AIT 환경에서 더 좋은 기록이 기존 기록을 덮어쓴다', async () => {
-      const userId = await initializeUserIdentity();
+    it('더 좋은 기록이 기존 기록을 덮어쓴다', async () => {
+      await saveRecord('easy', 8000, 'multiplication');
+      expect(getBestRecord('easy', 'multiplication')?.time).toBe(8000);
 
-      await saveRecord('easy', 8000, 'multiplication', userId);
-      const firstRecord = getBestRecord('easy', 'multiplication');
-      expect(firstRecord?.time).toBe(8000);
-
-      await saveRecord('easy', 6000, 'multiplication', userId);
-      const improvedRecord = getBestRecord('easy', 'multiplication');
-      expect(improvedRecord?.time).toBe(6000);
+      await saveRecord('easy', 6000, 'multiplication');
+      expect(getBestRecord('easy', 'multiplication')?.time).toBe(6000);
     });
 
-    it('비AIT 환경에서 더 나쁜 기록은 최고 기록을 갱신하지 않는다', async () => {
-      const userId = await initializeUserIdentity();
-
-      await saveRecord('easy', 5000, 'multiplication', userId);
-      const slowResult = await saveRecord('easy', 9000, 'multiplication', userId);
+    it('더 나쁜 기록은 최고 기록을 갱신하지 않는다', async () => {
+      await saveRecord('easy', 5000, 'multiplication');
+      const slowResult = await saveRecord('easy', 9000, 'multiplication');
 
       expect(slowResult.isNewLocalRecord).toBe(false);
-      const record = getBestRecord('easy', 'multiplication');
-      expect(record?.time).toBe(5000);
+      expect(getBestRecord('easy', 'multiplication')?.time).toBe(5000);
     });
   });
 
   describe('Supabase 미설정 환경: 로컬 전용 모드', () => {
-    it('Supabase 미설정 시 로컬 전용 모드로 동작한다', () => {
-      // vitest 환경에서는 VITE_SUPABASE_URL이 설정되지 않아 false 반환
-      // (실제 supabase.ts의 isSupabaseConfigured를 직접 호출)
-      const online = isOnlineMode();
-      // 환경 변수 미설정 시 false, 설정 시 true
-      expect(typeof online).toBe('boolean');
+    it('Supabase 설정 여부를 boolean으로 알려준다', () => {
+      expect(typeof isOnlineMode()).toBe('boolean');
     });
 
     it('Supabase 미설정 시 saveRecord는 로컬 저장만 수행하고 serverRecord는 null이다', async () => {
-      mockAppLoginIsSupported.mockReturnValue(false);
-      const userId = await initializeUserIdentity();
+      const result = await saveRecord('easy', 4000, 'multiplication');
 
-      // isOnlineMode()가 false인 경우 서버 저장 스킵
-      const result = await saveRecord('easy', 4000, 'multiplication', userId);
-
-      // isNewLocalRecord는 항상 로컬 저장 성공 여부
       expect(result.isNewLocalRecord).toBe(true);
-      // serverRecord는 null (Supabase 미설정)
-      // 실제 환경 변수 여부에 따라 null 또는 non-null
-      expect(result.serverRecord === null || result.serverRecord !== null).toBe(true);
+      if (!isOnlineMode()) {
+        expect(result.serverRecord).toBeNull();
+      }
     });
   });
 
   describe('appLogin 실패 시나리오', () => {
-    beforeEach(() => {
-      mockAppLoginIsSupported.mockReturnValue(true);
-    });
-
-    it('appLogin이 null을 반환하면 fallback으로 graceful degradation', async () => {
+    it('appLogin이 null을 반환하면 미지원 에러를 던진다', async () => {
       mockAppLogin.mockResolvedValue(null);
 
-      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-      const userId = await initializeUserIdentity();
-      warnSpy.mockRestore();
-
-      expect(userId).toMatch(/^local-/);
+      await expect(initializeUserIdentity()).rejects.toThrow('appLogin 미지원 앱 버전');
+      expect(getCachedUserId()).toBeNull();
     });
 
-    it('appLogin SDK 예외 시 fallback으로 graceful degradation', async () => {
+    it('appLogin SDK 예외는 그대로 전달된다', async () => {
       mockAppLogin.mockRejectedValue(new Error('Bridge not available'));
 
-      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-      const userId = await initializeUserIdentity();
-      warnSpy.mockRestore();
-
-      expect(userId).toMatch(/^local-/);
+      await expect(initializeUserIdentity()).rejects.toThrow('Bridge not available');
+      expect(getCachedUserId()).toBeNull();
     });
 
     it('appLogin 실패 후 게임 기록 로컬 저장이 정상 동작한다', async () => {
       mockAppLogin.mockRejectedValue(new Error('SDK error'));
+      await expect(initializeUserIdentity()).rejects.toThrow('SDK error');
 
-      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-      const fallbackId = await initializeUserIdentity();
-      warnSpy.mockRestore();
-
-      const result = await saveRecord('medium', 6500, 'multiplication', fallbackId);
+      const result = await saveRecord('medium', 6500, 'multiplication');
 
       expect(result.isNewLocalRecord).toBe(true);
-      const record = getBestRecord('medium', 'multiplication');
-      expect(record?.time).toBe(6500);
+      expect(getBestRecord('medium', 'multiplication')?.time).toBe(6500);
     });
   });
 });
