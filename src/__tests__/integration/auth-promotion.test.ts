@@ -1,12 +1,14 @@
 /**
- * 통합 테스트: 인증 → 프로모션 지급 플로우
+ * 통합 테스트: 인증 → 프로모션 지급 플로우 (서비스 레이어)
  *
  * appLogin → userKey → claimPromotion(SDK grantPromotionReward) 흐름을 검증한다.
  *
  * 테스트 범위:
  * - userIdentity: appLogin → Edge Function → userKey 획득
  * - promotionService: SDK 직접 호출 (userKey·AIT 환경 게이트 없음)
- * - 인증 실패가 프로모션 지급을 막지 않음 (로그인 타이밍 이슈로 지급이 막히던 회귀 방지)
+ * - 서비스 레이어에서는 인증 실패가 claimPromotion을 막지 않음
+ *
+ * 주의: 화면 레이어(ExchangePage)는 캐시된 userKey가 없으면 지급 전에 막는다 — 여기서 다루지 않는다.
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';

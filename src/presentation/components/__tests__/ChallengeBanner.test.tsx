@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { ChallengeBanner } from '../ChallengeBanner';
 
@@ -30,7 +30,7 @@ vi.mock('@domain/services/challengeService', async () => {
 
 describe('ChallengeBanner', () => {
   beforeEach(() => {
-    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.useFakeTimers({ toFake: ['Date', 'setInterval', 'clearInterval'] });
     vi.setSystemTime(FIXED_NOW);
     mockGetTimeRemaining.mockReset();
     mockGetTimeRemaining.mockImplementation(() => {
@@ -65,6 +65,16 @@ describe('ChallengeBanner', () => {
       </MemoryRouter>,
     );
     expect(mockGetTimeRemaining).toHaveBeenCalledTimes(1);
+  });
+
+  it('1분마다 남은 시간을 다시 계산한다', () => {
+    renderBanner();
+
+    act(() => {
+      vi.advanceTimersByTime(60_000);
+    });
+
+    expect(mockGetTimeRemaining).toHaveBeenCalledTimes(2);
   });
 
   it('탭을 바꾸면 해당 기간의 남은 시간을 다시 계산한다', () => {

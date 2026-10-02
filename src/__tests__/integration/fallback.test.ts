@@ -1,15 +1,17 @@
 /**
- * 통합 테스트: 인증 장애 시 게임 지속성
+ * 통합 테스트: 인증 장애 시 서비스 레이어 동작
  *
- * Edge Function 500 에러, 네트워크 에러, appLogin 실패가 나도
- * 게임 기록은 로컬에 저장되어 정상 플레이가 가능해야 한다.
  * 인증 실패는 local- 대체 ID로 숨기지 않고 에러로 드러낸다 (local-/temp- userKey 금지 정책).
+ * recordService의 로컬 저장은 인증과 독립적으로 동작한다.
+ *
+ * 주의: 이 파일은 서비스 레이어만 검증한다. 화면 레이어(ResultPage 등)가 인증 실패 시
+ * 로컬 저장까지 건너뛰는지는 여기서 보장하지 않는다 — 각 페이지 테스트의 몫이다.
  *
  * 테스트 범위:
- * - Edge Function 500 → 인증 에러 + userKey 미캐시 → 로컬 기록 저장 정상
+ * - Edge Function 500 → 인증 에러 + userKey 미캐시 → 재시작 시 인증 재시도
  * - 네트워크 에러 → 인증 에러 → 다음 호출에서 인증 재시도
- * - Supabase 미설정 환경 → 로컬 전용 모드로 동작
- * - appLogin 실패 → 인증 에러 → 로컬 기록 저장 정상
+ * - Supabase 미설정 환경 → saveRecord가 로컬 전용으로 동작
+ * - appLogin 실패 → 인증 에러, userKey 미캐시
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
@@ -33,6 +35,12 @@ import {
   getBestRecord,
   isOnlineMode,
 } from '@data/recordService';
+
+// .env.local에 Supabase 키가 있어도 로컬 전용 모드로 고정한다
+vi.mock('@infrastructure/supabase', () => ({
+  getSupabaseClient: vi.fn(() => null),
+  isSupabaseConfigured: vi.fn(() => false),
+}));
 
 const originalFetch = globalThis.fetch;
 const mockFetch = vi.fn();
@@ -151,17 +159,16 @@ describe('통합: 인증 장애 시 게임 지속성', () => {
   });
 
   describe('Supabase 미설정 환경: 로컬 전용 모드', () => {
-    it('Supabase 설정 여부를 boolean으로 알려준다', () => {
-      expect(typeof isOnlineMode()).toBe('boolean');
+    it('Supabase가 설정되지 않으면 온라인 모드가 아니다', () => {
+      expect(isOnlineMode()).toBe(false);
     });
 
     it('Supabase 미설정 시 saveRecord는 로컬 저장만 수행하고 serverRecord는 null이다', async () => {
       const result = await saveRecord('easy', 4000, 'multiplication');
 
       expect(result.isNewLocalRecord).toBe(true);
-      if (!isOnlineMode()) {
-        expect(result.serverRecord).toBeNull();
-      }
+      expect(result.serverRecord).toBeNull();
+      expect(mockFetch).not.toHaveBeenCalled();
     });
   });
 
