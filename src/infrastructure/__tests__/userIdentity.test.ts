@@ -3,7 +3,9 @@
  *
  * appLogin() -> Edge Function -> userKey 플로우를 검증한다.
  * 시나리오: appLogin 성공, appLogin 실패, Edge Function 실패,
- *          캐시 히트, 캐시 만료, 비AIT 환경
+ *          캐시 히트, 캐시 만료, 환경 체크 없음
+ *
+ * 실패 시 local- 대체 ID를 만들지 않고 에러를 던진다 (local-/temp- userKey 금지 정책).
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
@@ -70,24 +72,32 @@ describe('userIdentity', () => {
     });
   });
 
-  describe('비AIT 환경 (웹 브라우저)', () => {
+  describe('환경 체크 없음 (isSupported가 false여도)', () => {
     beforeEach(() => {
       mockAppLoginIsSupported.mockReturnValue(false);
     });
 
-    it('appLogin을 호출하지 않고 localStorage fallback ID를 반환한다', async () => {
+    it('isSupported 결과와 무관하게 appLogin을 호출한다', async () => {
+      mockAppLogin.mockResolvedValue({ authorizationCode: 'code', referrer: 'home' });
+      mockFetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({ userKey: 'user-key-web', expiresAt: '2026-02-24T14:00:00.000Z' }),
+      });
+
       const userId = await initializeUserIdentity();
 
-      expect(userId).toMatch(/^local-/);
-      expect(mockAppLogin).not.toHaveBeenCalled();
+      expect(userId).toBe('user-key-web');
+      expect(mockAppLogin).toHaveBeenCalledTimes(1);
     });
 
-    it('fallback ID는 localStorage에 저장되어 재사용된다', async () => {
-      const first = await initializeUserIdentity();
-      resetUserIdentityCache();
-      const second = await initializeUserIdentity();
+    it('appLogin이 지원되지 않으면 local- ID를 만들지 않고 에러를 던진다', async () => {
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
-      expect(first).toBe(second);
+      await expect(initializeUserIdentity()).rejects.toThrow('appLogin 미지원 앱 버전');
+
+      expect(getCachedUserId()).toBeNull();
+      expect(localStorage.getItem('math-time-attack-local-user-id')).toBeNull();
+      warnSpy.mockRestore();
     });
   });
 
@@ -223,26 +233,26 @@ describe('userIdentity', () => {
       mockAppLoginIsSupported.mockReturnValue(true);
     });
 
-    it('appLogin이 undefined를 반환하면 fallback ID를 반환한다', async () => {
+    it('appLogin이 undefined를 반환하면 미지원 에러를 던진다', async () => {
       mockAppLogin.mockResolvedValue(undefined);
 
       const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-      const userId = await initializeUserIdentity();
 
-      expect(userId).toMatch(/^local-/);
+      await expect(initializeUserIdentity()).rejects.toThrow('appLogin 미지원 앱 버전');
       expect(warnSpy).toHaveBeenCalled();
+      expect(getCachedUserId()).toBeNull();
 
       warnSpy.mockRestore();
     });
 
-    it('appLogin이 예외를 던지면 fallback ID를 반환한다', async () => {
+    it('appLogin이 예외를 던지면 그 에러를 전달한다', async () => {
       mockAppLogin.mockRejectedValue(new Error('SDK internal error'));
 
       const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-      const userId = await initializeUserIdentity();
 
-      expect(userId).toMatch(/^local-/);
+      await expect(initializeUserIdentity()).rejects.toThrow('SDK internal error');
       expect(warnSpy).toHaveBeenCalled();
+      expect(getCachedUserId()).toBeNull();
 
       warnSpy.mockRestore();
     });
@@ -257,7 +267,7 @@ describe('userIdentity', () => {
       });
     });
 
-    it('Edge Function이 500 에러를 반환하면 fallback ID를 반환한다', async () => {
+    it('Edge Function이 500 에러를 반환하면 에러 코드를 담아 던진다', async () => {
       mockFetch.mockResolvedValue({
         ok: false,
         status: 500,
@@ -268,27 +278,27 @@ describe('userIdentity', () => {
       });
 
       const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-      const userId = await initializeUserIdentity();
 
-      expect(userId).toMatch(/^local-/);
+      await expect(initializeUserIdentity()).rejects.toThrow('TOSS_SERVER_ERROR');
       expect(warnSpy).toHaveBeenCalled();
+      expect(getCachedUserId()).toBeNull();
 
       warnSpy.mockRestore();
     });
 
-    it('Edge Function 네트워크 에러 시 fallback ID를 반환한다', async () => {
+    it('Edge Function 네트워크 에러 시 그 에러를 전달한다', async () => {
       mockFetch.mockRejectedValue(new TypeError('Failed to fetch'));
 
       const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-      const userId = await initializeUserIdentity();
 
-      expect(userId).toMatch(/^local-/);
+      await expect(initializeUserIdentity()).rejects.toThrow('Failed to fetch');
       expect(warnSpy).toHaveBeenCalled();
+      expect(getCachedUserId()).toBeNull();
 
       warnSpy.mockRestore();
     });
 
-    it('Edge Function이 400 INVALID_AUTH_CODE를 반환하면 fallback ID를 반환한다', async () => {
+    it('Edge Function이 400 INVALID_AUTH_CODE를 반환하면 에러 코드를 담아 던진다', async () => {
       mockFetch.mockResolvedValue({
         ok: false,
         status: 400,
@@ -299,22 +309,24 @@ describe('userIdentity', () => {
       });
 
       const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-      const userId = await initializeUserIdentity();
 
-      expect(userId).toMatch(/^local-/);
+      await expect(initializeUserIdentity()).rejects.toThrow('INVALID_AUTH_CODE');
+      expect(getCachedUserId()).toBeNull();
 
       warnSpy.mockRestore();
     });
 
-    it('Edge Function 타임아웃(AbortError) 시 fallback ID를 반환한다', async () => {
-      const abortError = new DOMException('The operation was aborted.', 'AbortError');
+    it('Edge Function 타임아웃(AbortError) 시 타임아웃 에러를 던진다', async () => {
+      // 브라우저의 fetch abort 에러(DOMException)는 Error를 상속한다.
+      // jsdom의 DOMException은 instanceof Error가 아니라서 같은 모양의 Error로 재현한다.
+      const abortError = Object.assign(new Error('The operation was aborted.'), { name: 'AbortError' });
       mockFetch.mockRejectedValue(abortError);
 
       const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-      const userId = await initializeUserIdentity();
 
-      expect(userId).toMatch(/^local-/);
+      await expect(initializeUserIdentity()).rejects.toThrow('Edge Function 타임아웃 (5000ms)');
       expect(warnSpy).toHaveBeenCalled();
+      expect(getCachedUserId()).toBeNull();
 
       warnSpy.mockRestore();
     });
@@ -346,11 +358,16 @@ describe('userIdentity', () => {
     });
 
     it('캐시가 없으면 initializeUserIdentity를 호출한다', async () => {
-      mockAppLoginIsSupported.mockReturnValue(false);
+      mockAppLogin.mockResolvedValue({ authorizationCode: 'code-2', referrer: 'home' });
+      mockFetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({ userKey: 'user-key-2', expiresAt: '2026-02-24T14:00:00.000Z' }),
+      });
 
       const userId = await getUserId();
 
-      expect(userId).toMatch(/^local-/);
+      expect(userId).toBe('user-key-2');
+      expect(mockAppLogin).toHaveBeenCalledTimes(1);
     });
   });
 });

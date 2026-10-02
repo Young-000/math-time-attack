@@ -16,13 +16,15 @@ export function ChallengeBanner(): JSX.Element {
 
   const info = getCurrentChallengeInfo(activeTab);
   const rewards = info.rewards as Record<number, number>;
+  // endsAt은 렌더마다 새 Date 객체라 의존성으로 쓰면 effect가 매 렌더 다시 돈다 → 시각 값으로 비교
+  const endsAtTime = info.endsAt.getTime();
 
   useEffect(() => {
-    const update = (): void => setTimeLeft(getTimeRemaining(info.endsAt));
+    const update = (): void => setTimeLeft(getTimeRemaining(new Date(endsAtTime)));
     update();
     const timer = setInterval(update, 60_000);
     return () => clearInterval(timer);
-  }, [info.endsAt]);
+  }, [endsAtTime]);
 
   const timeText = timeLeft.days > 0
     ? `${timeLeft.days}일 ${timeLeft.hours}시간`

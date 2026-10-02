@@ -1,33 +1,21 @@
 /**
  * promotionService.ts 테스트
  *
- * Edge Function 기반 프로모션 지급 플로우를 검증한다.
- * 시나리오: 성공, 실패, 이미 지급됨, 네트워크 에러, 비AIT 환경, userKey 미제공
+ * SDK grantPromotionReward() 직접 호출 방식의 결과 매핑을 검증한다.
+ * 시나리오: 성공, 앱 버전 미지원(undefined), 'ERROR', 에러 코드, 예상 밖 응답, 예외
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-// vi.hoisted를 사용하여 mock 함수를 hoisted 스코프에서 생성
-const { mockAppLoginIsSupported } = vi.hoisted(() => {
-  const mockAppLoginIsSupported = vi.fn(() => false);
-  return { mockAppLoginIsSupported };
-});
-
-vi.mock('@apps-in-toss/web-framework', () => ({
-  appLogin: Object.assign(
-    vi.fn(() => Promise.resolve(undefined)),
-    { isSupported: mockAppLoginIsSupported },
-  ),
+const { mockGrantPromotionReward } = vi.hoisted(() => ({
+  mockGrantPromotionReward: vi.fn(),
 }));
 
-import {
-  claimPromotion,
-  resetPromotionClaims,
-} from '../promotionService';
+vi.mock('@apps-in-toss/web-framework', () => ({
+  grantPromotionReward: mockGrantPromotionReward,
+}));
 
-// fetch mock
-const originalFetch = globalThis.fetch;
-const mockFetch = vi.fn();
+import { claimPromotion } from '../promotionService';
 
 const TEST_CODE = 'TEST_PROMO_CODE_123';
 const TEST_AMOUNT = 100;
@@ -35,204 +23,105 @@ const TEST_USER_KEY = 'test-user-key-abc';
 
 describe('promotionService', () => {
   beforeEach(() => {
-    resetPromotionClaims();
-    localStorage.clear();
-    vi.clearAllMocks();
-    mockAppLoginIsSupported.mockReturnValue(false);
-    globalThis.fetch = mockFetch;
-  });
-
-  afterEach(() => {
-    globalThis.fetch = originalFetch;
+    mockGrantPromotionReward.mockReset();
   });
 
   describe('claimPromotion', () => {
-    it('비AIT 환경에서는 에러를 반환한다', async () => {
-      mockAppLoginIsSupported.mockReturnValue(false);
+    it('프로모션 코드와 금액으로 SDK를 호출한다', async () => {
+      mockGrantPromotionReward.mockResolvedValue({ key: 'reward-key-1' });
 
-      const result = await claimPromotion(TEST_CODE, TEST_AMOUNT, TEST_USER_KEY);
+      await claimPromotion(TEST_CODE, TEST_AMOUNT, TEST_USER_KEY);
 
-      expect(result.success).toBe(false);
-      if (!result.success) {
-        expect(result.error).toContain('AIT 환경이 아닙니다');
-      }
-      expect(mockFetch).not.toHaveBeenCalled();
+      expect(mockGrantPromotionReward).toHaveBeenCalledWith({
+        params: { promotionCode: TEST_CODE, amount: TEST_AMOUNT },
+      });
     });
 
-    it('userKey 미제공 시 에러를 반환한다', async () => {
-      mockAppLoginIsSupported.mockReturnValue(true);
+    it('userKey 없이도 SDK를 호출한다 (환경·userKey 게이트 없음)', async () => {
+      mockGrantPromotionReward.mockResolvedValue({ key: 'reward-key-1' });
 
       const result = await claimPromotion(TEST_CODE, TEST_AMOUNT);
 
-      expect(result.success).toBe(false);
-      if (!result.success) {
-        expect(result.error).toContain('userKey가 필요합니다');
-      }
-      expect(mockFetch).not.toHaveBeenCalled();
+      expect(mockGrantPromotionReward).toHaveBeenCalledTimes(1);
+      expect(result.success).toBe(true);
     });
 
-    it('Edge Function 성공 시 포인트 지급 성공을 반환한다', async () => {
-      mockAppLoginIsSupported.mockReturnValue(true);
-      mockFetch.mockResolvedValue({
-        ok: true,
-        json: () => Promise.resolve({
-          success: true,
-          key: 'promo-key-xyz',
-        }),
-      });
+    it('{ key } 응답이면 포인트 지급 성공을 반환한다', async () => {
+      mockGrantPromotionReward.mockResolvedValue({ key: 'reward-key-1' });
 
       const result = await claimPromotion(TEST_CODE, TEST_AMOUNT, TEST_USER_KEY);
 
-      expect(result.success).toBe(true);
-      if (result.success) {
-        expect(result.message).toContain(`${TEST_AMOUNT} 포인트 지급 성공`);
-        expect(result.message).toContain('promo-key-xyz');
-      }
-
-      // Edge Function에 올바른 요청이 전달되었는지 확인
-      expect(mockFetch).toHaveBeenCalledTimes(1);
-      const [url, options] = mockFetch.mock.calls[0] as [string, RequestInit];
-      expect(url).toContain('/functions/v1/promotion');
-      const body = JSON.parse(options.body as string);
-      expect(body).toEqual({
-        promotionCode: TEST_CODE,
-        amount: TEST_AMOUNT,
-        userKey: TEST_USER_KEY,
-      });
+      expect(result).toEqual({ success: true, message: '100 포인트 지급 성공!' });
     });
 
-    it('성공 후 localStorage에 지급 완료 기록이 남는다', async () => {
-      mockAppLoginIsSupported.mockReturnValue(true);
-      mockFetch.mockResolvedValue({
-        ok: true,
-        json: () => Promise.resolve({ success: true, key: 'key-123' }),
-      });
+    it('같은 코드를 다시 호출해도 매번 SDK에 위임한다 (중복 판정은 서버 몫)', async () => {
+      mockGrantPromotionReward.mockResolvedValue({ key: 'reward-key-1' });
 
       await claimPromotion(TEST_CODE, TEST_AMOUNT, TEST_USER_KEY);
-
-      const claimed = JSON.parse(localStorage.getItem('math-attack-promo-claimed') ?? '[]');
-      expect(claimed).toContain(TEST_CODE);
-    });
-
-    it('이미 지급된 프로모션은 중복 호출하지 않는다', async () => {
-      mockAppLoginIsSupported.mockReturnValue(true);
-      // localStorage에 미리 claimed 기록
-      localStorage.setItem(
-        'math-attack-promo-claimed',
-        JSON.stringify([TEST_CODE])
-      );
-
-      const result = await claimPromotion(TEST_CODE, TEST_AMOUNT, TEST_USER_KEY);
-
-      expect(result.success).toBe(false);
-      if (!result.success) {
-        expect(result.error).toContain('이미 지급된 프로모션');
-      }
-      expect(mockFetch).not.toHaveBeenCalled();
-    });
-
-    it('Edge Function 에러 응답 시 에러 메시지를 반환한다', async () => {
-      mockAppLoginIsSupported.mockReturnValue(true);
-      mockFetch.mockResolvedValue({
-        ok: true,
-        json: () => Promise.resolve({
-          success: false,
-          error: 'GET_KEY_FAILED',
-          message: 'Invalid promotion code',
-        }),
-      });
-
-      const result = await claimPromotion(TEST_CODE, TEST_AMOUNT, TEST_USER_KEY);
-
-      expect(result.success).toBe(false);
-      if (!result.success) {
-        expect(result.error).toContain('GET_KEY_FAILED');
-        expect(result.error).toContain('Invalid promotion code');
-      }
-    });
-
-    it('서버 측 ALREADY_CLAIMED 응답 시 클라이언트도 claimed 마킹한다', async () => {
-      mockAppLoginIsSupported.mockReturnValue(true);
-      mockFetch.mockResolvedValue({
-        ok: true,
-        json: () => Promise.resolve({
-          success: false,
-          error: 'ALREADY_CLAIMED',
-          message: 'Promotion already claimed for this user',
-        }),
-      });
-
-      const result = await claimPromotion(TEST_CODE, TEST_AMOUNT, TEST_USER_KEY);
-
-      expect(result.success).toBe(false);
-      if (!result.success) {
-        expect(result.error).toContain('이미 지급된 프로모션');
-      }
-
-      // localStorage에도 claimed 기록됨
-      const claimed = JSON.parse(localStorage.getItem('math-attack-promo-claimed') ?? '[]');
-      expect(claimed).toContain(TEST_CODE);
-    });
-
-    it('네트워크 에러(fetch throw) 시 에러 메시지를 반환한다', async () => {
-      mockAppLoginIsSupported.mockReturnValue(true);
-      mockFetch.mockRejectedValue(new Error('Network request failed'));
-
-      const result = await claimPromotion(TEST_CODE, TEST_AMOUNT, TEST_USER_KEY);
-
-      expect(result.success).toBe(false);
-      if (!result.success) {
-        expect(result.error).toContain('프로모션 요청 실패');
-        expect(result.error).toContain('Network request failed');
-      }
-    });
-
-    it('fetch가 non-Error를 throw해도 처리한다', async () => {
-      mockAppLoginIsSupported.mockReturnValue(true);
-      mockFetch.mockRejectedValue('unexpected string error');
-
-      const result = await claimPromotion(TEST_CODE, TEST_AMOUNT, TEST_USER_KEY);
-
-      expect(result.success).toBe(false);
-      if (!result.success) {
-        expect(result.error).toContain('알 수 없는 오류');
-      }
-    });
-
-    it('다른 프로모션 코드는 독립적으로 지급 가능하다', async () => {
-      mockAppLoginIsSupported.mockReturnValue(true);
-      mockFetch.mockResolvedValue({
-        ok: true,
-        json: () => Promise.resolve({ success: true, key: 'key-1' }),
-      });
-
-      // 첫 번째 프로모션 지급
       await claimPromotion(TEST_CODE, TEST_AMOUNT, TEST_USER_KEY);
 
-      // 두 번째 다른 프로모션 코드
-      const ANOTHER_CODE = 'ANOTHER_PROMO_CODE';
-      mockFetch.mockResolvedValue({
-        ok: true,
-        json: () => Promise.resolve({ success: true, key: 'key-2' }),
-      });
-
-      const result = await claimPromotion(ANOTHER_CODE, 50, TEST_USER_KEY);
-
-      expect(result.success).toBe(true);
-      expect(mockFetch).toHaveBeenCalledTimes(2);
+      expect(mockGrantPromotionReward).toHaveBeenCalledTimes(2);
     });
-  });
 
-  describe('resetPromotionClaims', () => {
-    it('localStorage의 claimed 기록을 초기화한다', () => {
-      localStorage.setItem(
-        'math-attack-promo-claimed',
-        JSON.stringify([TEST_CODE])
-      );
+    it('undefined 응답이면 앱 업데이트 안내를 반환한다', async () => {
+      mockGrantPromotionReward.mockResolvedValue(undefined);
 
-      resetPromotionClaims();
+      const result = await claimPromotion(TEST_CODE, TEST_AMOUNT, TEST_USER_KEY);
 
-      expect(localStorage.getItem('math-attack-promo-claimed')).toBeNull();
+      expect(result).toEqual({ success: false, error: '앱 업데이트가 필요합니다 (v5.232.0+)' });
+    });
+
+    it("'ERROR' 응답이면 알 수 없는 오류를 반환한다", async () => {
+      mockGrantPromotionReward.mockResolvedValue('ERROR');
+
+      const result = await claimPromotion(TEST_CODE, TEST_AMOUNT, TEST_USER_KEY);
+
+      expect(result).toEqual({ success: false, error: '알 수 없는 오류가 발생했습니다' });
+    });
+
+    it.each([
+      ['4100', '프로모션 정보를 찾을 수 없습니다'],
+      ['4109', '프로모션이 진행 중이 아닙니다'],
+      ['4112', '프로모션 예산이 소진되었습니다'],
+      ['4114', '1회 지급 한도를 초과했습니다'],
+    ])('에러 코드 %s는 사용자 메시지로 바꿔 반환한다', async (errorCode, message) => {
+      mockGrantPromotionReward.mockResolvedValue({ errorCode, message: 'sdk message' });
+
+      const result = await claimPromotion(TEST_CODE, TEST_AMOUNT, TEST_USER_KEY);
+
+      expect(result).toEqual({ success: false, error: message });
+    });
+
+    it('매핑되지 않은 에러 코드는 코드와 SDK 메시지를 함께 반환한다', async () => {
+      mockGrantPromotionReward.mockResolvedValue({ errorCode: '4113', message: '이미 지급된 내역' });
+
+      const result = await claimPromotion(TEST_CODE, TEST_AMOUNT, TEST_USER_KEY);
+
+      expect(result).toEqual({ success: false, error: '프로모션 오류 (4113): 이미 지급된 내역' });
+    });
+
+    it('key도 errorCode도 없는 응답은 예상 밖 응답으로 처리한다', async () => {
+      mockGrantPromotionReward.mockResolvedValue({ code: 'UNKNOWN' });
+
+      const result = await claimPromotion(TEST_CODE, TEST_AMOUNT, TEST_USER_KEY);
+
+      expect(result).toEqual({ success: false, error: '예상치 못한 응답입니다' });
+    });
+
+    it('SDK가 Error를 throw하면 에러 메시지를 반환한다', async () => {
+      mockGrantPromotionReward.mockRejectedValue(new Error('Bridge not available'));
+
+      const result = await claimPromotion(TEST_CODE, TEST_AMOUNT, TEST_USER_KEY);
+
+      expect(result).toEqual({ success: false, error: 'Bridge not available' });
+    });
+
+    it('SDK가 non-Error를 throw해도 처리한다', async () => {
+      mockGrantPromotionReward.mockRejectedValue('string error');
+
+      const result = await claimPromotion(TEST_CODE, TEST_AMOUNT, TEST_USER_KEY);
+
+      expect(result).toEqual({ success: false, error: '네트워크 오류' });
     });
   });
 });
