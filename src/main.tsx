@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import App from './App';
 import { initializeUserIdentity, checkUnlinkReferrer, clearAllUserData } from '@infrastructure/userIdentity';
+import { initAmplitude } from '@infrastructure/analytics/amplitude';
 import './styles/global.css';
 
 // AIT 가이드라인: UNLINK referrer 처리 (연결 해제 시 모든 데이터 삭제)
@@ -12,6 +13,8 @@ if (checkUnlinkReferrer()) {
 }
 
 // 앱 시작 시 유저 식별자(hash) 조회 및 캐싱 — 완료 후 렌더링
+initAmplitude();
+
 async function bootstrap(): Promise<void> {
   try {
     await initializeUserIdentity();

@@ -3,6 +3,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
+import { trackAmplitude } from '@infrastructure/analytics/amplitude';
 import { useNavigate } from 'react-router-dom';
 import { DIFFICULTY_CONFIG, type DifficultyType, Operation } from '@domain/entities';
 import { getBestRecord, getMyRankInfo, getTimeAttackRankInfo, isOnlineMode } from '@data/recordService';
@@ -194,6 +195,8 @@ export function DifficultySelectPage() {
     if (!consumed) {
       return;
     }
+
+    trackAmplitude('game_started', { mode: type, difficulty });
 
     if (type === 'classic') {
       navigate(`/game/${difficulty}`);

@@ -27,6 +27,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@amplitude/analytics-browser": "^2.48.1",
     "@apps-in-toss/web-framework": "2.5.1",
     "@supabase/supabase-js": "^2.90.1",
     "@toss/tds-mobile": "^2.2.0",

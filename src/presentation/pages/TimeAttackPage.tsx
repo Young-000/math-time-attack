@@ -4,6 +4,7 @@
  */
 
 import { useState, useEffect, useRef } from 'react';
+import { trackAmplitude } from '@infrastructure/analytics/amplitude';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTimeAttack, TIME_ATTACK_DURATION_BY_DIFFICULTY, AD_BONUS_TIME } from '@presentation/hooks/useTimeAttack';
 import { useFullScreenAd } from '@presentation/hooks/useFullScreenAd';
@@ -60,6 +61,11 @@ export function TimeAttackPage() {
   // 게임 완료 시 결과 페이지로 이동
   useEffect(() => {
     if (gameState?.isComplete) {
+      trackAmplitude('game_completed', {
+        mode: 'timeattack',
+        difficulty: gameState.difficulty,
+        correct_count: gameState.correctCount,
+      });
       navigate('/time-attack/result', {
         state: {
           difficulty: gameState.difficulty,

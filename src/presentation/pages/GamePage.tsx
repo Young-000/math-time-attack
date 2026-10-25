@@ -3,6 +3,7 @@
  */
 
 import { useState, useEffect, useRef } from 'react';
+import { trackAmplitude } from '@infrastructure/analytics/amplitude';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useMathGame } from '@presentation/hooks';
 import { DIFFICULTY_CONFIG, OPERATION_SYMBOLS, type DifficultyType } from '@domain/entities';
@@ -58,6 +59,11 @@ export function GamePage() {
   // Navigate to result when complete
   useEffect(() => {
     if (gameState?.isComplete) {
+      trackAmplitude('game_completed', {
+        mode: isDaily ? 'daily' : 'classic',
+        difficulty: gameState.difficulty,
+        elapsed_time: elapsedTime,
+      });
       navigate('/result', {
         state: {
           difficulty: gameState.difficulty,

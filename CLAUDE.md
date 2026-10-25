@@ -19,6 +19,7 @@
 - Supabase (PostgreSQL + Edge Functions)
 - Clean Architecture
 - Vitest + RTL (325 단위 테스트) + Playwright E2E (5 스펙)
+- Amplitude (`src/infrastructure/analytics/` - `VITE_AMPLITUDE_API_KEY` 빌드 시 주입, 키 없으면 전송 없음. 이벤트: game_started, game_completed, points_exchanged)
 
 ## 앱인토스 규칙
 

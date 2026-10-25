@@ -5,6 +5,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
+import { trackAmplitude } from '@infrastructure/analytics/amplitude';
 import { useNavigate } from 'react-router-dom';
 import { usePoints } from '@presentation/hooks/usePoints';
 import { EXCHANGE_RATE, MIN_EXCHANGE_STARS, MAX_EXCHANGE_STARS, MAX_EXCHANGE_TOSS_POINTS } from '@constants/points';
@@ -66,6 +67,7 @@ export function ExchangePage(): JSX.Element {
         await spendPoints(userKey, starsToSpend, 'exchange', `${starsToSpend}별 -> ${tossPoints}P 교환`);
 
         setStatus('success');
+        trackAmplitude('points_exchanged', { toss_points: tossPoints });
         setLastResult({ starsSpent: starsToSpend, tossPoints });
 
         // 미션 통계 업데이트
